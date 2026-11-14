@@ -93,10 +93,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     async (nextUser: User, defaults?: PendingProfileDefaults) => {
       setVerifyingTenant(true);
       try {
+        const wasVerified = isUserVerified(nextUser);
+        if (!wasVerified) {
+          try {
+            await nextUser.reload();
+          } catch {
+            // Ignore transient reload failures
+          }
+        }
         const verified = isUserVerified(nextUser);
         setIsAuthorized(verified);
         setDenialReason(verified ? null : 'unverified_email');
         if (verified) {
+          if (!wasVerified) {
+            await nextUser.getIdToken(true);
+          }
           const resolvedDefaults = defaults || consumePendingProfile(nextUser.uid);
           try {
             await dbService.bootstrapWorkspace(nextUser, resolvedDefaults);
