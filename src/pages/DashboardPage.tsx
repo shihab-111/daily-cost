@@ -5,6 +5,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useMode } from '../context/ModeContext';
 import {
   useActivityLogs,
+  useExpenseCategories,
   useExpenses,
   useProducts,
   useSettings,
@@ -31,6 +32,7 @@ export const DashboardPage: React.FC = () => {
   const { t } = useLanguage();
   const { mode } = useMode();
   const { expenses, loading: expLoading } = useExpenses(user, Boolean(user));
+  const { modeCategories, categoryLabels } = useExpenseCategories(user, Boolean(user), mode);
   const { products, loading: prodLoading } = useProducts(user, Boolean(user));
   const { settings } = useSettings(user, Boolean(user));
   const { logs } = useActivityLogs(user, Boolean(user));
@@ -206,7 +208,7 @@ export const DashboardPage: React.FC = () => {
               variant="secondary"
               size="sm"
               disabled={filteredExpenses.length === 0}
-              onClick={() => exportExpensesCsv(filteredExpenses)}
+              onClick={() => exportExpensesCsv(filteredExpenses, categoryLabels)}
             >
               <Download className="w-3.5 h-3.5 text-[#4ade80]" />
               {mode === 'business' ? t.dashboard.businessCsv : t.dashboard.personalCsv}
@@ -337,6 +339,8 @@ export const DashboardPage: React.FC = () => {
         <OverviewCharts
           mode={mode}
           expenses={filteredExpenses}
+          categories={modeCategories}
+          categoryLabels={categoryLabels}
           inventoryValueBdt={businessKpis.inventoryCostValueBdt}
           monthlyBudgetBdt={monthlyBudgetBdt}
           monthSpentBdt={personalKpis.thisMonthSpendBdt}

@@ -5,6 +5,7 @@ import {
   Customer,
   CustomerReceipt,
   Expense,
+  ExpenseCategoryItem,
   Product,
   ProductPhoto,
   ReceiptAsset,
@@ -20,6 +21,7 @@ import {
   SettingsFormValues,
 } from '../validators/schemas';
 import * as activityService from '../services/activityService';
+import * as categoryService from '../services/categoryService';
 import * as customerService from '../services/customerService';
 import * as expenseService from '../services/expenseService';
 import * as productService from '../services/productService';
@@ -54,6 +56,18 @@ export interface BusinessDataAdapter {
     onData: (items: Expense[]) => void,
     onError: (err: Error) => void
   ): () => void;
+  subscribeExpenseCategories(
+    user: User,
+    onData: (items: ExpenseCategoryItem[]) => void,
+    onError: (err: Error) => void
+  ): () => void;
+  addExpenseCategory(user: User, mode: AppMode, label: string): Promise<ExpenseCategoryItem>;
+  deleteExpenseCategory(user: User, categoryDocId: string): Promise<void>;
+  restoreDefaultExpenseCategories(
+    user: User,
+    mode: AppMode,
+    existingKeys: Set<string>
+  ): Promise<void>;
   subscribeProducts(
     user: User,
     onData: (items: Product[]) => void,
@@ -132,6 +146,10 @@ export interface BusinessDataAdapter {
 class FirestoreBusinessAdapter implements BusinessDataAdapter {
   bootstrapWorkspace = settingsService.bootstrapUserWorkspace;
   subscribeExpenses = expenseService.subscribeExpenses;
+  subscribeExpenseCategories = categoryService.subscribeExpenseCategories;
+  addExpenseCategory = categoryService.addExpenseCategory;
+  deleteExpenseCategory = categoryService.deleteExpenseCategory;
+  restoreDefaultExpenseCategories = categoryService.restoreDefaultExpenseCategories;
   subscribeProducts = productService.subscribeProducts;
   subscribeCustomers = customerService.subscribeCustomers;
   subscribeSettings = settingsService.subscribeSettings;

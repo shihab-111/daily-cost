@@ -1,11 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { User } from 'firebase/auth';
 import { dbService } from '../lib/firebase/db';
+import { EXPENSE_CATEGORY_LABELS } from '../lib/utils';
 import {
   ActivityLog,
+  AppMode,
   Customer,
   CustomerReceipt,
   Expense,
+  ExpenseCategoryItem,
   Product,
   ReceiptTemplate,
   UserSettings,
@@ -39,6 +42,59 @@ export function useExpenses(user: User | null, enabled: boolean) {
   }, [user, enabled]);
 
   return { expenses, loading, error };
+}
+
+export function useExpenseCategories(
+  user: User | null,
+  enabled: boolean,
+  mode?: AppMode
+) {
+  const [categories, setCategories] = useState<ExpenseCategoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user || !enabled) {
+      setCategories([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    const unsub = dbService.subscribeExpenseCategories(
+      user,
+      (list) => {
+        setCategories(list);
+        setLoading(false);
+      },
+      (err) => {
+        setError(err.message);
+        setLoading(false);
+      }
+    );
+    return () => unsub();
+  }, [user, enabled]);
+
+  const modeCategories = useMemo(
+    () => (mode ? categories.filter((c) => c.mode === mode) : categories),
+    [categories, mode]
+  );
+
+  const categoryLabels = useMemo(() => {
+    const map: Record<string, string> = { ...EXPENSE_CATEGORY_LABELS };
+    for (const c of categories) {
+      map[c.key] = c.label;
+    }
+    return map;
+  }, [categories]);
+
+  return {
+    allCategories: categories,
+    modeCategories,
+    categoryLabels,
+    loading,
+    error,
+  };
 }
 
 export function useProducts(user: User | null, enabled: boolean) {

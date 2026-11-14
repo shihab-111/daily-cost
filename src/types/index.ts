@@ -20,7 +20,17 @@ export type PersonalExpenseCategory =
   | 'family_health'
   | 'dining_out';
 
-export type ExpenseCategory = BusinessExpenseCategory | PersonalExpenseCategory;
+export type ExpenseCategory = BusinessExpenseCategory | PersonalExpenseCategory | (string & {});
+
+export interface ExpenseCategoryItem {
+  id: string;
+  userId: string;
+  mode: AppMode;
+  key: string;
+  label: string;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
 
 export type PaymentMethod =
   | 'bKash'

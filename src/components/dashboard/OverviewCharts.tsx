@@ -1,17 +1,18 @@
 import React from 'react';
-import { ActivityLog, AppMode, Expense, ExpenseCategory } from '../../types';
+import { ActivityLog, AppMode, Expense, ExpenseCategoryItem } from '../../types';
 import {
   convertToBdt,
-  EXPENSE_CATEGORY_LABELS,
   formatMoney,
-  getCategoriesForMode,
   PAYMENT_METHODS,
+  resolveCategoryLabel,
 } from '../../lib/utils';
 import { Card } from '../ui';
 
 interface OverviewChartsProps {
   mode: AppMode;
   expenses: Expense[];
+  categories: ExpenseCategoryItem[];
+  categoryLabels: Record<string, string>;
   inventoryValueBdt: number;
   monthlyBudgetBdt?: number;
   monthSpentBdt?: number;
@@ -19,7 +20,7 @@ interface OverviewChartsProps {
   logs: ActivityLog[];
 }
 
-const CATEGORY_COLORS: Record<ExpenseCategory, string> = {
+const DEFAULT_CATEGORY_COLORS: Record<string, string> = {
   facebook_ads: '#22c55e',
   marketing_promo: '#4ade80',
   photoshoot_model: '#eab308',
@@ -34,19 +35,26 @@ const CATEGORY_COLORS: Record<ExpenseCategory, string> = {
   dining_out: '#f97316',
 };
 
+const PALETTE_CYCLE = ['#22c55e', '#38bdf8', '#eab308', '#a855f7', '#f97316', '#f472b6', '#4ade80'];
+
+function getCategoryColor(key: string, idx: number): string {
+  return DEFAULT_CATEGORY_COLORS[key] || PALETTE_CYCLE[idx % PALETTE_CYCLE.length];
+}
+
 export const OverviewCharts: React.FC<OverviewChartsProps> = ({
   mode,
   expenses,
+  categories,
+  categoryLabels,
   inventoryValueBdt,
   monthlyBudgetBdt = 25000,
   monthSpentBdt = 0,
   usdToBdtRate,
   logs,
 }) => {
-  const modeCategories = getCategoriesForMode(mode);
   const categoryTotals: Record<string, number> = {};
-  for (const [key] of modeCategories) {
-    categoryTotals[key] = 0;
+  for (const cat of categories) {
+    categoryTotals[cat.key] = 0;
   }
 
   const paymentTotals: Record<string, number> = {};
@@ -59,6 +67,39 @@ export const OverviewCharts: React.FC<OverviewChartsProps> = ({
   }
 
   const totalExpenseBdt = Object.values(categoryTotals).reduce((a, b) => a + b, 0);
+
+  const displayedCategories = [
+    ...categories.map((c, idx) => ({
+      key: c.key,
+      label: c.label,
+      color: getCategoryColor(c.key, idx),
+    })),
+    ...Object.keys(categoryTotals)
+      .filter((key) => !categories.some((c) => c.key === key))
+      .map((key, idx) => ({
+        key,
+        label: resolveCategoryLabel(key, categoryLabels),
+        color: getCategoryColor(key, categories.length + idx),
+      })),
+  ];
+
+  const knownCoreOpsTotal =
+    (categoryTotals.operations_packaging || 0) +
+    (categoryTotals.raw_materials || 0) +
+    (categoryTotals.rent_utilities || 0);
+  const customBusinessTotal = Object.entries(categoryTotals)
+    .filter(
+      ([k]) =>
+        ![
+          'facebook_ads',
+          'marketing_promo',
+          'photoshoot_model',
+          'operations_packaging',
+          'raw_materials',
+          'rent_utilities',
+        ].includes(k)
+    )
+    .reduce((sum, [, v]) => sum + v, 0);
 
   const comparisonRows =
     mode === 'business'
@@ -75,18 +116,15 @@ export const OverviewCharts: React.FC<OverviewChartsProps> = ({
             color: '#eab308',
           },
           {
-            label: 'Packaging, Raw & Rent',
-            value:
-              (categoryTotals.operations_packaging || 0) +
-              (categoryTotals.raw_materials || 0) +
-              (categoryTotals.rent_utilities || 0),
+            label: 'Packaging, Raw, Rent & Other',
+            value: knownCoreOpsTotal + customBusinessTotal,
             color: '#a1a1aa',
           },
         ]
-      : modeCategories.map(([key, label]) => ({
-          label,
-          value: categoryTotals[key] || 0,
-          color: CATEGORY_COLORS[key],
+      : displayedCategories.map((c) => ({
+          label: c.label,
+          value: categoryTotals[c.key] || 0,
+          color: c.color,
         }));
 
   const maxBar = Math.max(1, ...comparisonRows.map((c) => c.value));
@@ -167,17 +205,17 @@ export const OverviewCharts: React.FC<OverviewChartsProps> = ({
               {mode === 'business' ? 'Business Categories' : 'Personal Categories'}
             </h3>
             <div className="space-y-2">
-              {modeCategories.map(([catKey, catLabel]) => {
-                const val = categoryTotals[catKey] || 0;
+              {displayedCategories.map((cat) => {
+                const val = categoryTotals[cat.key] || 0;
                 const share = totalExpenseBdt > 0 ? Math.round((val / totalExpenseBdt) * 100) : 0;
                 return (
-                  <div key={catKey} className="flex items-center justify-between text-xs gap-2">
+                  <div key={cat.key} className="flex items-center justify-between text-xs gap-2">
                     <span className="text-zinc-300 flex items-center gap-2 truncate">
                       <span
                         className="w-2 h-2 rounded-xs shrink-0"
-                        style={{ backgroundColor: CATEGORY_COLORS[catKey] }}
+                        style={{ backgroundColor: cat.color }}
                       />
-                      <span className="truncate">{EXPENSE_CATEGORY_LABELS[catKey] || catLabel}</span>
+                      <span className="truncate">{cat.label}</span>
                     </span>
                     <span className="font-mono tabular-nums text-zinc-400 shrink-0">
                       {share}% · {formatMoney(val, 'BDT')}

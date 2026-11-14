@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Building2, Download, ShieldCheck, Wallet } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useLanguage } from '../context/LanguageContext';
-import { useExpenses, useProducts, useSettings } from '../hooks/useBusinessData';
+import { useExpenseCategories, useExpenses, useProducts, useSettings } from '../hooks/useBusinessData';
 import { dbService } from '../lib/firebase/db';
 import { exportExpensesCsv, exportProductsCsv } from '../lib/utils';
 import { settingsSchema } from '../lib/validators/schemas';
@@ -16,6 +16,7 @@ export const SettingsPage: React.FC = () => {
   const { t } = useLanguage();
   const { settings } = useSettings(user, Boolean(user));
   const { expenses } = useExpenses(user, Boolean(user));
+  const { categoryLabels } = useExpenseCategories(user, Boolean(user));
   const { products } = useProducts(user, Boolean(user));
 
   const [businessName, setBusinessName] = useState(
@@ -231,7 +232,7 @@ export const SettingsPage: React.FC = () => {
                   variant="secondary"
                   size="sm"
                   disabled={expenses.length === 0}
-                  onClick={() => exportExpensesCsv(expenses)}
+                  onClick={() => exportExpensesCsv(expenses, categoryLabels)}
                 >
                   <Download className="w-3.5 h-3.5 text-[#4ade80]" />
                   {t.settings.allExpensesCsv}

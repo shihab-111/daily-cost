@@ -1,17 +1,17 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { User } from 'firebase/auth';
-import { ImagePlus, Trash2 } from 'lucide-react';
+import { ImagePlus, Plus, Trash2 } from 'lucide-react';
 import { AppMode, CurrencyCode, Expense, ExpenseCategory, PaymentMethod } from '../../types';
+import { useLanguage } from '../../context/LanguageContext';
 import { useMode } from '../../context/ModeContext';
+import { useExpenseCategories } from '../../hooks/useBusinessData';
 import { dbService, StagedAssetInput } from '../../lib/firebase/db';
 import { processImageAsset, tryUploadToStorageOrFallback } from '../../lib/firebase/storage';
-import { expenseSchema } from '../../lib/validators/schemas';
+import { expenseCategorySchema, expenseSchema } from '../../lib/validators/schemas';
 import {
-  BUSINESS_EXPENSE_CATEGORIES,
-  getCategoriesForMode,
   getTodayDhakaDate,
   PAYMENT_METHODS,
-  PERSONAL_EXPENSE_CATEGORIES,
+  resolveCategoryLabel,
 } from '../../lib/utils';
 import { Button, Input, Modal, Select } from '../ui';
 
@@ -31,8 +31,14 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
   onClose,
 }) => {
   const { mode: activeMode } = useMode();
+  const { t } = useLanguage();
 
   const [entryMode, setEntryMode] = useState<AppMode>(activeMode);
+  const { allCategories, modeCategories, categoryLabels } = useExpenseCategories(
+    user,
+    open,
+    entryMode
+  );
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState<ExpenseCategory>('facebook_ads');
@@ -49,6 +55,10 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
   const [studioName, setStudioName] = useState('');
   const [vendorOrCourier, setVendorOrCourier] = useState('');
 
+  const [addingCat, setAddingCat] = useState(false);
+  const [newCatLabel, setNewCatLabel] = useState('');
+  const [catSaving, setCatSaving] = useState(false);
+
   const [receipts, setReceipts] = useState<StagedAssetInput[]>([]);
   const [removedIds, setRemovedIds] = useState<string[]>([]);
   const [processingFile, setProcessingFile] = useState(false);
@@ -61,6 +71,8 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
     if (!open) return;
     setErrorMsg(null);
     setRemovedIds([]);
+    setAddingCat(false);
+    setNewCatLabel('');
     if (editingExpense) {
       const m = editingExpense.mode || 'business';
       setEntryMode(m);
@@ -117,12 +129,54 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
     }
   }, [open, editingExpense, defaultCurrency, user, activeMode]);
 
+  // Keep selected category aligned with the user's active categories for entryMode
+  useEffect(() => {
+    if (!open || editingExpense || modeCategories.length === 0) return;
+    if (!modeCategories.some((c) => c.key === category)) {
+      setCategory(modeCategories[0].key);
+    }
+  }, [open, editingExpense, modeCategories, category]);
+
   const handleModeChange = (nextMode: AppMode) => {
     setEntryMode(nextMode);
-    if (nextMode === 'business' && !(category in BUSINESS_EXPENSE_CATEGORIES)) {
-      setCategory('facebook_ads');
-    } else if (nextMode === 'personal' && !(category in PERSONAL_EXPENSE_CATEGORIES)) {
-      setCategory('groceries_bazaar');
+    setAddingCat(false);
+    setNewCatLabel('');
+    const nextList = allCategories.filter((c) => c.mode === nextMode);
+    if (nextList.length > 0) {
+      if (!nextList.some((c) => c.key === category)) {
+        setCategory(nextList[0].key);
+      }
+    } else {
+      setCategory(nextMode === 'business' ? 'facebook_ads' : 'groceries_bazaar');
+    }
+  };
+
+  const handleQuickAddCategory = async () => {
+    setErrorMsg(null);
+    const parsed = expenseCategorySchema.safeParse({ mode: entryMode, label: newCatLabel });
+    if (!parsed.success) {
+      setErrorMsg(parsed.error.issues[0]?.message || 'Enter a category name.');
+      return;
+    }
+    const existingMatch = modeCategories.find(
+      (c) => c.label.trim().toLowerCase() === parsed.data.label.toLowerCase()
+    );
+    if (existingMatch) {
+      setCategory(existingMatch.key);
+      setAddingCat(false);
+      setNewCatLabel('');
+      return;
+    }
+    setCatSaving(true);
+    try {
+      const created = await dbService.addExpenseCategory(user, entryMode, parsed.data.label);
+      setCategory(created.key);
+      setAddingCat(false);
+      setNewCatLabel('');
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : 'Unable to add category.');
+    } finally {
+      setCatSaving(false);
     }
   };
 
@@ -204,7 +258,13 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
     }
   };
 
-  const modeCategories = getCategoriesForMode(entryMode);
+  const selectOptions = useMemo(() => {
+    const base = modeCategories.map((c) => ({ key: c.key, label: c.label }));
+    if (category && !base.some((o) => o.key === category)) {
+      base.push({ key: category, label: resolveCategoryLabel(category, categoryLabels) });
+    }
+    return base;
+  }, [modeCategories, category, categoryLabels]);
 
   return (
     <Modal
@@ -264,17 +324,53 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
                 : 'e.g., Karwan Bazar Weekly Groceries'
             }
           />
-          <Select
-            label="Category *"
-            value={category}
-            onChange={(e) => setCategory(e.target.value as ExpenseCategory)}
-          >
-            {modeCategories.map(([catKey, catLabel]) => (
-              <option key={catKey} value={catKey}>
-                {catLabel}
-              </option>
-            ))}
-          </Select>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between gap-2">
+              <label htmlFor="expense-category-select" className="block text-xs font-medium text-zinc-300">
+                Category *
+              </label>
+              <button
+                type="button"
+                onClick={() => setAddingCat((v) => !v)}
+                className="inline-flex items-center gap-1 text-[11px] font-medium text-[#4ade80] hover:text-[#86efac] cursor-pointer"
+              >
+                <Plus className="w-3 h-3" />
+                {addingCat ? 'Close' : t.expenses.addCategoryBtn}
+              </button>
+            </div>
+            <select
+              id="expense-category-select"
+              value={category}
+              onChange={(e) => setCategory(e.target.value as ExpenseCategory)}
+              className="w-full px-3 py-2 text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg focus:outline-none focus:border-[#22c55e] focus:ring-1 focus:ring-[#22c55e]"
+            >
+              {selectOptions.map((opt) => (
+                <option key={opt.key} value={opt.key}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            {addingCat && (
+              <div className="flex items-center gap-1.5 pt-1">
+                <input
+                  type="text"
+                  maxLength={60}
+                  value={newCatLabel}
+                  onChange={(e) => setNewCatLabel(e.target.value)}
+                  placeholder={t.expenses.addCategoryPlaceholder}
+                  className="flex-1 min-w-0 px-2.5 py-1.5 text-xs bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-500 focus:outline-none focus:border-[#22c55e]"
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={catSaving || !newCatLabel.trim()}
+                  onClick={handleQuickAddCategory}
+                >
+                  {t.expenses.addCategoryBtn}
+                </Button>
+              </div>
+            )}
+          </div>
 
           <div className="grid grid-cols-3 gap-2">
             <div className="col-span-2">

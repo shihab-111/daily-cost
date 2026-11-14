@@ -24,20 +24,12 @@ export const expenseSchema = z.object({
   mode: z.enum(['business', 'personal']),
   title: z.string().trim().min(1, 'Expense title is required.').max(200),
   description: z.string().trim().max(4000).default(''),
-  category: z.enum([
-    'facebook_ads',
-    'marketing_promo',
-    'photoshoot_model',
-    'operations_packaging',
-    'raw_materials',
-    'rent_utilities',
-    'groceries_bazaar',
-    'bills_utilities',
-    'transportation',
-    'personal_shopping',
-    'family_health',
-    'dining_out',
-  ]),
+  category: z
+    .string()
+    .trim()
+    .min(1, 'Expense category is required.')
+    .max(64)
+    .regex(/^[a-zA-Z0-9_-]+$/, 'Invalid category key format.'),
   amount: z.coerce.number().min(0, 'Amount cannot be negative.').max(999999999),
   currency: z.enum(['BDT', 'USD']),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD date format.'),
@@ -49,6 +41,15 @@ export const expenseSchema = z.object({
   photographerName: z.string().trim().max(120).default(''),
   studioName: z.string().trim().max(120).default(''),
   vendorOrCourier: z.string().trim().max(160).default(''),
+});
+
+export const expenseCategorySchema = z.object({
+  mode: z.enum(['business', 'personal']),
+  label: z
+    .string()
+    .trim()
+    .min(1, 'Category name is required.')
+    .max(60, 'Category name must be 60 characters or fewer.'),
 });
 
 export const productSchema = z.object({

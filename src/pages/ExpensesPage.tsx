@@ -1,18 +1,20 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Download, Edit3, Plus, Receipt, Search, Trash2 } from 'lucide-react';
+import { Download, Edit3, Plus, Receipt, RotateCcw, Search, SlidersHorizontal, Trash2, X } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useLanguage } from '../context/LanguageContext';
 import { useMode } from '../context/ModeContext';
-import { useExpenses, useSettings } from '../hooks/useBusinessData';
+import { useExpenseCategories, useExpenses, useSettings } from '../hooks/useBusinessData';
 import { dbService } from '../lib/firebase/db';
 import {
+  BUSINESS_EXPENSE_CATEGORIES,
   convertToBdt,
-  EXPENSE_CATEGORY_LABELS,
   exportExpensesCsv,
   formatMoney,
-  getCategoriesForMode,
   isDateInRange,
+  PERSONAL_EXPENSE_CATEGORIES,
+  resolveCategoryLabel,
 } from '../lib/utils';
+import { expenseCategorySchema } from '../lib/validators/schemas';
 import { DateRangePreset, Expense, ExpenseCategory } from '../types';
 import { DashboardShell } from '../components/layout/DashboardShell';
 import { ExpenseModal } from '../components/expenses/ExpenseModal';
@@ -24,6 +26,7 @@ export const ExpensesPage: React.FC = () => {
   const { t } = useLanguage();
   const { mode } = useMode();
   const { expenses, loading } = useExpenses(user, Boolean(user));
+  const { modeCategories, categoryLabels } = useExpenseCategories(user, Boolean(user), mode);
   const { settings } = useSettings(user, Boolean(user));
 
   const [categoryFilter, setCategoryFilter] = useState<'all' | ExpenseCategory>('all');
@@ -32,6 +35,11 @@ export const ExpensesPage: React.FC = () => {
   const [customEnd, setCustomEnd] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
 
+  const [manageCatsOpen, setManageCatsOpen] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [catSaving, setCatSaving] = useState(false);
+  const [catError, setCatError] = useState<string | null>(null);
+
   const [modalOpen, setModalOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -39,12 +47,71 @@ export const ExpensesPage: React.FC = () => {
 
   useEffect(() => {
     setCategoryFilter('all');
+    setCatError(null);
   }, [mode]);
 
   const businessName = settings?.businessName || 'EkTally';
   const defaultCurrency = settings?.currencyCode || 'BDT';
   const usdToBdtRate = settings?.usdToBdtRate || 120;
-  const modeCategories = useMemo(() => getCategoriesForMode(mode), [mode]);
+
+  const missingDefaultsCount = useMemo(() => {
+    const defaults =
+      mode === 'business' ? BUSINESS_EXPENSE_CATEGORIES : PERSONAL_EXPENSE_CATEGORIES;
+    const activeKeys = new Set(modeCategories.map((c) => c.key));
+    return Object.keys(defaults).filter((k) => !activeKeys.has(k)).length;
+  }, [mode, modeCategories]);
+
+  const handleAddCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    setCatError(null);
+    const parsed = expenseCategorySchema.safeParse({ mode, label: newCategoryName });
+    if (!parsed.success) {
+      setCatError(parsed.error.issues[0]?.message || 'Enter a category name.');
+      return;
+    }
+    const normalized = parsed.data.label.toLowerCase();
+    if (modeCategories.some((c) => c.label.trim().toLowerCase() === normalized)) {
+      setCatError(t.expenses.duplicateCategory);
+      return;
+    }
+    setCatSaving(true);
+    try {
+      await dbService.addExpenseCategory(user, mode, parsed.data.label);
+      setNewCategoryName('');
+    } catch (err) {
+      setCatError(err instanceof Error ? err.message : 'Unable to add category.');
+    } finally {
+      setCatSaving(false);
+    }
+  };
+
+  const handleDeleteCategory = async (catId: string, catKey: string) => {
+    if (!user) return;
+    setCatError(null);
+    try {
+      await dbService.deleteExpenseCategory(user, catId);
+      if (categoryFilter === catKey) {
+        setCategoryFilter('all');
+      }
+    } catch (err) {
+      setCatError(err instanceof Error ? err.message : 'Unable to delete category.');
+    }
+  };
+
+  const handleRestoreDefaults = async () => {
+    if (!user) return;
+    setCatSaving(true);
+    setCatError(null);
+    try {
+      const existingKeys = new Set(modeCategories.map((c) => c.key));
+      await dbService.restoreDefaultExpenseCategories(user, mode, existingKeys);
+    } catch (err) {
+      setCatError(err instanceof Error ? err.message : 'Unable to restore default categories.');
+    } finally {
+      setCatSaving(false);
+    }
+  };
 
   const modeExpenses = useMemo(
     () => expenses.filter((exp) => (exp.mode || 'business') === mode),
@@ -127,7 +194,7 @@ export const ExpensesPage: React.FC = () => {
             variant="secondary"
             size="sm"
             disabled={filteredExpenses.length === 0}
-            onClick={() => exportExpensesCsv(filteredExpenses)}
+            onClick={() => exportExpensesCsv(filteredExpenses, categoryLabels)}
           >
             <Download className="w-3.5 h-3.5 text-[#4ade80]" />
             <span className="hidden sm:inline">{t.common.exportCsv}</span>
@@ -210,32 +277,52 @@ export const ExpensesPage: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#27272a]">
-            <div className="flex items-center gap-1 p-1 bg-[#09090b] border border-[#27272a] rounded-lg overflow-x-auto">
-              <button
-                type="button"
-                onClick={() => setCategoryFilter('all')}
-                className={`px-3 py-1.5 text-xs font-medium rounded-md cursor-pointer whitespace-nowrap ${
-                  categoryFilter === 'all'
-                    ? 'bg-[#18181b] text-[#4ade80]'
-                    : 'text-zinc-400 hover:text-zinc-100'
-                }`}
-              >
-                {mode === 'business' ? t.expenses.allBusiness : t.expenses.allPersonal}
-              </button>
-              {modeCategories.map(([catKey, catLabel]) => (
+            <div className="flex flex-wrap items-center gap-2 min-w-0">
+              <div className="flex items-center gap-1 p-1 bg-[#09090b] border border-[#27272a] rounded-lg overflow-x-auto max-w-full">
                 <button
-                  key={catKey}
                   type="button"
-                  onClick={() => setCategoryFilter(catKey)}
+                  onClick={() => setCategoryFilter('all')}
                   className={`px-3 py-1.5 text-xs font-medium rounded-md cursor-pointer whitespace-nowrap ${
-                    categoryFilter === catKey
+                    categoryFilter === 'all'
                       ? 'bg-[#18181b] text-[#4ade80]'
                       : 'text-zinc-400 hover:text-zinc-100'
                   }`}
                 >
-                  {catLabel}
+                  {mode === 'business' ? t.expenses.allBusiness : t.expenses.allPersonal}
                 </button>
-              ))}
+                {modeCategories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setCategoryFilter(cat.key)}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md cursor-pointer whitespace-nowrap ${
+                      categoryFilter === cat.key
+                        ? 'bg-[#18181b] text-[#4ade80]'
+                        : 'text-zinc-400 hover:text-zinc-100'
+                    }`}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setManageCatsOpen((o) => !o);
+                  setCatError(null);
+                }}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-colors cursor-pointer whitespace-nowrap ${
+                  manageCatsOpen
+                    ? 'bg-[#22c55e]/15 text-[#4ade80] border-[#22c55e]/40'
+                    : 'bg-[#09090b] text-zinc-300 border-[#27272a] hover:border-zinc-600 hover:text-white'
+                }`}
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5 text-[#4ade80]" />
+                <span>
+                  {manageCatsOpen ? t.expenses.doneManaging : t.expenses.manageCategories}
+                </span>
+              </button>
             </div>
 
             <div className="text-xs font-mono tabular-nums text-zinc-400">
@@ -245,6 +332,61 @@ export const ExpensesPage: React.FC = () => {
               </span>
             </div>
           </div>
+
+          {manageCatsOpen && (
+            <div className="p-3.5 rounded-lg bg-[#09090b] border border-[#27272a] space-y-3">
+              <form onSubmit={handleAddCategory} className="flex flex-wrap items-center gap-2">
+                <input
+                  type="text"
+                  maxLength={60}
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  placeholder={t.expenses.addCategoryPlaceholder}
+                  className="flex-1 min-w-[200px] px-3 py-1.5 text-xs bg-[#121214] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-500 focus:outline-none focus:border-[#22c55e]"
+                />
+                <Button type="submit" size="sm" disabled={catSaving || !newCategoryName.trim()}>
+                  <Plus className="w-3.5 h-3.5" />
+                  {t.expenses.addCategoryBtn}
+                </Button>
+                {missingDefaultsCount > 0 && (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    disabled={catSaving}
+                    onClick={handleRestoreDefaults}
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-[#4ade80]" />
+                    {t.expenses.restoreDefaults}
+                  </Button>
+                )}
+              </form>
+
+              {catError && (
+                <p className="text-xs text-red-400">{catError}</p>
+              )}
+
+              <div className="flex flex-wrap gap-2">
+                {modeCategories.map((cat) => (
+                  <div
+                    key={cat.id}
+                    className="inline-flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 text-xs bg-[#18181b] border border-[#27272a] rounded-md text-zinc-200"
+                  >
+                    <span>{cat.label}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteCategory(cat.id, cat.key)}
+                      aria-label={`${t.expenses.deleteCategoryTitle} ${cat.label}`}
+                      title={t.expenses.deleteCategoryTitle}
+                      className="p-0.5 text-zinc-400 hover:text-red-400 rounded cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </Card>
 
         {/* Expense Table */}
@@ -301,7 +443,7 @@ export const ExpensesPage: React.FC = () => {
                         </div>
                         <div className="text-xs text-zinc-400 mt-0.5 truncate">
                           <span className="text-[#4ade80]">
-                            {EXPENSE_CATEGORY_LABELS[exp.category] || exp.category}
+                            {resolveCategoryLabel(exp.category, categoryLabels)}
                           </span>
                           <span className="mx-1.5 text-zinc-600">·</span>
                           <span>{renderCategoryContext(exp)}</span>

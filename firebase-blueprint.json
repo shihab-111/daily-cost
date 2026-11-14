@@ -36,10 +36,9 @@
         "description": { "type": "string", "maxLength": 4000 },
         "category": {
           "type": "string",
-          "enum": [
-            "facebook_ads", "marketing_promo", "photoshoot_model", "operations_packaging", "raw_materials", "rent_utilities",
-            "groceries_bazaar", "bills_utilities", "transportation", "personal_shopping", "family_health", "dining_out"
-          ]
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
         },
         "amount": { "type": "number" },
         "currency": { "type": "string", "enum": ["BDT", "USD"] },
@@ -267,12 +266,45 @@
         "subtotal", "deliveryCharge", "discountAmount", "vatPercent", "vatAmount",
         "grandTotal", "paidAmount", "dueAmount", "footerNote", "createdAt", "updatedAt"
       ]
+    },
+    "ExpenseCategory": {
+      "title": "ExpenseCategory",
+      "description": "Tenant-isolated customizable business or personal expense category.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "mode": { "type": "string", "enum": ["business", "personal"] },
+        "key": { "type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "label": { "type": "string", "minLength": 1, "maxLength": 60 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "mode", "key", "label", "createdAt", "updatedAt"]
+    },
+    "ExpenseCategorySeed": {
+      "title": "ExpenseCategorySeed",
+      "description": "One-time marker indicating default expense categories were initialized for a user.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "seeded": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "seeded", "createdAt"]
     }
   },
   "firestore": {
     "/settings/{userId}": {
       "schema": { "$ref": "#/entities/UserSettings" },
       "description": "Per-tenant business and personal budget configuration."
+    },
+    "/expenseCategories/{categoryId}": {
+      "schema": { "$ref": "#/entities/ExpenseCategory" },
+      "description": "Tenant-isolated editable business and personal expense categories."
+    },
+    "/expenseCategorySeeds/{userId}": {
+      "schema": { "$ref": "#/entities/ExpenseCategorySeed" },
+      "description": "One-time initialization state for per-user default expense categories."
     },
     "/expenses/{expenseId}": {
       "schema": { "$ref": "#/entities/Expense" },

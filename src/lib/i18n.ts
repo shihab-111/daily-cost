@@ -134,6 +134,13 @@ export interface TranslationStrings {
     payment: string;
     receipt: string;
     amount: string;
+    manageCategories: string;
+    doneManaging: string;
+    addCategoryPlaceholder: string;
+    addCategoryBtn: string;
+    restoreDefaults: string;
+    deleteCategoryTitle: string;
+    duplicateCategory: string;
   };
   products: {
     addProduct: string;
@@ -246,7 +253,7 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
     },
     login: {
       kicker: 'EkTally · Dual-Mode Business & Personal Ledger',
-      headlinePrefix: 'Private Bangladesh',
+      headlinePrefix: 'Private',
       headlineHighlight: 'business & personal',
       headlineSuffix: 'expense control.',
       subtitle:
@@ -341,6 +348,13 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       payment: 'Payment',
       receipt: 'Receipt',
       amount: 'Amount',
+      manageCategories: 'Add / Delete Categories',
+      doneManaging: 'Done',
+      addCategoryPlaceholder: 'New category name...',
+      addCategoryBtn: 'Add',
+      restoreDefaults: 'Restore Defaults',
+      deleteCategoryTitle: 'Delete category',
+      duplicateCategory: 'This category already exists in the current mode.',
     },
     products: {
       addProduct: 'Add Product',
@@ -455,7 +469,7 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
     },
     login: {
       kicker: 'EkTally · ব্যবসা ও ব্যক্তিগত হিসাবের দ্বৈত প্ল্যাটফর্ম',
-      headlinePrefix: 'আপনার বাংলাদেশি',
+      headlinePrefix: 'আপনার',
       headlineHighlight: 'ব্যবসা ও ব্যক্তিগত',
       headlineSuffix: 'খরচের নিরাপদ হিসাব।',
       subtitle:
@@ -550,6 +564,13 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       payment: 'পেমেন্ট মাধ্যম',
       receipt: 'রসিদ',
       amount: 'পরিমাণ',
+      manageCategories: 'ক্যাটাগরি যোগ / মুছুন',
+      doneManaging: 'সম্পন্ন',
+      addCategoryPlaceholder: 'নতুন ক্যাটাগরির নাম লিখুন...',
+      addCategoryBtn: 'যোগ করুন',
+      restoreDefaults: 'ডিফল্ট ফিরিয়ে আনুন',
+      deleteCategoryTitle: 'ক্যাটাগরি মুছুন',
+      duplicateCategory: 'এই ক্যাটাগরিটি ইতোমধ্যেই রয়েছে।',
     },
     products: {
       addProduct: 'পণ্য যোগ করুন',

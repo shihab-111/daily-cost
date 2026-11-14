@@ -49,7 +49,7 @@ export const PERSONAL_EXPENSE_CATEGORIES: Record<PersonalExpenseCategory, string
   dining_out: 'Dining & Tea/Coffee',
 };
 
-export const EXPENSE_CATEGORY_LABELS: Record<ExpenseCategory, string> = {
+export const EXPENSE_CATEGORY_LABELS: Record<string, string> = {
   ...BUSINESS_EXPENSE_CATEGORIES,
   ...PERSONAL_EXPENSE_CATEGORIES,
 };
@@ -57,6 +57,25 @@ export const EXPENSE_CATEGORY_LABELS: Record<ExpenseCategory, string> = {
 export function getCategoriesForMode(mode: AppMode): Array<[ExpenseCategory, string]> {
   const source = mode === 'business' ? BUSINESS_EXPENSE_CATEGORIES : PERSONAL_EXPENSE_CATEGORIES;
   return Object.entries(source) as Array<[ExpenseCategory, string]>;
+}
+
+export function generateCategoryKey(label: string): string {
+  const slug = label
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 32);
+  const rand = Math.random().toString(36).slice(2, 7);
+  return `cat_${slug || 'item'}_${rand}`;
+}
+
+export function resolveCategoryLabel(
+  key: string,
+  labelMap?: Record<string, string>
+): string {
+  if (labelMap && labelMap[key]) return labelMap[key];
+  if (EXPENSE_CATEGORY_LABELS[key]) return EXPENSE_CATEGORY_LABELS[key];
+  return key.replace(/[_-]+/g, ' ');
 }
 
 export const PAYMENT_METHODS = [
@@ -253,7 +272,10 @@ function downloadCsv(filename: string, headers: string[], rows: Array<Array<stri
   URL.revokeObjectURL(url);
 }
 
-export function exportExpensesCsv(expenses: Expense[]) {
+export function exportExpensesCsv(
+  expenses: Expense[],
+  categoryLabels?: Record<string, string>
+) {
   const headers = [
     'Mode',
     'Date',
@@ -275,7 +297,7 @@ export function exportExpensesCsv(expenses: Expense[]) {
     e.mode,
     e.date,
     e.title,
-    EXPENSE_CATEGORY_LABELS[e.category] || e.category,
+    resolveCategoryLabel(e.category, categoryLabels),
     e.amount.toFixed(2),
     e.currency,
     e.paymentMethod,
