@@ -132,25 +132,20 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
   };
 
   return (
-    <div className="min-h-screen bg-[#050507] text-zinc-100 flex flex-col lg:flex-row items-stretch">
-      {/* Left Modern Black & Light Green Brand Panel */}
-      <div className="relative lg:w-1/2 lg:min-h-screen bg-gradient-to-br from-[#050507] via-[#07150d] to-[#050507] border-b lg:border-b-0 lg:border-r border-[#4ade80]/15 overflow-hidden flex flex-col justify-between p-8 sm:p-10 lg:p-14">
-        {/* Ambient Light Green Mix & Architectural Grid */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -top-32 -left-24 w-[420px] h-[420px] rounded-full bg-[#4ade80]/15 blur-[110px]"
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -bottom-36 -right-20 w-[460px] h-[460px] rounded-full bg-[#22c55e]/15 blur-[120px]"
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 opacity-60 [background-image:linear-gradient(to_right,rgba(74,222,128,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(74,222,128,0.06)_1px,transparent_1px)] [background-size:48px_48px] [mask-image:radial-gradient(ellipse_at_center,black_35%,transparent_80%)]"
-        />
+    <div className="relative min-h-screen bg-[#050507] text-zinc-100 grid grid-cols-1 lg:grid-cols-2 lg:grid-rows-[1fr_auto]">
+      {/* Shared Modern Black & Light Green Backdrop (Full on mobile, Left half on desktop) */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 lg:w-1/2 bg-gradient-to-br from-[#050507] via-[#07150d] to-[#050507] lg:border-r border-[#4ade80]/15 overflow-hidden"
+      >
+        <div className="absolute -top-32 -left-24 w-[420px] h-[420px] rounded-full bg-[#4ade80]/15 blur-[110px]" />
+        <div className="absolute -bottom-36 -right-20 w-[460px] h-[460px] rounded-full bg-[#22c55e]/15 blur-[120px]" />
+        <div className="absolute inset-0 opacity-60 [background-image:linear-gradient(to_right,rgba(74,222,128,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(74,222,128,0.06)_1px,transparent_1px)] [background-size:48px_48px] [mask-image:radial-gradient(ellipse_at_center,black_35%,transparent_80%)]" />
+      </div>
 
-        {/* Top Brand Mark */}
-        <div className="relative z-10 flex items-center justify-between gap-4">
+      {/* 1. Brand Mark & Hero Statement (Mobile: Top | Desktop: Left Top/Center) */}
+      <div className="relative z-10 lg:col-start-1 lg:row-start-1 flex flex-col justify-between p-6 pb-4 sm:p-10 sm:pb-6 lg:p-14 lg:pb-8">
+        <div className="flex items-center justify-between gap-4">
           <img
             src={EKTALLY_LOGO_URL}
             alt="EkTally"
@@ -162,12 +157,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
           </span>
         </div>
 
-        {/* Center Hero Statement */}
-        <div className="relative z-10 my-10 lg:my-0 max-w-xl">
-          <p className="text-xs font-mono text-[#4ade80] mb-3 tracking-wide">
+        <div className="mt-6 lg:my-auto lg:py-8 max-w-xl">
+          <p className="text-xs font-mono text-[#4ade80] mb-2.5 tracking-wide">
             EkTally · Dual-Mode Business &amp; Personal Ledger
           </p>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-white tracking-tight leading-[1.15] text-balance mb-4">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-white tracking-tight leading-[1.15] text-balance mb-3">
             Private Bangladesh{' '}
             <span className="text-[#4ade80]">business &amp; personal</span>{' '}
             expense control.
@@ -176,35 +170,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
             Switch seamlessly between Business Operations (Meta ads, inventory, customers, custom receipts) and Personal Daily Expenses (bazaar, bills, monthly budget) with strict per-user data isolation.
           </p>
         </div>
-
-        {/* Bottom Architectural Highlights */}
-        <div className="relative z-10 border-t border-[#4ade80]/15 pt-6 grid grid-cols-1 sm:grid-cols-3 gap-5 max-w-xl">
-          <div>
-            <p className="text-xs font-medium text-[#86efac]">Dual Workspace</p>
-            <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
-              Business ops &amp; personal daily ledger in one toggle
-            </p>
-          </div>
-          <div>
-            <p className="text-xs font-medium text-[#86efac]">BD Ready</p>
-            <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
-              BDT ৳, bKash, Nagad, Rocket &amp; A4/80mm receipts
-            </p>
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5 text-xs font-medium text-[#86efac]">
-              <ShieldCheck className="w-3.5 h-3.5 text-[#4ade80] shrink-0" />
-              <span>UID Isolated</span>
-            </div>
-            <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
-              Scoped strictly to your verified account
-            </p>
-          </div>
-        </div>
       </div>
 
-      {/* Right Tenant Auth Panel */}
-      <div className="relative flex-1 flex items-center justify-center p-6 sm:p-10 lg:p-16 bg-[#07080a] overflow-hidden">
+      {/* 2. Tenant Auth Panel (Mobile: Middle, before Dual Workspace | Desktop: Right Column) */}
+      <div className="relative z-10 lg:col-start-2 lg:row-start-1 lg:row-span-2 flex items-center justify-center px-6 py-4 sm:px-10 sm:py-6 lg:p-16 lg:bg-[#07080a] overflow-hidden">
         <div
           aria-hidden="true"
           className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] h-[480px] rounded-full bg-[#22c55e]/[0.06] blur-[120px]"
@@ -456,6 +425,33 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
               </Button>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* 3. Architectural Highlights (Mobile: Bottom, after Login | Desktop: Left Bottom) */}
+      <div className="relative z-10 lg:col-start-1 lg:row-start-2 px-6 pt-4 pb-10 sm:px-10 sm:pb-12 lg:px-14 lg:pt-0 lg:pb-14">
+        <div className="border-t border-[#4ade80]/15 pt-6 grid grid-cols-1 sm:grid-cols-3 gap-5 max-w-xl">
+          <div>
+            <p className="text-xs font-medium text-[#86efac]">Dual Workspace</p>
+            <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+              Business ops &amp; personal daily ledger in one toggle
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-medium text-[#86efac]">BD Ready</p>
+            <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+              BDT ৳, bKash, Nagad, Rocket &amp; A4/80mm receipts
+            </p>
+          </div>
+          <div>
+            <div className="flex items-center gap-1.5 text-xs font-medium text-[#86efac]">
+              <ShieldCheck className="w-3.5 h-3.5 text-[#4ade80] shrink-0" />
+              <span>UID Isolated</span>
+            </div>
+            <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+              Scoped strictly to your verified account
+            </p>
+          </div>
         </div>
       </div>
     </div>
