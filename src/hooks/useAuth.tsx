@@ -5,11 +5,38 @@ import {
   isUserVerified,
   registerWithUserEmail,
   sendVerificationToUser,
+  signInWithGoogleIdToken,
   signInWithUserEmail,
   signInWithUserGoogle,
   signOutUser,
 } from '../lib/firebase/auth';
 import { dbService } from '../lib/firebase/db';
+
+const PENDING_PROFILE_PREFIX = 'ektally_pending_profile_';
+
+interface PendingProfileDefaults {
+  businessName?: string;
+  ownerName?: string;
+}
+
+function savePendingProfile(uid: string, defaults: PendingProfileDefaults) {
+  try {
+    window.localStorage.setItem(`${PENDING_PROFILE_PREFIX}${uid}`, JSON.stringify(defaults));
+  } catch {
+    // ignore storage errors
+  }
+}
+
+function consumePendingProfile(uid: string): PendingProfileDefaults | undefined {
+  try {
+    const raw = window.localStorage.getItem(`${PENDING_PROFILE_PREFIX}${uid}`);
+    if (!raw) return undefined;
+    window.localStorage.removeItem(`${PENDING_PROFILE_PREFIX}${uid}`);
+    return JSON.parse(raw) as PendingProfileDefaults;
+  } catch {
+    return undefined;
+  }
+}
 
 interface AuthContextValue {
   user: User | null;
@@ -24,8 +51,9 @@ interface AuthContextValue {
     password: string,
     displayName: string,
     businessName: string
-  ) => Promise<void>;
+  ) => Promise<{ verificationSent: boolean; verificationError?: string }>;
   loginWithGoogle: (rememberMe?: boolean) => Promise<void>;
+  loginWithGoogleIdToken: (idToken: string, rememberMe?: boolean) => Promise<void>;
   resendVerification: () => Promise<void>;
   refreshVerificationStatus: () => Promise<boolean>;
   logout: () => Promise<void>;
@@ -44,7 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const hydrateTenant = async (
     nextUser: User,
-    defaults?: { businessName?: string; ownerName?: string }
+    defaults?: PendingProfileDefaults
   ) => {
     setVerifyingTenant(true);
     try {
@@ -52,7 +80,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsAuthorized(verified);
       setDenialReason(verified ? null : 'unverified_email');
       if (verified) {
-        await dbService.bootstrapWorkspace(nextUser, defaults);
+        const resolvedDefaults = defaults || consumePendingProfile(nextUser.uid);
+        try {
+          await dbService.bootstrapWorkspace(nextUser, resolvedDefaults);
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : '';
+          if (msg.toLowerCase().includes('permission')) {
+            await nextUser.getIdToken(true);
+            await dbService.bootstrapWorkspace(nextUser, resolvedDefaults);
+          } else {
+            throw err;
+          }
+        }
       }
     } catch (err) {
       setIsAuthorized(false);
@@ -96,6 +135,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (code === 'auth/weak-password') {
       return 'Choose a stronger password (at least 6 characters).';
     }
+    if (code === 'auth/too-many-requests') {
+      return 'Too many attempts right now. Please wait a minute and try again.';
+    }
     if (
       code === 'auth/invalid-credential' ||
       code === 'auth/wrong-password' ||
@@ -107,7 +149,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return 'Google sign-in popup was blocked by your browser. Please allow popups or open EkTally directly in Chrome/Safari in a full browser tab.';
     }
     if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
-      return 'Google sign-in window closed before completing. Please tap Continue with Google again or open EkTally in a full browser tab.';
+      return 'Google sign-in window closed before completing. Please try again or open EkTally in a full browser tab.';
     }
     if (
       code === 'auth/web-storage-unsupported' ||
@@ -137,13 +179,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   ) => {
     setAuthError(null);
     try {
-      const cred = await registerWithUserEmail(email, password, displayName);
+      const { cred, verificationSent, verificationError } = await registerWithUserEmail(
+        email,
+        password,
+        displayName
+      );
+      savePendingProfile(cred.user.uid, {
+        businessName,
+        ownerName: displayName,
+      });
       if (cred.user.emailVerified) {
         await dbService.bootstrapWorkspace(cred.user, {
           businessName,
           ownerName: displayName,
         });
       }
+      return { verificationSent, verificationError };
     } catch (err) {
       setAuthError(mapAuthError(err, 'Account registration failed.'));
       throw err;
@@ -160,6 +211,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const loginWithGoogleIdToken = async (idToken: string, rememberMe = true) => {
+    setAuthError(null);
+    try {
+      await signInWithGoogleIdToken(idToken, rememberMe);
+    } catch (err) {
+      setAuthError(mapAuthError(err, 'Google sign-in failed. Please try again.'));
+      throw err;
+    }
+  };
+
   const resendVerification = async () => {
     if (!auth.currentUser) return;
     await sendVerificationToUser(auth.currentUser);
@@ -171,6 +232,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const updated = auth.currentUser;
     setUser(updated);
     if (updated.emailVerified) {
+      await updated.getIdToken(true);
       await hydrateTenant(updated);
       return true;
     }
@@ -194,6 +256,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loginWithEmail,
         registerWithEmail,
         loginWithGoogle,
+        loginWithGoogleIdToken,
         resendVerification,
         refreshVerificationStatus,
         logout,

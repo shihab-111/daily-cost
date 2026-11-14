@@ -85,6 +85,8 @@ export interface TranslationStrings {
     or: string;
     continueWithGoogle: string;
     openInFullTab: string;
+    checkSpamHint: string;
+    verificationAutoDetect: string;
   };
   dashboard: {
     addProduct: string;
@@ -290,6 +292,8 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       or: 'or',
       continueWithGoogle: 'Continue with Google',
       openInFullTab: 'Open in full browser tab for Google Sign-In',
+      checkSpamHint: 'Check both your Inbox and Spam/Junk folder for the verification link.',
+      verificationAutoDetect: 'Checking automatically every few seconds once you click the link.',
     },
     dashboard: {
       addProduct: 'Add Product',
@@ -497,6 +501,8 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       or: 'অথবা',
       continueWithGoogle: 'Google দিয়ে চালিয়ে যান',
       openInFullTab: 'Google সাইন-ইনের জন্য পূর্ণ ব্রাউজার ট্যাবে খুলুন',
+      checkSpamHint: 'ভেরিফিকেশন লিংকটি পেতে আপনার Inbox এবং Spam/Junk ফোল্ডার উভয়ই চেক করুন।',
+      verificationAutoDetect: 'লিংকে ক্লিক করার সাথে সাথেই স্বয়ংক্রিয়ভাবে যাচাই হয়ে যাবে।',
     },
     dashboard: {
       addProduct: 'পণ্য যোগ করুন',

@@ -1,9 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { ExternalLink, Eye, EyeOff, Lock, LogOut, MailCheck, RefreshCw, ShieldCheck, UserPlus } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useLanguage } from '../context/LanguageContext';
-import { preloadGoogleGis } from '../lib/firebase/auth';
+import {
+  preloadGoogleGis,
+  renderGoogleIdButton,
+  waitForGoogleGis,
+} from '../lib/firebase/auth';
 import { EKTALLY_LOGO_URL } from '../lib/utils';
 import { loginSchema, registerSchema } from '../lib/validators/schemas';
 import { Button } from '../components/ui';
@@ -24,12 +28,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
     loginWithEmail,
     registerWithEmail,
     loginWithGoogle,
+    loginWithGoogleIdToken,
     resendVerification,
     refreshVerificationStatus,
     logout,
     clearError,
   } = useAuth();
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
 
   const [mode, setMode] = useState<'login' | 'register'>(initialMode);
   const [displayName, setDisplayName] = useState('');
@@ -45,10 +50,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
   const [verificationSent, setVerificationSent] = useState(false);
   const [checkingVerify, setCheckingVerify] = useState(false);
   const [verifyNotice, setVerifyNotice] = useState<string | null>(null);
+  const [gisReady, setGisReady] = useState(false);
 
-  useEffect(() => {
-    preloadGoogleGis();
-  }, []);
+  const gisContainerRef = useRef<HTMLDivElement | null>(null);
+  const rememberMeRef = useRef(rememberMe);
+  rememberMeRef.current = rememberMe;
 
   const isEmbeddedIframe = (() => {
     try {
@@ -57,6 +63,77 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
       return true;
     }
   })();
+
+  const handleGoogleCredential = useCallback(
+    async (idToken: string) => {
+      setFormError(null);
+      setSubmitting(true);
+      try {
+        await loginWithGoogleIdToken(idToken, rememberMeRef.current);
+      } catch {
+        // authError handled by context
+      } finally {
+        setSubmitting(false);
+      }
+    },
+    [loginWithGoogleIdToken]
+  );
+
+  // Render responsive Google Identity Services button on both mobile & PC views
+  useEffect(() => {
+    if (user || authLoading || verifyingTenant) return;
+    let cancelled = false;
+    let observer: ResizeObserver | null = null;
+
+    const renderButtonInContainer = () => {
+      const container = gisContainerRef.current;
+      if (!container) return false;
+      const width = container.clientWidth || 340;
+      return renderGoogleIdButton(container, {
+        width,
+        locale: language === 'bn' ? 'bn' : 'en',
+        isEmbeddedIframe,
+        onCredential: handleGoogleCredential,
+      });
+    };
+
+    preloadGoogleGis();
+    waitForGoogleGis(6000).then((loaded) => {
+      if (cancelled || !loaded) return;
+      const rendered = renderButtonInContainer();
+      if (rendered) {
+        setGisReady(true);
+        const container = gisContainerRef.current;
+        if (container && typeof ResizeObserver !== 'undefined') {
+          let lastWidth = Math.round(container.clientWidth);
+          observer = new ResizeObserver((entries) => {
+            const nextWidth = Math.round(entries[0]?.contentRect.width || 0);
+            if (nextWidth > 0 && Math.abs(nextWidth - lastWidth) >= 16) {
+              lastWidth = nextWidth;
+              renderButtonInContainer();
+            }
+          });
+          observer.observe(container);
+        }
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      observer?.disconnect();
+    };
+  }, [user, authLoading, verifyingTenant, language, isEmbeddedIframe, handleGoogleCredential]);
+
+  // Automatically detect when user completes email verification in another tab/app
+  useEffect(() => {
+    if (!user || isAuthorized || denialReason !== 'unverified_email') return;
+    const intervalId = window.setInterval(() => {
+      refreshVerificationStatus().catch(() => {
+        // ignore transient polling errors
+      });
+    }, 4000);
+    return () => window.clearInterval(intervalId);
+  }, [user, isAuthorized, denialReason, refreshVerificationStatus]);
 
   if (user && isAuthorized) {
     return <Navigate to="/" replace />;
@@ -100,13 +177,18 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
       }
       setSubmitting(true);
       try {
-        await registerWithEmail(
+        const result = await registerWithEmail(
           parsed.data.email,
           parsed.data.password,
           parsed.data.displayName,
           parsed.data.businessName
         );
-        setVerificationSent(true);
+        setVerificationSent(result.verificationSent);
+        if (result.verificationError) {
+          setVerifyNotice(result.verificationError);
+        } else {
+          setVerifyNotice(null);
+        }
       } catch {
         // authError handled by context
       } finally {
@@ -129,9 +211,20 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
 
   const handleSendVerification = async () => {
     setVerifyNotice(null);
-    await resendVerification();
-    setVerificationSent(true);
-    setVerifyNotice('Verification link sent. Open your inbox, confirm, then click "I\'ve Verified".');
+    try {
+      await resendVerification();
+      setVerificationSent(true);
+      setVerifyNotice('Verification link sent. Open your inbox or spam folder, confirm, then click "I\'ve Verified".');
+    } catch (err) {
+      const code = (err as { code?: string })?.code || '';
+      if (code === 'auth/too-many-requests') {
+        setVerifyNotice('Too many verification emails sent recently. Please check your inbox/spam or wait 1 minute.');
+      } else {
+        setVerifyNotice(
+          err instanceof Error ? err.message : 'Unable to send verification email right now.'
+        );
+      }
+    }
   };
 
   const handleCheckVerified = async () => {
@@ -140,8 +233,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
     try {
       const ok = await refreshVerificationStatus();
       if (!ok) {
-        setVerifyNotice('Email is not verified yet. Please click the verification link in your inbox first.');
+        setVerifyNotice('Email is not verified yet. Please click the verification link in your inbox or spam folder first.');
       }
+    } catch (err) {
+      setVerifyNotice(
+        err instanceof Error ? err.message : 'Unable to verify account status right now.'
+      );
     } finally {
       setCheckingVerify(false);
     }
@@ -229,6 +326,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                     <span className="font-mono text-zinc-200">{user.email}</span>.{' '}
                     {t.login.verifyEmailDescSuffix}
                   </p>
+                  <p className="text-[11px] text-amber-300/90 mt-2 leading-relaxed">
+                    {t.login.checkSpamHint}
+                  </p>
                 </div>
               </div>
 
@@ -266,6 +366,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                   {t.login.signOutSwitch}
                 </Button>
               </div>
+
+              <p className="text-[11px] text-zinc-500 text-center">
+                {t.login.verificationAutoDetect}
+              </p>
             </div>
           ) : (
             <div className="space-y-5">
@@ -428,35 +532,49 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                 <div className="flex-1 border-t border-[#27272a]" />
               </div>
 
-              <Button
-                type="button"
-                variant="secondary"
-                disabled={submitting}
-                onClick={handleGoogleLogin}
-                className="w-full py-2.5"
-              >
-                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    fill="currentColor"
-                    d="M21.35 11.1h-9.17v2.73h6.51c-.33 3.81-3.5 5.44-6.5 5.44C8.36 19.27 5 16.25 5 12c0-4.1 3.2-7.27 7.2-7.27 3.09 0 4.9 1.97 4.9 1.97L19 4.72S16.56 2 12.1 2C6.42 2 2.03 6.8 2.03 12c0 5.05 4.13 10 10.22 10 5.35 0 9.25-3.67 9.25-9.09 0-1.15-.15-1.81-.15-1.81Z"
-                  />
-                </svg>
-                {t.login.continueWithGoogle}
-              </Button>
+              {/* Official Google Identity Services ID-token button (PC & Mobile responsive) */}
+              <div className="space-y-2.5">
+                <div
+                  ref={gisContainerRef}
+                  className={
+                    gisReady
+                      ? 'w-full min-h-[42px] flex items-center justify-center overflow-hidden rounded-lg'
+                      : 'w-full h-0 overflow-hidden opacity-0 pointer-events-none'
+                  }
+                />
 
-              {(isEmbeddedIframe || authError) && (
-                <div className="pt-1 text-center">
-                  <a
-                    href={typeof window !== 'undefined' ? window.location.href : '/login'}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-1.5 text-xs text-[#4ade80] hover:text-[#86efac] transition-colors py-1"
+                {!gisReady && (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={submitting}
+                    onClick={handleGoogleLogin}
+                    className="w-full py-2.5"
                   >
-                    <ExternalLink className="w-3.5 h-3.5 shrink-0" />
-                    <span>{t.login.openInFullTab}</span>
-                  </a>
-                </div>
-              )}
+                    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+                      <path
+                        fill="currentColor"
+                        d="M21.35 11.1h-9.17v2.73h6.51c-.33 3.81-3.5 5.44-6.5 5.44C8.36 19.27 5 16.25 5 12c0-4.1 3.2-7.27 7.2-7.27 3.09 0 4.9 1.97 4.9 1.97L19 4.72S16.56 2 12.1 2C6.42 2 2.03 6.8 2.03 12c0 5.05 4.13 10 10.22 10 5.35 0 9.25-3.67 9.25-9.09 0-1.15-.15-1.81-.15-1.81Z"
+                      />
+                    </svg>
+                    {t.login.continueWithGoogle}
+                  </Button>
+                )}
+
+                {(isEmbeddedIframe || authError) && (
+                  <div className="pt-0.5 text-center">
+                    <a
+                      href={typeof window !== 'undefined' ? window.location.href : '/login'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-1.5 text-xs text-[#4ade80] hover:text-[#86efac] transition-colors py-1"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                      <span>{t.login.openInFullTab}</span>
+                    </a>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>

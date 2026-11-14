@@ -16,6 +16,11 @@ import {
 } from 'firebase/auth';
 import { auth, googleOAuthClientId, googleProvider } from './client';
 
+interface GisCredentialResponse {
+  credential?: string;
+  select_by?: string;
+}
+
 interface GisTokenResponse {
   access_token?: string;
   error?: string;
@@ -34,6 +39,30 @@ interface GisTokenClient {
 interface GoogleIdentityWindow extends Window {
   google?: {
     accounts?: {
+      id?: {
+        initialize: (config: {
+          client_id: string;
+          callback: (response: GisCredentialResponse) => void;
+          ux_mode?: 'popup' | 'redirect';
+          use_fedcm_for_button?: boolean;
+          auto_select?: boolean;
+          context?: 'signin' | 'signup' | 'use';
+        }) => void;
+        renderButton: (
+          parent: HTMLElement,
+          options: {
+            type?: 'standard' | 'icon';
+            theme?: 'outline' | 'filled_blue' | 'filled_black';
+            size?: 'large' | 'medium' | 'small';
+            text?: 'signin_with' | 'signup_with' | 'continue_with' | 'signin';
+            shape?: 'rectangular' | 'pill' | 'circle' | 'square';
+            logo_alignment?: 'left' | 'center';
+            width?: number;
+            locale?: string;
+          }
+        ) => void;
+        cancel?: () => void;
+      };
       oauth2?: {
         initTokenClient: (config: {
           client_id: string;
@@ -53,13 +82,84 @@ const GIS_SCRIPT_SRC = 'https://accounts.google.com/gsi/client';
 export function preloadGoogleGis() {
   if (typeof document === 'undefined') return;
   const gWindow = window as GoogleIdentityWindow;
-  if (gWindow.google?.accounts?.oauth2) return;
+  if (gWindow.google?.accounts?.id || gWindow.google?.accounts?.oauth2) return;
   if (document.querySelector(`script[src="${GIS_SCRIPT_SRC}"]`)) return;
   const script = document.createElement('script');
   script.src = GIS_SCRIPT_SRC;
   script.async = true;
   script.defer = true;
   document.head.appendChild(script);
+}
+
+export function waitForGoogleGis(timeoutMs = 5000): Promise<boolean> {
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    return Promise.resolve(false);
+  }
+  const gWindow = window as GoogleIdentityWindow;
+  if (gWindow.google?.accounts?.id) {
+    return Promise.resolve(true);
+  }
+
+  preloadGoogleGis();
+
+  return new Promise<boolean>((resolve) => {
+    const started = Date.now();
+    const timer = window.setInterval(() => {
+      if (gWindow.google?.accounts?.id) {
+        window.clearInterval(timer);
+        resolve(true);
+        return;
+      }
+      if (Date.now() - started >= timeoutMs) {
+        window.clearInterval(timer);
+        resolve(false);
+      }
+    }, 100);
+  });
+}
+
+export function renderGoogleIdButton(
+  container: HTMLElement,
+  options: {
+    width: number;
+    locale: string;
+    isEmbeddedIframe: boolean;
+    onCredential: (idToken: string) => void;
+  }
+): boolean {
+  if (typeof window === 'undefined' || !googleOAuthClientId) return false;
+  const gWindow = window as GoogleIdentityWindow;
+  const googleId = gWindow.google?.accounts?.id;
+  if (!googleId) return false;
+
+  try {
+    googleId.initialize({
+      client_id: googleOAuthClientId,
+      ux_mode: 'popup',
+      use_fedcm_for_button: !options.isEmbeddedIframe,
+      context: 'use',
+      callback: (response) => {
+        if (response.credential) {
+          options.onCredential(response.credential);
+        }
+      },
+    });
+
+    container.innerHTML = '';
+    googleId.renderButton(container, {
+      type: 'standard',
+      theme: 'filled_black',
+      size: 'large',
+      text: 'continue_with',
+      shape: 'rectangular',
+      logo_alignment: 'left',
+      width: Math.min(400, Math.max(220, Math.round(options.width))),
+      locale: options.locale,
+    });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function signInWithUserEmail(
@@ -82,7 +182,11 @@ export async function registerWithUserEmail(
   email: string,
   password: string,
   displayName: string
-) {
+): Promise<{
+  cred: UserCredential;
+  verificationSent: boolean;
+  verificationError?: string;
+}> {
   try {
     await setPersistence(auth, browserLocalPersistence);
   } catch {
@@ -90,10 +194,24 @@ export async function registerWithUserEmail(
   }
   const cred = await createUserWithEmailAndPassword(auth, email.trim(), password);
   if (displayName.trim()) {
-    await updateProfile(cred.user, { displayName: displayName.trim().slice(0, 120) });
+    try {
+      await updateProfile(cred.user, { displayName: displayName.trim().slice(0, 120) });
+    } catch {
+      // Non-fatal if profile display name update fails
+    }
   }
-  await sendEmailVerification(cred.user);
-  return cred;
+
+  let verificationSent = false;
+  let verificationError: string | undefined;
+  try {
+    await sendVerificationToUser(cred.user);
+    verificationSent = true;
+  } catch (err) {
+    verificationError =
+      err instanceof Error ? err.message : 'Unable to send verification email automatically.';
+  }
+
+  return { cred, verificationSent, verificationError };
 }
 
 async function applyPostLoginPersistence(rememberMe: boolean) {
@@ -104,6 +222,16 @@ async function applyPostLoginPersistence(rememberMe: boolean) {
       // Ignore if sessionStorage is restricted
     }
   }
+}
+
+export async function signInWithGoogleIdToken(
+  idToken: string,
+  rememberMe = true
+): Promise<UserCredential> {
+  const credential = GoogleAuthProvider.credential(idToken);
+  const userCred = await signInWithCredential(auth, credential);
+  await applyPostLoginPersistence(rememberMe);
+  return userCred;
 }
 
 async function signInWithPopupFallback(rememberMe: boolean): Promise<UserCredential> {
@@ -120,9 +248,7 @@ export function signInWithUserGoogle(rememberMe = true): Promise<UserCredential>
   const gWindow = typeof window !== 'undefined' ? (window as GoogleIdentityWindow) : null;
   const oauth2 = gWindow?.google?.accounts?.oauth2;
 
-  // Primary path: Google Identity Services token client + signInWithCredential.
-  // This bypasses Firebase's cross-origin /__/auth/handler page and avoids
-  // "missing initial state / sessionStorage partitioned" errors in iframes & mobile browsers.
+  // Use GIS OAuth2 token client on click when available, with Firebase popup fallback
   if (oauth2 && googleOAuthClientId) {
     return new Promise<UserCredential>((resolve, reject) => {
       let settled = false;
@@ -206,7 +332,6 @@ export function signInWithUserGoogle(rememberMe = true): Promise<UserCredential>
           },
         });
 
-        // Invoke synchronously inside the user tap gesture
         tokenClient.requestAccessToken({ prompt: 'select_account' });
       } catch {
         settled = true;
@@ -219,6 +344,16 @@ export function signInWithUserGoogle(rememberMe = true): Promise<UserCredential>
 }
 
 export async function sendVerificationToUser(user: User) {
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    try {
+      await sendEmailVerification(user, {
+        url: `${window.location.origin}/login`,
+      });
+      return;
+    } catch {
+      // Fallback without continue URL if origin is not allowlisted for email action links
+    }
+  }
   return sendEmailVerification(user);
 }
 
