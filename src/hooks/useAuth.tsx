@@ -86,6 +86,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const mapAuthError = (err: unknown, fallback: string): string => {
     const code = (err as { code?: string })?.code || '';
+    const msg = err instanceof Error ? err.message : '';
     if (code === 'auth/operation-not-allowed') {
       return 'Email/Password sign-in is not yet enabled in Firebase Console (Authentication → Sign-in method → Email/Password). You can enable it there or use Google Sign-In below.';
     }
@@ -102,7 +103,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     ) {
       return 'Invalid email or password.';
     }
-    return err instanceof Error ? err.message : fallback;
+    if (code === 'auth/popup-blocked') {
+      return 'Google sign-in popup was blocked by your browser. Please allow popups or open EkTally directly in Chrome/Safari in a full browser tab.';
+    }
+    if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+      return 'Google sign-in window closed before completing. If you saw a "missing initial state" or sessionStorage message in a mobile or embedded browser, open EkTally in a full Chrome/Safari tab or sign in with Email & Password above.';
+    }
+    if (
+      code === 'auth/web-storage-unsupported' ||
+      msg.toLowerCase().includes('sessionstorage') ||
+      msg.toLowerCase().includes('initial state')
+    ) {
+      return 'Your current browser window is blocking or partitioning sessionStorage (common in in-app browsers or embedded previews). Open EkTally directly in Chrome or Safari, or use Email & Password sign-in.';
+    }
+    return msg || fallback;
   };
 
   const loginWithEmail = async (email: string, password: string, rememberMe: boolean) => {

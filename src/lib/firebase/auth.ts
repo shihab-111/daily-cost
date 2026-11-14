@@ -1,5 +1,6 @@
 import {
   browserLocalPersistence,
+  browserPopupRedirectResolver,
   browserSessionPersistence,
   createUserWithEmailAndPassword,
   sendEmailVerification,
@@ -17,10 +18,14 @@ export async function signInWithUserEmail(
   password: string,
   rememberMe: boolean
 ) {
-  await setPersistence(
-    auth,
-    rememberMe ? browserLocalPersistence : browserSessionPersistence
-  );
+  try {
+    await setPersistence(
+      auth,
+      rememberMe ? browserLocalPersistence : browserSessionPersistence
+    );
+  } catch {
+    // Fallback to default persistence in storage-restricted contexts
+  }
   return signInWithEmailAndPassword(auth, email.trim(), password);
 }
 
@@ -29,7 +34,11 @@ export async function registerWithUserEmail(
   password: string,
   displayName: string
 ) {
-  await setPersistence(auth, browserLocalPersistence);
+  try {
+    await setPersistence(auth, browserLocalPersistence);
+  } catch {
+    // Fallback to default persistence
+  }
   const cred = await createUserWithEmailAndPassword(auth, email.trim(), password);
   if (displayName.trim()) {
     await updateProfile(cred.user, { displayName: displayName.trim().slice(0, 120) });
@@ -39,11 +48,21 @@ export async function registerWithUserEmail(
 }
 
 export async function signInWithUserGoogle(rememberMe = true) {
-  await setPersistence(
+  // Execute signInWithPopup synchronously inside the user tap gesture with
+  // browserPopupRedirectResolver so mobile/partitioned browsers retain opener state.
+  const credential = await signInWithPopup(
     auth,
-    rememberMe ? browserLocalPersistence : browserSessionPersistence
+    googleProvider,
+    browserPopupRedirectResolver
   );
-  return signInWithPopup(auth, googleProvider);
+  if (!rememberMe) {
+    try {
+      await setPersistence(auth, browserSessionPersistence);
+    } catch {
+      // Ignore if sessionStorage is restricted
+    }
+  }
+  return credential;
 }
 
 export async function sendVerificationToUser(user: User) {

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { Eye, EyeOff, Lock, LogOut, MailCheck, RefreshCw, ShieldCheck, UserPlus } from 'lucide-react';
+import { ExternalLink, Eye, EyeOff, Lock, LogOut, MailCheck, RefreshCw, ShieldCheck, UserPlus } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { EKTALLY_LOGO_URL } from '../lib/utils';
 import { loginSchema, registerSchema } from '../lib/validators/schemas';
@@ -41,6 +41,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
   const [verificationSent, setVerificationSent] = useState(false);
   const [checkingVerify, setCheckingVerify] = useState(false);
   const [verifyNotice, setVerifyNotice] = useState<string | null>(null);
+
+  const isEmbeddedIframe = (() => {
+    try {
+      return typeof window !== 'undefined' && window.self !== window.top;
+    } catch {
+      return true;
+    }
+  })();
 
   if (user && isAuthorized) {
     return <Navigate to="/" replace />;
@@ -423,6 +431,20 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                 </svg>
                 Continue with Google
               </Button>
+
+              {(isEmbeddedIframe || authError) && (
+                <div className="pt-1 text-center">
+                  <a
+                    href={typeof window !== 'undefined' ? window.location.href : '/login'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-1.5 text-xs text-[#4ade80] hover:text-[#86efac] transition-colors py-1"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                    <span>Open in full browser tab for Google Sign-In</span>
+                  </a>
+                </div>
+              )}
             </div>
           )}
         </div>
