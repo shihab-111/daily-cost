@@ -199,15 +199,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
         </div>
 
         <div className="mt-5 sm:mt-6 lg:my-auto lg:py-8 max-w-xl">
-          <p className="text-xs font-mono text-[#4ade80] mb-2 tracking-wide">
+          <p className="hidden lg:block text-xs font-mono text-[#4ade80] mb-2 tracking-wide">
             {t.login.kicker}
           </p>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-white tracking-tight leading-[1.15] text-balance mb-2.5 sm:mb-3">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-white tracking-tight leading-[1.15] text-balance mb-1 lg:mb-3">
             {t.login.headlinePrefix}{' '}
             <span className="text-[#4ade80]">{t.login.headlineHighlight}</span>{' '}
             {t.login.headlineSuffix}
           </h1>
-          <p className="text-sm text-zinc-400 leading-relaxed max-w-md">
+          <p className="hidden lg:block text-sm text-zinc-400 leading-relaxed max-w-md">
             {t.login.subtitle}
           </p>
         </div>
@@ -474,14 +474,17 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
 
       {/* 3. Architectural Highlights (Mobile: Bottom, after Login | Desktop: Left Bottom) */}
       <div className="relative z-10 lg:col-start-1 lg:row-start-2 px-4 pt-4 pb-8 sm:px-10 sm:pb-12 lg:px-14 lg:pt-0 lg:pb-14">
-        <div className="border-t border-[#4ade80]/15 pt-6 grid grid-cols-1 sm:grid-cols-3 gap-5 max-w-xl">
+        <div className="border-t border-[#4ade80]/15 pt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-xl">
           <div>
             <p className="text-xs font-medium text-[#86efac]">{t.login.highlight1Title}</p>
-            <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+            <p className="lg:hidden text-xs text-zinc-400 mt-1 leading-relaxed">
+              {t.login.subtitle}
+            </p>
+            <p className="hidden lg:block text-xs text-zinc-400 mt-1 leading-relaxed">
               {t.login.highlight1Desc}
             </p>
           </div>
-          <div>
+          <div className="hidden lg:block">
             <p className="text-xs font-medium text-[#86efac]">{t.login.highlight2Title}</p>
             <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
               {t.login.highlight2Desc}
