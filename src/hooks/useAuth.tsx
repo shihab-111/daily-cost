@@ -107,7 +107,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return 'Google sign-in popup was blocked by your browser. Please allow popups or open EkTally directly in Chrome/Safari in a full browser tab.';
     }
     if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
-      return 'Google sign-in window closed before completing. If you saw a "missing initial state" or sessionStorage message in a mobile or embedded browser, open EkTally in a full Chrome/Safari tab or sign in with Email & Password above.';
+      return 'Google sign-in window closed before completing. Please tap Continue with Google again or open EkTally in a full browser tab.';
     }
     if (
       code === 'auth/web-storage-unsupported' ||

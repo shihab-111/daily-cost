@@ -22,6 +22,9 @@ export const db = getFirestore(app, databaseId);
 export const auth = getAuth(app);
 export const storage = getStorage(app);
 
+export const googleOAuthClientId: string =
+  import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID || firebaseConfigJson.oAuthClientId || '';
+
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 

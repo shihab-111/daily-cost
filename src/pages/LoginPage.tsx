@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { ExternalLink, Eye, EyeOff, Lock, LogOut, MailCheck, RefreshCw, ShieldCheck, UserPlus } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useLanguage } from '../context/LanguageContext';
+import { preloadGoogleGis } from '../lib/firebase/auth';
 import { EKTALLY_LOGO_URL } from '../lib/utils';
 import { loginSchema, registerSchema } from '../lib/validators/schemas';
 import { Button } from '../components/ui';
@@ -44,6 +45,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
   const [verificationSent, setVerificationSent] = useState(false);
   const [checkingVerify, setCheckingVerify] = useState(false);
   const [verifyNotice, setVerifyNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    preloadGoogleGis();
+  }, []);
 
   const isEmbeddedIframe = (() => {
     try {
