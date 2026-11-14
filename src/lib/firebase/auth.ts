@@ -79,6 +79,9 @@ interface GoogleIdentityWindow extends Window {
 
 const GIS_SCRIPT_SRC = 'https://accounts.google.com/gsi/client';
 
+let gisInitialized = false;
+let latestGisCredentialHandler: ((idToken: string) => void) | null = null;
+
 export function preloadGoogleGis() {
   if (typeof document === 'undefined') return;
   const gWindow = window as GoogleIdentityWindow;
@@ -132,18 +135,23 @@ export function renderGoogleIdButton(
   const googleId = gWindow.google?.accounts?.id;
   if (!googleId) return false;
 
+  latestGisCredentialHandler = options.onCredential;
+
   try {
-    googleId.initialize({
-      client_id: googleOAuthClientId,
-      ux_mode: 'popup',
-      use_fedcm_for_button: !options.isEmbeddedIframe,
-      context: 'use',
-      callback: (response) => {
-        if (response.credential) {
-          options.onCredential(response.credential);
-        }
-      },
-    });
+    if (!gisInitialized) {
+      googleId.initialize({
+        client_id: googleOAuthClientId,
+        ux_mode: 'popup',
+        use_fedcm_for_button: !options.isEmbeddedIframe,
+        context: 'use',
+        callback: (response) => {
+          if (response.credential && latestGisCredentialHandler) {
+            latestGisCredentialHandler(response.credential);
+          }
+        },
+      });
+      gisInitialized = true;
+    }
 
     container.innerHTML = '';
     googleId.renderButton(container, {
@@ -181,7 +189,8 @@ export async function signInWithUserEmail(
 export async function registerWithUserEmail(
   email: string,
   password: string,
-  displayName: string
+  displayName: string,
+  onCreated?: (uid: string) => void
 ): Promise<{
   cred: UserCredential;
   verificationSent: boolean;
@@ -193,6 +202,8 @@ export async function registerWithUserEmail(
     // Fallback to default persistence
   }
   const cred = await createUserWithEmailAndPassword(auth, email.trim(), password);
+  onCreated?.(cred.user.uid);
+
   if (displayName.trim()) {
     try {
       await updateProfile(cred.user, { displayName: displayName.trim().slice(0, 120) });
@@ -224,14 +235,24 @@ async function applyPostLoginPersistence(rememberMe: boolean) {
   }
 }
 
+export async function signInWithGoogleCredentials(
+  tokens: { idToken?: string; accessToken?: string },
+  rememberMe = true
+): Promise<UserCredential> {
+  const credential = GoogleAuthProvider.credential(
+    tokens.idToken || null,
+    tokens.accessToken || null
+  );
+  const userCred = await signInWithCredential(auth, credential);
+  await applyPostLoginPersistence(rememberMe);
+  return userCred;
+}
+
 export async function signInWithGoogleIdToken(
   idToken: string,
   rememberMe = true
 ): Promise<UserCredential> {
-  const credential = GoogleAuthProvider.credential(idToken);
-  const userCred = await signInWithCredential(auth, credential);
-  await applyPostLoginPersistence(rememberMe);
-  return userCred;
+  return signInWithGoogleCredentials({ idToken }, rememberMe);
 }
 
 async function signInWithPopupFallback(rememberMe: boolean): Promise<UserCredential> {
@@ -242,6 +263,112 @@ async function signInWithPopupFallback(rememberMe: boolean): Promise<UserCredent
   );
   await applyPostLoginPersistence(rememberMe);
   return credential;
+}
+
+export async function obtainGoogleCredentialsForBridge(): Promise<{
+  idToken?: string;
+  accessToken?: string;
+}> {
+  const gWindow = typeof window !== 'undefined' ? (window as GoogleIdentityWindow) : null;
+  const oauth2 = gWindow?.google?.accounts?.oauth2;
+
+  if (oauth2 && googleOAuthClientId) {
+    return new Promise((resolve, reject) => {
+      let settled = false;
+      const finishReject = (err: unknown) => {
+        if (settled) return;
+        settled = true;
+        reject(err);
+      };
+
+      try {
+        const tokenClient = oauth2.initTokenClient({
+          client_id: googleOAuthClientId,
+          scope: 'openid email profile',
+          ux_mode: 'popup',
+          callback: async (response) => {
+            if (settled) return;
+            if (response.access_token) {
+              settled = true;
+              resolve({ accessToken: response.access_token });
+              return;
+            }
+            const errCode = response.error || '';
+            if (errCode === 'access_denied') {
+              finishReject(
+                Object.assign(new Error('Google Sign-In was cancelled or denied.'), {
+                  code: 'auth/popup-closed-by-user',
+                })
+              );
+              return;
+            }
+            if (
+              errCode === 'invalid_client' ||
+              errCode === 'unauthorized_client' ||
+              errCode === 'unsupported_response_type'
+            ) {
+              settled = true;
+              signInWithPopup(auth, googleProvider, browserPopupRedirectResolver)
+                .then((userCred) => {
+                  const cred = GoogleAuthProvider.credentialFromResult(userCred);
+                  resolve({
+                    idToken: cred?.idToken ?? undefined,
+                    accessToken: cred?.accessToken ?? undefined,
+                  });
+                })
+                .catch(reject);
+              return;
+            }
+            finishReject(
+              new Error(
+                response.error_description || response.error || 'Google sign-in failed.'
+              )
+            );
+          },
+          error_callback: (err) => {
+            if (settled) return;
+            if (err?.type === 'popup_failed_to_open') {
+              finishReject(
+                Object.assign(new Error('Google sign-in popup was blocked by your browser.'), {
+                  code: 'auth/popup-blocked',
+                })
+              );
+              return;
+            }
+            if (err?.type === 'popup_closed') {
+              finishReject(
+                Object.assign(new Error('Google sign-in window closed before completing.'), {
+                  code: 'auth/popup-closed-by-user',
+                })
+              );
+              return;
+            }
+            finishReject(new Error(err?.message || 'Unable to complete Google sign-in.'));
+          },
+        });
+
+        tokenClient.requestAccessToken({ prompt: 'select_account' });
+      } catch {
+        settled = true;
+        signInWithPopup(auth, googleProvider, browserPopupRedirectResolver)
+          .then((userCred) => {
+            const cred = GoogleAuthProvider.credentialFromResult(userCred);
+            resolve({
+              idToken: cred?.idToken ?? undefined,
+              accessToken: cred?.accessToken ?? undefined,
+            });
+          })
+          .catch(reject);
+      }
+    });
+  }
+
+  const userCred = await signInWithPopup(auth, googleProvider, browserPopupRedirectResolver);
+  const cred = GoogleAuthProvider.credentialFromResult(userCred);
+  return {
+    idToken: cred?.idToken ?? undefined,
+    accessToken: cred?.accessToken ?? undefined,
+  };
 }
 
 export function signInWithUserGoogle(rememberMe = true): Promise<UserCredential> {
@@ -269,12 +396,10 @@ export function signInWithUserGoogle(rememberMe = true): Promise<UserCredential>
             if (response.access_token) {
               settled = true;
               try {
-                const credential = GoogleAuthProvider.credential(
-                  null,
-                  response.access_token
+                const userCred = await signInWithGoogleCredentials(
+                  { accessToken: response.access_token },
+                  rememberMe
                 );
-                const userCred = await signInWithCredential(auth, credential);
-                await applyPostLoginPersistence(rememberMe);
                 resolve(userCred);
               } catch (err) {
                 reject(err);

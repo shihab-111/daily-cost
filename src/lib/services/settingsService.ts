@@ -29,15 +29,13 @@ export async function bootstrapUserWorkspace(
     try {
       await setDoc(settingsRef, {
         userId: user.uid,
-        businessName: (defaults?.businessName || 'EkTally').trim().slice(0, 140),
+        businessName: (defaults?.businessName?.trim() || 'EkTally').slice(0, 140),
         ownerName: (
-          defaults?.ownerName ||
-          user.displayName ||
-          user.email?.split('@')[0] ||
+          defaults?.ownerName?.trim() ||
+          user.displayName?.trim() ||
+          user.email?.split('@')[0]?.trim() ||
           'Owner'
-        )
-          .trim()
-          .slice(0, 120),
+        ).slice(0, 120),
         currencyCode: 'BDT',
         currencySymbol: '৳',
         lowStockThreshold: 5,
