@@ -351,3 +351,36 @@ export function exportProductsCsv(products: Product[]) {
   });
   downloadCsv(`bd-inventory-${getTodayDhakaDate()}.csv`, headers, rows);
 }
+
+export interface AdminUserCsvRow {
+  userId: string;
+  displayName: string;
+  email: string;
+  businesses: string;
+  loginCount: number;
+  lastLoginText: string;
+  firstSeenText: string;
+}
+
+export function exportAdminUsersCsv(users: AdminUserCsvRow[]) {
+  const headers = [
+    'User ID',
+    'Name',
+    'Email',
+    'Businesses',
+    'Login Count',
+    'Last Login (Asia/Dhaka)',
+    'First Seen (Asia/Dhaka)',
+  ];
+  const rows = users.map((u) => [
+    u.userId,
+    u.displayName,
+    u.email,
+    u.businesses,
+    u.loginCount,
+    u.lastLoginText,
+    u.firstSeenText,
+  ]);
+  downloadCsv(`ektally-users-logins-${getTodayDhakaDate()}.csv`, headers, rows);
+}
+

@@ -716,15 +716,17 @@ export const ReceiptsPage: React.FC = () => {
           <Button
             variant="secondary"
             size="sm"
+            className="flex-1 md:flex-none min-h-[40px] md:min-h-0"
             onClick={handlePrint}
             disabled={downloadingPng || downloadingPdf}
           >
             <Printer className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">{t.receipts.print}</span>
+            <span>{t.receipts.print}</span>
           </Button>
           <Button
             variant="secondary"
             size="sm"
+            className="flex-1 md:flex-none min-h-[40px] md:min-h-0"
             onClick={handleDownloadPng}
             disabled={downloadingPng || downloadingPdf}
           >
@@ -733,10 +735,11 @@ export const ReceiptsPage: React.FC = () => {
             ) : (
               <Download className="w-3.5 h-3.5 text-[#4ade80]" />
             )}
-            <span className="hidden sm:inline">PNG</span>
+            <span>PNG</span>
           </Button>
           <Button
             size="sm"
+            className="flex-1 md:flex-none min-h-[40px] md:min-h-0"
             onClick={handleDownloadPdf}
             disabled={downloadingPdf || downloadingPng}
           >
@@ -745,28 +748,38 @@ export const ReceiptsPage: React.FC = () => {
             ) : (
               <FileDown className="w-3.5 h-3.5" />
             )}
-            {t.receipts.downloadPdf}
+            <span>{t.receipts.downloadPdf}</span>
           </Button>
         </div>
       }
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:px-8 space-y-5 sm:space-y-6">
         {/* Studio Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 no-print">
-          <div>
-            <h2 className="text-xl font-semibold text-zinc-100">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 no-print">
+          <div className="min-w-0">
+            <h2 className="text-lg sm:text-xl font-semibold text-zinc-100">
               BD Receipt &amp; Memo Studio
             </h2>
             <p className="text-xs text-zinc-400 mt-0.5">
               Customize logo size &amp; position, header background, memo title, typography, BD delivery, and export PDF or PNG.
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button variant="secondary" size="sm" onClick={handleNewReceipt}>
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto [&>button]:flex-1 sm:[&>button]:flex-none">
+            <Button
+              variant="secondary"
+              size="sm"
+              className="min-h-[40px] sm:min-h-0"
+              onClick={handleNewReceipt}
+            >
               <FilePlus2 className="w-3.5 h-3.5" />
               {t.receipts.newBlankReceipt}
             </Button>
-            <Button size="sm" onClick={handleSaveReceipt} disabled={savingReceipt}>
+            <Button
+              size="sm"
+              className="min-h-[40px] sm:min-h-0"
+              onClick={handleSaveReceipt}
+              disabled={savingReceipt}
+            >
               {savingReceipt ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
               ) : (
@@ -790,7 +803,7 @@ export const ReceiptsPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setFeedback(null)}
-              className="text-zinc-400 hover:text-zinc-100 cursor-pointer text-xs"
+              className="text-zinc-400 hover:text-zinc-100 cursor-pointer text-xs shrink-0"
             >
               Dismiss
             </button>
@@ -798,11 +811,11 @@ export const ReceiptsPage: React.FC = () => {
         )}
 
         {/* Split Studio: Editor + Live Preview */}
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 sm:gap-6 items-start">
           {/* Editor Column */}
           <Card className="xl:col-span-5 p-4 sm:p-5 space-y-5 no-print">
             {/* Segmented Tab Bar */}
-            <div className="grid grid-cols-3 gap-1.5 p-1 bg-[#09090b] border border-[#27272a] rounded-lg">
+            <div className="flex sm:grid sm:grid-cols-3 gap-1.5 p-1 bg-[#09090b] border border-[#27272a] rounded-lg overflow-x-auto no-scrollbar max-w-full">
               {(
                 [
                   { id: 'brand', label: t.receipts.brandStyleTab },
@@ -815,7 +828,7 @@ export const ReceiptsPage: React.FC = () => {
                   type="button"
                   onClick={() => setActiveTab(tab.id)}
                   className={cn(
-                    'py-2 px-2 rounded-md text-xs font-medium transition-colors cursor-pointer whitespace-nowrap',
+                    'flex-1 min-h-[40px] sm:min-h-0 py-2 px-2.5 rounded-md text-xs font-medium transition-colors cursor-pointer whitespace-nowrap shrink-0',
                     activeTab === tab.id
                       ? 'bg-[#22c55e]/15 text-[#4ade80] border border-[#22c55e]/30'
                       : 'text-zinc-400 hover:text-zinc-100 border border-transparent'
@@ -840,7 +853,7 @@ export const ReceiptsPage: React.FC = () => {
                         type="button"
                         onClick={() => setDraft((prev) => ({ ...prev, memoTitle: preset }))}
                         className={cn(
-                          'px-2.5 py-1 rounded-md border text-[11px] font-medium cursor-pointer',
+                          'px-2.5 py-1.5 sm:py-1 rounded-md border text-[11px] font-medium cursor-pointer',
                           draft.memoTitle === preset
                             ? 'bg-[#22c55e]/15 border-[#22c55e] text-[#4ade80]'
                             : 'bg-[#09090b] border-[#27272a] text-zinc-400 hover:text-zinc-100'
@@ -858,13 +871,13 @@ export const ReceiptsPage: React.FC = () => {
                       setDraft((prev) => ({ ...prev, memoTitle: e.target.value }))
                     }
                     placeholder="Money Receipt"
-                    className="w-full px-3 py-2 text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg focus:outline-none focus:border-[#22c55e]"
+                    className="w-full px-3 py-2 min-h-[42px] sm:min-h-0 text-base sm:text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg focus:outline-none focus:border-[#22c55e]"
                   />
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="block text-xs font-medium text-zinc-300">Logo Type</label>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
                     {(
                       [
                         { id: 'monogram', label: 'Monogram' },
@@ -882,7 +895,7 @@ export const ReceiptsPage: React.FC = () => {
                           }))
                         }
                         className={cn(
-                          'px-2.5 py-2 rounded-lg border text-xs font-medium transition-colors cursor-pointer',
+                          'px-1.5 sm:px-2.5 min-h-[40px] sm:min-h-0 py-2 rounded-lg border text-[11px] sm:text-xs font-medium transition-colors cursor-pointer leading-tight text-center',
                           draft.logoType === opt.id
                             ? 'bg-[#22c55e]/15 border-[#22c55e] text-[#4ade80]'
                             : 'bg-[#09090b] border-[#27272a] text-zinc-400 hover:text-zinc-100'
@@ -983,7 +996,7 @@ export const ReceiptsPage: React.FC = () => {
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Select
                     label="Logo Size"
                     value={draft.logoSize}
@@ -1225,14 +1238,14 @@ export const ReceiptsPage: React.FC = () => {
                     onChange={(e) =>
                       setDraft((prev) => ({ ...prev, footerNote: e.target.value }))
                     }
-                    className="w-full px-3 py-2 text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-500 focus:outline-none focus:border-[#22c55e] focus:ring-1 focus:ring-[#22c55e]"
+                    className="w-full px-3 py-2 text-base sm:text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-500 focus:outline-none focus:border-[#22c55e] focus:ring-1 focus:ring-[#22c55e]"
                   />
                 </div>
 
                 <Button
                   type="button"
                   variant="secondary"
-                  className="w-full"
+                  className="w-full min-h-[42px] sm:min-h-0"
                   onClick={handleSaveTemplate}
                   disabled={savingTemplate}
                 >
@@ -1257,7 +1270,7 @@ export const ReceiptsPage: React.FC = () => {
                     <select
                       value={selectedCustomerId}
                       onChange={(e) => handleSelectSavedCustomer(e.target.value)}
-                      className="w-full px-3 py-2 text-xs bg-[#18181b] text-zinc-100 border border-[#27272a] rounded-lg focus:outline-none focus:border-[#22c55e]"
+                      className="w-full px-3 py-2 min-h-[42px] sm:min-h-0 text-base sm:text-xs bg-[#18181b] text-zinc-100 border border-[#27272a] rounded-lg focus:outline-none focus:border-[#22c55e]"
                     >
                       <option value="">Select saved customer or enter manually below...</option>
                       {customers.map((c) => (
@@ -1295,7 +1308,7 @@ export const ReceiptsPage: React.FC = () => {
                       onChange={(e) =>
                         setDraft((prev) => ({ ...prev, receiptNumber: e.target.value }))
                       }
-                      className="w-full px-3 py-2 text-sm font-mono bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg focus:outline-none focus:border-[#22c55e]"
+                      className="w-full px-3 py-2 min-h-[42px] sm:min-h-0 text-base sm:text-sm font-mono bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg focus:outline-none focus:border-[#22c55e]"
                     />
                   </div>
 
@@ -1334,7 +1347,7 @@ export const ReceiptsPage: React.FC = () => {
                       setDraft((prev) => ({ ...prev, issueTime: e.target.value }))
                     }
                     placeholder="10:30 AM BST"
-                    className="w-full px-3 py-2 text-sm font-mono bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg focus:outline-none focus:border-[#22c55e]"
+                    className="w-full px-3 py-2 min-h-[42px] sm:min-h-0 text-base sm:text-sm font-mono bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg focus:outline-none focus:border-[#22c55e]"
                   />
                 </div>
 
@@ -1440,7 +1453,7 @@ export const ReceiptsPage: React.FC = () => {
                   <label className="block text-xs font-medium text-zinc-300">
                     Delivery Zone (Auto-sets BD Courier Charge)
                   </label>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     {(
                       [
                         { id: 'inside_dhaka', label: 'Inside Dhaka ৳70' },
@@ -1453,7 +1466,7 @@ export const ReceiptsPage: React.FC = () => {
                         type="button"
                         onClick={() => handleDeliveryZoneChange(z.id)}
                         className={cn(
-                          'px-2 py-2 rounded-lg border text-[11px] font-medium transition-colors cursor-pointer',
+                          'px-2.5 min-h-[40px] sm:min-h-0 py-2 rounded-lg border text-xs sm:text-[11px] font-medium transition-colors cursor-pointer',
                           draft.deliveryZone === z.id
                             ? 'bg-[#22c55e]/15 border-[#22c55e] text-[#4ade80]'
                             : 'bg-[#09090b] border-[#27272a] text-zinc-400 hover:text-zinc-100'
@@ -1484,11 +1497,11 @@ export const ReceiptsPage: React.FC = () => {
                   <label className="block text-xs font-medium text-zinc-300">
                     Quick Add from Product Inventory
                   </label>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                     <select
                       value={selectedProductId}
                       onChange={(e) => setSelectedProductId(e.target.value)}
-                      className="flex-1 min-w-0 px-3 py-2 text-xs bg-[#18181b] text-zinc-100 border border-[#27272a] rounded-lg focus:outline-none focus:border-[#22c55e]"
+                      className="w-full sm:flex-1 min-w-0 px-3 py-2 min-h-[42px] sm:min-h-0 text-base sm:text-xs bg-[#18181b] text-zinc-100 border border-[#27272a] rounded-lg focus:outline-none focus:border-[#22c55e]"
                     >
                       <option value="">Select inventory SKU...</option>
                       {products.map((p) => (
@@ -1501,6 +1514,7 @@ export const ReceiptsPage: React.FC = () => {
                       type="button"
                       variant="secondary"
                       size="sm"
+                      className="w-full sm:w-auto min-h-[40px] sm:min-h-0"
                       onClick={handleAddProductItem}
                       disabled={!selectedProductId}
                     >
@@ -1519,6 +1533,7 @@ export const ReceiptsPage: React.FC = () => {
                       type="button"
                       variant="secondary"
                       size="sm"
+                      className="min-h-[36px] sm:min-h-0"
                       onClick={handleAddBlankItem}
                     >
                       <Plus className="w-3.5 h-3.5" />
@@ -1526,7 +1541,7 @@ export const ReceiptsPage: React.FC = () => {
                     </Button>
                   </div>
 
-                  <div className="space-y-2.5 max-h-[300px] overflow-y-auto pr-1">
+                  <div className="space-y-2.5 max-h-[340px] overflow-y-auto pr-1">
                     {draft.items.map((item, idx) => (
                       <div
                         key={idx}
@@ -1539,21 +1554,21 @@ export const ReceiptsPage: React.FC = () => {
                             maxLength={160}
                             placeholder="Product or service name"
                             onChange={(e) => handleItemChange(idx, 'name', e.target.value)}
-                            className="flex-1 min-w-0 px-2.5 py-1.5 text-xs bg-[#18181b] text-zinc-100 border border-[#27272a] rounded-md focus:outline-none focus:border-[#22c55e]"
+                            className="flex-1 min-w-0 px-2.5 py-2 sm:py-1.5 text-base sm:text-xs bg-[#18181b] text-zinc-100 border border-[#27272a] rounded-md focus:outline-none focus:border-[#22c55e]"
                           />
                           <button
                             type="button"
                             onClick={() => handleRemoveItem(idx)}
                             disabled={draft.items.length <= 1}
                             title="Remove item"
-                            className="p-1.5 text-zinc-500 hover:text-red-400 disabled:opacity-30 cursor-pointer"
+                            className="min-h-[38px] min-w-[38px] sm:min-h-0 sm:min-w-0 inline-flex items-center justify-center p-1.5 text-zinc-500 hover:text-red-400 disabled:opacity-30 cursor-pointer shrink-0"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-2">
-                          <div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          <div className="col-span-2 sm:col-span-1">
                             <label className="block text-[10px] text-zinc-500 mb-1">SKU</label>
                             <input
                               type="text"
@@ -1561,7 +1576,7 @@ export const ReceiptsPage: React.FC = () => {
                               maxLength={60}
                               placeholder="SKU"
                               onChange={(e) => handleItemChange(idx, 'sku', e.target.value)}
-                              className="w-full px-2 py-1 text-xs font-mono bg-[#18181b] text-zinc-200 border border-[#27272a] rounded-md focus:outline-none focus:border-[#22c55e]"
+                              className="w-full px-2 py-1.5 sm:py-1 text-base sm:text-xs font-mono bg-[#18181b] text-zinc-200 border border-[#27272a] rounded-md focus:outline-none focus:border-[#22c55e]"
                             />
                           </div>
                           <div>
@@ -1574,7 +1589,7 @@ export const ReceiptsPage: React.FC = () => {
                               onChange={(e) =>
                                 handleItemChange(idx, 'qty', Number(e.target.value))
                               }
-                              className="w-full px-2 py-1 text-xs font-mono bg-[#18181b] text-zinc-200 border border-[#27272a] rounded-md tabular-nums focus:outline-none focus:border-[#22c55e]"
+                              className="w-full px-2 py-1.5 sm:py-1 text-base sm:text-xs font-mono bg-[#18181b] text-zinc-200 border border-[#27272a] rounded-md tabular-nums focus:outline-none focus:border-[#22c55e]"
                             />
                           </div>
                           <div>
@@ -1589,7 +1604,7 @@ export const ReceiptsPage: React.FC = () => {
                               onChange={(e) =>
                                 handleItemChange(idx, 'unitPrice', Number(e.target.value))
                               }
-                              className="w-full px-2 py-1 text-xs font-mono bg-[#18181b] text-zinc-200 border border-[#27272a] rounded-md tabular-nums focus:outline-none focus:border-[#22c55e]"
+                              className="w-full px-2 py-1.5 sm:py-1 text-base sm:text-xs font-mono bg-[#18181b] text-zinc-200 border border-[#27272a] rounded-md tabular-nums focus:outline-none focus:border-[#22c55e]"
                             />
                           </div>
                         </div>
@@ -1599,7 +1614,7 @@ export const ReceiptsPage: React.FC = () => {
                 </div>
 
                 {/* Charges & Paid */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2 border-t border-[#27272a]">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-[#27272a]">
                   <Select
                     label="Currency"
                     value={draft.currency}
@@ -1643,7 +1658,7 @@ export const ReceiptsPage: React.FC = () => {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Input
                     label="VAT (%)"
                     type="number"
@@ -1680,12 +1695,12 @@ export const ReceiptsPage: React.FC = () => {
                           paidAmount: Math.max(0, Number(e.target.value) || 0),
                         }))
                       }
-                      className="w-full px-3 py-2 text-sm font-mono bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg tabular-nums focus:outline-none focus:border-[#22c55e]"
+                      className="w-full px-3 py-2 min-h-[42px] sm:min-h-0 text-base sm:text-sm font-mono bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg tabular-nums focus:outline-none focus:border-[#22c55e]"
                     />
                   </div>
                 </div>
 
-                <div className="p-3 bg-[#09090b] border border-[#27272a] rounded-lg grid grid-cols-2 gap-2 text-xs">
+                <div className="p-3 bg-[#09090b] border border-[#27272a] rounded-lg grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                   <div className="flex justify-between">
                     <span className="text-zinc-400">Grand Total:</span>
                     <span className="font-mono font-semibold text-[#4ade80] tabular-nums">
@@ -1704,8 +1719,8 @@ export const ReceiptsPage: React.FC = () => {
           </Card>
 
           {/* Live Preview Column */}
-          <div className="xl:col-span-7 space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2 px-1 no-print">
+          <div className="xl:col-span-7 space-y-3 sm:space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-1 no-print">
               <div className="text-xs text-zinc-400">
                 {t.receipts.livePreview} ·{' '}
                 <span className="font-mono text-zinc-200">
@@ -1716,14 +1731,20 @@ export const ReceiptsPage: React.FC = () => {
                     : 'A4 Clean'}
                 </span>
               </div>
-              <div className="flex items-center gap-2">
-                <Button variant="secondary" size="sm" onClick={handlePrint}>
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto [&>button]:flex-1 sm:[&>button]:flex-none">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="min-h-[38px] sm:min-h-0"
+                  onClick={handlePrint}
+                >
                   <Printer className="w-3.5 h-3.5" />
                   {t.receipts.print}
                 </Button>
                 <Button
                   variant="secondary"
                   size="sm"
+                  className="min-h-[38px] sm:min-h-0"
                   onClick={handleDownloadPng}
                   disabled={downloadingPng || downloadingPdf}
                 >
@@ -1736,6 +1757,7 @@ export const ReceiptsPage: React.FC = () => {
                 </Button>
                 <Button
                   size="sm"
+                  className="min-h-[38px] sm:min-h-0"
                   onClick={handleDownloadPdf}
                   disabled={downloadingPdf || downloadingPng}
                 >
@@ -1749,7 +1771,7 @@ export const ReceiptsPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="p-3 sm:p-6 bg-[#121214] border border-[#27272a] rounded-xl overflow-x-auto">
+            <div className="p-2.5 sm:p-6 bg-[#121214] border border-[#27272a] rounded-xl overflow-x-auto">
               <ReceiptPreview receipt={draft} />
             </div>
           </div>
@@ -1757,7 +1779,7 @@ export const ReceiptsPage: React.FC = () => {
 
         {/* Saved Receipts History */}
         <Card className="overflow-hidden no-print">
-          <div className="px-5 py-4 border-b border-[#27272a] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="px-4 py-4 sm:px-5 border-b border-[#27272a] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <h3 className="text-sm font-semibold text-zinc-100">
                 {t.receipts.savedReceipts} ({receipts.length})
@@ -1773,13 +1795,13 @@ export const ReceiptsPage: React.FC = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search receipt #, customer, phone..."
-                className="w-full pl-8 pr-3 py-1.5 text-xs bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg focus:outline-none focus:border-[#22c55e]"
+                className="w-full pl-8 pr-3 py-2 sm:py-1.5 min-h-[40px] sm:min-h-0 text-base sm:text-xs bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg focus:outline-none focus:border-[#22c55e]"
               />
             </div>
           </div>
 
           {receiptsError && (
-            <div className="px-5 py-3 text-xs text-red-400 bg-red-500/10 border-b border-red-500/20">
+            <div className="px-4 sm:px-5 py-3 text-xs text-red-400 bg-red-500/10 border-b border-red-500/20">
               {receiptsError}
             </div>
           )}
@@ -1794,96 +1816,191 @@ export const ReceiptsPage: React.FC = () => {
               No saved receipts yet. Customize a receipt above and click Save Receipt.
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-[#27272a] text-[11px] font-mono uppercase tracking-wider text-zinc-400 bg-[#09090b]/50">
-                    <th className="py-2.5 px-4">Receipt #</th>
-                    <th className="py-2.5 px-4">Date &amp; Time</th>
-                    <th className="py-2.5 px-4">Customer</th>
-                    <th className="py-2.5 px-4">Delivery / Courier</th>
-                    <th className="py-2.5 px-4 text-right">Total</th>
-                    <th className="py-2.5 px-4">Status</th>
-                    <th className="py-2.5 px-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#27272a] text-xs">
-                  {filteredReceipts.map((r) => (
-                    <tr key={r.id} className="hover:bg-[#09090b]/40">
-                      <td className="py-3 px-4 font-mono font-semibold text-zinc-100 whitespace-nowrap">
-                        {r.receiptNumber}
-                      </td>
-                      <td className="py-3 px-4 font-mono text-zinc-400 tabular-nums whitespace-nowrap">
-                        {[r.issueDate, r.issueTime].filter(Boolean).join(' · ')}
-                      </td>
-                      <td className="py-3 px-4 min-w-[160px]">
-                        <p className="font-medium text-zinc-100">{r.customerName}</p>
-                        {r.customerPhone && (
-                          <p className="text-[11px] font-mono text-zinc-400 tabular-nums">
-                            {r.customerPhone}
-                          </p>
-                        )}
-                      </td>
-                      <td className="py-3 px-4 text-zinc-300">
+            <>
+              {/* Mobile Saved Receipts Cards */}
+              <div className="md:hidden divide-y divide-[#27272a]">
+                {filteredReceipts.map((r) => (
+                  <div key={r.id} className="p-4 space-y-2.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-sm font-semibold text-zinc-100 truncate">
+                            {r.receiptNumber}
+                          </span>
+                          <span className="text-[11px] font-mono uppercase text-zinc-400">
+                            · {r.status}
+                          </span>
+                        </div>
+                        <p className="text-[11px] font-mono text-zinc-400 tabular-nums mt-0.5">
+                          {[r.issueDate, r.issueTime].filter(Boolean).join(' · ')}
+                        </p>
+                      </div>
+                      <span className="font-mono text-sm font-semibold text-[#4ade80] tabular-nums shrink-0">
+                        {formatMoney(r.grandTotal, r.currency)}
+                      </span>
+                    </div>
+
+                    <div className="text-xs space-y-0.5">
+                      <p className="font-medium text-zinc-100">
+                        {r.customerName}
+                        {r.customerPhone ? (
+                          <span className="font-mono text-zinc-400 ml-1.5">
+                            · {r.customerPhone}
+                          </span>
+                        ) : null}
+                      </p>
+                      <p className="text-zinc-400">
                         {r.customerDistrict || 'Dhaka'}
                         {r.courierName ? ` · ${r.courierName}` : ''}
-                      </td>
-                      <td className="py-3 px-4 text-right font-mono font-semibold text-[#4ade80] tabular-nums whitespace-nowrap">
-                        {formatMoney(r.grandTotal, r.currency)}
-                      </td>
-                      <td className="py-3 px-4 font-mono uppercase text-zinc-300 whitespace-nowrap">
-                        {r.status}
-                      </td>
-                      <td className="py-3 px-4 text-right whitespace-nowrap">
-                        <div className="inline-flex items-center gap-1.5">
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => handleLoadSavedReceipt(r)}
-                          >
-                            Edit / View
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => downloadReceiptAsPdf(r)}
-                            title="Download PDF"
-                          >
-                            <FileDown className="w-3.5 h-3.5 text-[#4ade80]" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => downloadReceiptAsPng(r)}
-                            title="Download PNG"
-                          >
-                            <Download className="w-3.5 h-3.5" />
-                          </Button>
-                          {confirmDeleteId === r.id ? (
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[#27272a]/70">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="flex-1 min-h-[40px]"
+                        onClick={() => handleLoadSavedReceipt(r)}
+                      >
+                        Edit / View
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="min-h-[40px]"
+                        onClick={() => downloadReceiptAsPdf(r)}
+                        title="Download PDF"
+                      >
+                        <FileDown className="w-3.5 h-3.5 text-[#4ade80]" />
+                        <span>PDF</span>
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="min-h-[40px]"
+                        onClick={() => downloadReceiptAsPng(r)}
+                        title="Download PNG"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>PNG</span>
+                      </Button>
+                      {confirmDeleteId === r.id ? (
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          className="min-h-[40px]"
+                          onClick={() => handleDeleteSaved(r)}
+                        >
+                          Confirm
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="min-h-[40px] min-w-[40px]"
+                          onClick={() => setConfirmDeleteId(r.id)}
+                          title="Delete receipt"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-400" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop Saved Receipts Table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-[#27272a] text-[11px] font-mono uppercase tracking-wider text-zinc-400 bg-[#09090b]/50">
+                      <th className="py-2.5 px-4">Receipt #</th>
+                      <th className="py-2.5 px-4">Date &amp; Time</th>
+                      <th className="py-2.5 px-4">Customer</th>
+                      <th className="py-2.5 px-4">Delivery / Courier</th>
+                      <th className="py-2.5 px-4 text-right">Total</th>
+                      <th className="py-2.5 px-4">Status</th>
+                      <th className="py-2.5 px-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#27272a] text-xs">
+                    {filteredReceipts.map((r) => (
+                      <tr key={r.id} className="hover:bg-[#09090b]/40">
+                        <td className="py-3 px-4 font-mono font-semibold text-zinc-100 whitespace-nowrap">
+                          {r.receiptNumber}
+                        </td>
+                        <td className="py-3 px-4 font-mono text-zinc-400 tabular-nums whitespace-nowrap">
+                          {[r.issueDate, r.issueTime].filter(Boolean).join(' · ')}
+                        </td>
+                        <td className="py-3 px-4 min-w-[160px]">
+                          <p className="font-medium text-zinc-100">{r.customerName}</p>
+                          {r.customerPhone && (
+                            <p className="text-[11px] font-mono text-zinc-400 tabular-nums">
+                              {r.customerPhone}
+                            </p>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-zinc-300">
+                          {r.customerDistrict || 'Dhaka'}
+                          {r.courierName ? ` · ${r.courierName}` : ''}
+                        </td>
+                        <td className="py-3 px-4 text-right font-mono font-semibold text-[#4ade80] tabular-nums whitespace-nowrap">
+                          {formatMoney(r.grandTotal, r.currency)}
+                        </td>
+                        <td className="py-3 px-4 font-mono uppercase text-zinc-300 whitespace-nowrap">
+                          {r.status}
+                        </td>
+                        <td className="py-3 px-4 text-right whitespace-nowrap">
+                          <div className="inline-flex items-center gap-1.5">
                             <Button
-                              variant="danger"
+                              variant="secondary"
                               size="sm"
-                              onClick={() => handleDeleteSaved(r)}
+                              onClick={() => handleLoadSavedReceipt(r)}
                             >
-                              Confirm
+                              Edit / View
                             </Button>
-                          ) : (
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => setConfirmDeleteId(r.id)}
-                              title="Delete receipt"
+                              onClick={() => downloadReceiptAsPdf(r)}
+                              title="Download PDF"
                             >
-                              <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                              <FileDown className="w-3.5 h-3.5 text-[#4ade80]" />
                             </Button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => downloadReceiptAsPng(r)}
+                              title="Download PNG"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                            </Button>
+                            {confirmDeleteId === r.id ? (
+                              <Button
+                                variant="danger"
+                                size="sm"
+                                onClick={() => handleDeleteSaved(r)}
+                              >
+                                Confirm
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setConfirmDeleteId(r.id)}
+                                title="Delete receipt"
+                              >
+                                <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                              </Button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </Card>
       </div>

@@ -157,24 +157,29 @@ export const DashboardPage: React.FC = () => {
             <Button
               variant="secondary"
               size="sm"
+              className="flex-1 md:flex-none min-h-[40px] md:min-h-0"
               onClick={() => setProductModalOpen(true)}
             >
               <Plus className="w-3.5 h-3.5 text-[#4ade80]" />
-              <span className="hidden sm:inline">{t.dashboard.addProduct}</span>
+              <span>{t.dashboard.addProduct}</span>
             </Button>
           )}
-          <Button size="sm" onClick={() => setExpenseModalOpen(true)}>
+          <Button
+            size="sm"
+            className="flex-1 md:flex-none min-h-[40px] md:min-h-0"
+            onClick={() => setExpenseModalOpen(true)}
+          >
             <Plus className="w-3.5 h-3.5" />
             {mode === 'business' ? t.dashboard.logBusinessExpense : t.dashboard.quickLogExpense}
           </Button>
         </div>
       }
     >
-      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-5 sm:space-y-6">
         {/* Date Range Filter & Export Bar */}
-        <Card className="p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-1 p-1 bg-[#09090b] border border-[#27272a] rounded-lg overflow-x-auto">
+        <Card className="p-3.5 sm:p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2.5 min-w-0">
+            <div className="flex items-center gap-1 p-1 bg-[#09090b] border border-[#27272a] rounded-lg overflow-x-auto no-scrollbar max-w-full">
               {(
                 [
                   { id: 'all', label: t.common.allTime },
@@ -188,7 +193,7 @@ export const DashboardPage: React.FC = () => {
                   key={preset.id}
                   type="button"
                   onClick={() => setDatePreset(preset.id)}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
+                  className={`px-3 min-h-[38px] sm:min-h-0 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
                     datePreset === preset.id
                       ? 'bg-[#22c55e] text-zinc-950 font-semibold'
                       : 'text-zinc-400 hover:text-zinc-100'
@@ -200,28 +205,29 @@ export const DashboardPage: React.FC = () => {
             </div>
 
             {datePreset === 'custom' && (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
                 <input
                   type="date"
                   value={customStart}
                   onChange={(e) => setCustomStart(e.target.value)}
-                  className="px-2.5 py-1.5 text-xs font-mono bg-[#09090b] border border-[#27272a] rounded-lg text-zinc-100"
+                  className="w-full sm:w-auto px-2.5 py-2 sm:py-1.5 text-sm sm:text-xs font-mono bg-[#09090b] border border-[#27272a] rounded-lg text-zinc-100"
                 />
-                <span className="text-xs text-zinc-500">{t.common.to}</span>
+                <span className="text-xs text-zinc-500 text-center sm:text-left">{t.common.to}</span>
                 <input
                   type="date"
                   value={customEnd}
                   onChange={(e) => setCustomEnd(e.target.value)}
-                  className="px-2.5 py-1.5 text-xs font-mono bg-[#09090b] border border-[#27272a] rounded-lg text-zinc-100"
+                  className="w-full sm:w-auto px-2.5 py-2 sm:py-1.5 text-sm sm:text-xs font-mono bg-[#09090b] border border-[#27272a] rounded-lg text-zinc-100"
                 />
               </div>
             )}
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto shrink-0 [&>button]:flex-1 sm:[&>button]:flex-none">
             <Button
               variant="secondary"
               size="sm"
+              className="min-h-[40px] sm:min-h-0"
               disabled={filteredExpenses.length === 0}
               onClick={() => exportExpensesCsv(filteredExpenses, categoryLabels)}
             >
@@ -232,6 +238,7 @@ export const DashboardPage: React.FC = () => {
               <Button
                 variant="secondary"
                 size="sm"
+                className="min-h-[40px] sm:min-h-0"
                 disabled={businessProducts.length === 0}
                 onClick={() => exportProductsCsv(businessProducts)}
               >
@@ -246,9 +253,9 @@ export const DashboardPage: React.FC = () => {
         {mode === 'business' ? (
           <section
             aria-label="Key Business Metrics"
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4"
           >
-            <Card className="p-5">
+            <Card className="p-4 sm:p-5">
               <p className="text-xs font-medium text-zinc-400">{t.dashboard.businessExpenses}</p>
               <p className="text-2xl font-semibold font-mono tabular-nums text-zinc-100 mt-2">
                 {expLoading ? '—' : formatMoney(businessKpis.totalExpensesBdt, 'BDT')}

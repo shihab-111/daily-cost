@@ -344,14 +344,16 @@ export const ExpensesPage: React.FC = () => {
           <Button
             variant="secondary"
             size="sm"
+            className="flex-1 md:flex-none min-h-[40px] md:min-h-0"
             disabled={filteredExpenses.length === 0}
             onClick={() => exportExpensesCsv(filteredExpenses, categoryLabels)}
           >
             <Download className="w-3.5 h-3.5 text-[#4ade80]" />
-            <span className="hidden sm:inline">{t.common.exportCsv}</span>
+            <span>{t.common.exportCsv}</span>
           </Button>
           <Button
             size="sm"
+            className="flex-1 md:flex-none min-h-[40px] md:min-h-0"
             onClick={() => {
               setEditingExpense(null);
               setModalOpen(true);
@@ -363,9 +365,9 @@ export const ExpensesPage: React.FC = () => {
         </div>
       }
     >
-      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-5 sm:space-y-6">
         {/* Filter Toolbar */}
-        <Card className="p-4 space-y-4">
+        <Card className="p-3.5 sm:p-4 space-y-3.5 sm:space-y-4">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
             <div className="relative flex-1 max-w-md">
               <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -378,12 +380,12 @@ export const ExpensesPage: React.FC = () => {
                     ? t.expenses.searchBusiness
                     : t.expenses.searchPersonal
                 }
-                className="w-full pl-9 pr-3 py-2 text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-500 focus:outline-none focus:border-[#22c55e]"
+                className="w-full pl-9 pr-3 py-2 min-h-[42px] sm:min-h-0 text-base sm:text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-500 focus:outline-none focus:border-[#22c55e]"
               />
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="flex items-center gap-1 p-1 bg-[#09090b] border border-[#27272a] rounded-lg overflow-x-auto">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 min-w-0">
+              <div className="flex items-center gap-1 p-1 bg-[#09090b] border border-[#27272a] rounded-lg overflow-x-auto no-scrollbar max-w-full">
                 {(
                   [
                     { id: 'all', label: t.common.all },
@@ -397,7 +399,7 @@ export const ExpensesPage: React.FC = () => {
                     key={p.id}
                     type="button"
                     onClick={() => setDatePreset(p.id)}
-                    className={`px-2.5 py-1 text-xs font-medium rounded-md cursor-pointer whitespace-nowrap ${
+                    className={`px-2.5 min-h-[36px] sm:min-h-0 py-1 text-xs font-medium rounded-md cursor-pointer whitespace-nowrap shrink-0 ${
                       datePreset === p.id
                         ? 'bg-[#22c55e] text-zinc-950 font-semibold'
                         : 'text-zinc-400 hover:text-zinc-100'
@@ -408,32 +410,32 @@ export const ExpensesPage: React.FC = () => {
                 ))}
               </div>
               {datePreset === 'custom' && (
-                <div className="flex items-center gap-1.5">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
                   <input
                     type="date"
                     value={customStart}
                     onChange={(e) => setCustomStart(e.target.value)}
-                    className="px-2 py-1 text-xs font-mono bg-[#09090b] border border-[#27272a] rounded-md text-zinc-100"
+                    className="w-full sm:w-auto px-2.5 py-2 sm:py-1 text-sm sm:text-xs font-mono bg-[#09090b] border border-[#27272a] rounded-md text-zinc-100"
                   />
-                  <span className="text-xs text-zinc-500">-</span>
+                  <span className="text-xs text-zinc-500 text-center sm:text-left">-</span>
                   <input
                     type="date"
                     value={customEnd}
                     onChange={(e) => setCustomEnd(e.target.value)}
-                    className="px-2 py-1 text-xs font-mono bg-[#09090b] border border-[#27272a] rounded-md text-zinc-100"
+                    className="w-full sm:w-auto px-2.5 py-2 sm:py-1 text-sm sm:text-xs font-mono bg-[#09090b] border border-[#27272a] rounded-md text-zinc-100"
                   />
                 </div>
               )}
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#27272a]">
-            <div className="flex flex-wrap items-center gap-2 min-w-0">
-              <div className="flex items-center gap-1 p-1 bg-[#09090b] border border-[#27272a] rounded-lg overflow-x-auto max-w-full">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center justify-between gap-3 pt-3 border-t border-[#27272a]">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 min-w-0">
+              <div className="flex items-center gap-1 p-1 bg-[#09090b] border border-[#27272a] rounded-lg overflow-x-auto no-scrollbar max-w-full">
                 <button
                   type="button"
                   onClick={() => setCategoryFilter('all')}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-md cursor-pointer whitespace-nowrap ${
+                  className={`px-3 min-h-[36px] sm:min-h-0 py-1.5 text-xs font-medium rounded-md cursor-pointer whitespace-nowrap shrink-0 ${
                     categoryFilter === 'all'
                       ? 'bg-[#18181b] text-[#4ade80]'
                       : 'text-zinc-400 hover:text-zinc-100'
@@ -446,7 +448,7 @@ export const ExpensesPage: React.FC = () => {
                     key={cat.id}
                     type="button"
                     onClick={() => setCategoryFilter(cat.key)}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md cursor-pointer whitespace-nowrap ${
+                    className={`inline-flex items-center gap-1.5 px-3 min-h-[36px] sm:min-h-0 py-1.5 text-xs font-medium rounded-md cursor-pointer whitespace-nowrap shrink-0 ${
                       categoryFilter === cat.key
                         ? 'bg-[#18181b] text-[#4ade80]'
                         : 'text-zinc-400 hover:text-zinc-100'
@@ -471,7 +473,7 @@ export const ExpensesPage: React.FC = () => {
                   setManageCatsOpen((o) => !o);
                   setCatError(null);
                 }}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-colors cursor-pointer whitespace-nowrap ${
+                className={`w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 min-h-[40px] sm:min-h-0 py-1.5 text-xs font-medium rounded-lg border transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
                   manageCatsOpen
                     ? 'bg-[#22c55e]/15 text-[#4ade80] border-[#22c55e]/40'
                     : 'bg-[#09090b] text-zinc-300 border-[#27272a] hover:border-zinc-600 hover:text-white'
@@ -484,7 +486,7 @@ export const ExpensesPage: React.FC = () => {
               </button>
             </div>
 
-            <div className="text-xs font-mono tabular-nums text-zinc-400">
+            <div className="text-xs font-mono tabular-nums text-zinc-400 shrink-0">
               {filteredExpenses.length} {t.expenses.entries} · {t.expenses.total}:{' '}
               <span className="text-[#4ade80] font-semibold">
                 {formatMoney(totalFilteredBdt, 'BDT')}
@@ -493,7 +495,7 @@ export const ExpensesPage: React.FC = () => {
           </div>
 
           {manageCatsOpen && (
-            <div className="p-4 rounded-lg bg-[#09090b] border border-[#27272a] space-y-4">
+            <div className="p-3.5 sm:p-4 rounded-lg bg-[#09090b] border border-[#27272a] space-y-4">
               <input
                 ref={quickCatFileRef}
                 type="file"
@@ -511,60 +513,62 @@ export const ExpensesPage: React.FC = () => {
 
               {/* Add New Category with Photo, Quantity, and Per Pics Price */}
               <form onSubmit={handleAddCategory} className="space-y-2.5">
-                <div className="flex flex-wrap items-end gap-2.5">
-                  <div className="shrink-0">
-                    <input
-                      ref={newCatFileRef}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => handleNewCatPhoto(e.target.files)}
-                    />
-                    {newCategoryPhoto ? (
-                      <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-[#27272a] group">
-                        <img
-                          src={newCategoryPhoto}
-                          alt="Category preview"
-                          referrerPolicy="no-referrer"
-                          className="w-full h-full object-cover"
-                        />
+                <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-end gap-2.5">
+                  <div className="col-span-2 flex items-end gap-2.5 sm:contents">
+                    <div className="shrink-0">
+                      <input
+                        ref={newCatFileRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleNewCatPhoto(e.target.files)}
+                      />
+                      {newCategoryPhoto ? (
+                        <div className="relative w-11 h-11 sm:w-10 sm:h-10 rounded-lg overflow-hidden border border-[#27272a] group">
+                          <img
+                            src={newCategoryPhoto}
+                            alt="Category preview"
+                            referrerPolicy="no-referrer"
+                            className="w-full h-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setNewCategoryPhoto('')}
+                            aria-label={t.expenses.removePhoto}
+                            className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 flex items-center justify-center text-red-400 transition-opacity cursor-pointer"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : (
                         <button
                           type="button"
-                          onClick={() => setNewCategoryPhoto('')}
-                          aria-label={t.expenses.removePhoto}
-                          className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 flex items-center justify-center text-red-400 transition-opacity cursor-pointer"
+                          disabled={processingCatPhoto}
+                          onClick={() => newCatFileRef.current?.click()}
+                          title={t.expenses.uploadPhoto}
+                          className="w-11 h-11 sm:w-10 sm:h-10 rounded-lg border border-dashed border-[#27272a] hover:border-[#22c55e] bg-[#121214] flex items-center justify-center text-zinc-400 hover:text-[#4ade80] transition-colors cursor-pointer"
                         >
-                          <X className="w-3.5 h-3.5" />
+                          <ImagePlus className="w-4 h-4" />
                         </button>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        disabled={processingCatPhoto}
-                        onClick={() => newCatFileRef.current?.click()}
-                        title={t.expenses.uploadPhoto}
-                        className="w-10 h-10 rounded-lg border border-dashed border-[#27272a] hover:border-[#22c55e] bg-[#121214] flex items-center justify-center text-zinc-400 hover:text-[#4ade80] transition-colors cursor-pointer"
-                      >
-                        <ImagePlus className="w-4 h-4" />
-                      </button>
-                    )}
+                      )}
+                    </div>
+
+                    <div className="flex-1 min-w-0 sm:min-w-[180px] space-y-1">
+                      <label className="block text-[11px] font-medium text-zinc-400">
+                        {t.expenses.category}
+                      </label>
+                      <input
+                        type="text"
+                        maxLength={60}
+                        value={newCategoryName}
+                        onChange={(e) => setNewCategoryName(e.target.value)}
+                        placeholder={t.expenses.addCategoryPlaceholder}
+                        className="w-full px-3 py-2 sm:py-1.5 text-base sm:text-xs bg-[#121214] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-500 focus:outline-none focus:border-[#22c55e]"
+                      />
+                    </div>
                   </div>
 
-                  <div className="flex-1 min-w-[180px] space-y-1">
-                    <label className="block text-[11px] font-medium text-zinc-400">
-                      {t.expenses.category}
-                    </label>
-                    <input
-                      type="text"
-                      maxLength={60}
-                      value={newCategoryName}
-                      onChange={(e) => setNewCategoryName(e.target.value)}
-                      placeholder={t.expenses.addCategoryPlaceholder}
-                      className="w-full px-3 py-1.5 text-xs bg-[#121214] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-500 focus:outline-none focus:border-[#22c55e]"
-                    />
-                  </div>
-
-                  <div className="w-24 space-y-1">
+                  <div className="w-full sm:w-24 space-y-1">
                     <label className="block text-[11px] font-medium text-zinc-400">
                       {t.expenses.quantity}
                     </label>
@@ -575,11 +579,11 @@ export const ExpensesPage: React.FC = () => {
                       value={newCategoryQty}
                       onChange={(e) => setNewCategoryQty(e.target.value)}
                       placeholder="0"
-                      className="w-full px-2.5 py-1.5 text-xs font-mono tabular-nums bg-[#121214] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-600 focus:outline-none focus:border-[#22c55e]"
+                      className="w-full px-2.5 py-2 sm:py-1.5 text-base sm:text-xs font-mono tabular-nums bg-[#121214] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-600 focus:outline-none focus:border-[#22c55e]"
                     />
                   </div>
 
-                  <div className="w-32 space-y-1">
+                  <div className="w-full sm:w-32 space-y-1">
                     <label className="block text-[11px] font-medium text-zinc-400">
                       {t.expenses.perPiecePrice}
                     </label>
@@ -590,14 +594,15 @@ export const ExpensesPage: React.FC = () => {
                       value={newCategoryUnitPrice}
                       onChange={(e) => setNewCategoryUnitPrice(e.target.value)}
                       placeholder="0.00"
-                      className="w-full px-2.5 py-1.5 text-xs font-mono tabular-nums bg-[#121214] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-600 focus:outline-none focus:border-[#22c55e]"
+                      className="w-full px-2.5 py-2 sm:py-1.5 text-base sm:text-xs font-mono tabular-nums bg-[#121214] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-600 focus:outline-none focus:border-[#22c55e]"
                     />
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="col-span-2 sm:w-auto flex flex-wrap items-center gap-2">
                     <Button
                       type="submit"
                       size="sm"
+                      className="flex-1 sm:flex-none min-h-[40px] sm:min-h-0"
                       disabled={catSaving || processingCatPhoto || !newCategoryName.trim()}
                     >
                       <Plus className="w-3.5 h-3.5" />
@@ -608,6 +613,7 @@ export const ExpensesPage: React.FC = () => {
                         type="button"
                         variant="secondary"
                         size="sm"
+                        className="flex-1 sm:flex-none min-h-[40px] sm:min-h-0"
                         disabled={catSaving}
                         onClick={handleRestoreDefaults}
                       >
@@ -683,7 +689,7 @@ export const ExpensesPage: React.FC = () => {
                               maxLength={60}
                               value={editCatLabel}
                               onChange={(e) => setEditCatLabel(e.target.value)}
-                              className="w-full px-2.5 py-1 text-xs bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-md focus:outline-none focus:border-[#22c55e]"
+                              className="w-full px-2.5 py-1.5 sm:py-1 text-base sm:text-xs bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-md focus:outline-none focus:border-[#22c55e]"
                             />
                             <button
                               type="button"
@@ -707,7 +713,7 @@ export const ExpensesPage: React.FC = () => {
                               value={editCatQty}
                               onChange={(e) => setEditCatQty(e.target.value)}
                               placeholder="0"
-                              className="w-full px-2 py-1 text-xs font-mono tabular-nums bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-md focus:outline-none focus:border-[#22c55e]"
+                              className="w-full px-2 py-1.5 sm:py-1 text-base sm:text-xs font-mono tabular-nums bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-md focus:outline-none focus:border-[#22c55e]"
                             />
                           </div>
                           <div>
@@ -721,7 +727,7 @@ export const ExpensesPage: React.FC = () => {
                               value={editCatUnitPrice}
                               onChange={(e) => setEditCatUnitPrice(e.target.value)}
                               placeholder="0.00"
-                              className="w-full px-2 py-1 text-xs font-mono tabular-nums bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-md focus:outline-none focus:border-[#22c55e]"
+                              className="w-full px-2 py-1.5 sm:py-1 text-base sm:text-xs font-mono tabular-nums bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-md focus:outline-none focus:border-[#22c55e]"
                             />
                           </div>
                         </div>
@@ -730,13 +736,14 @@ export const ExpensesPage: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => setEditingCatId(null)}
-                            className="px-2.5 py-1 text-xs text-zinc-400 hover:text-zinc-200 rounded cursor-pointer"
+                            className="px-2.5 min-h-[36px] sm:min-h-0 py-1 text-xs text-zinc-400 hover:text-zinc-200 rounded cursor-pointer"
                           >
                             {t.expenses.cancelEdit}
                           </button>
                           <Button
                             type="button"
                             size="sm"
+                            className="min-h-[36px] sm:min-h-0"
                             disabled={catSaving || processingCatPhoto || !editCatLabel.trim()}
                             onClick={() => handleSaveCategoryEdit(cat)}
                           >
@@ -820,7 +827,7 @@ export const ExpensesPage: React.FC = () => {
                           }}
                           title={cat.photoUrl ? t.expenses.changePhoto : t.expenses.uploadPhoto}
                           aria-label={`${t.expenses.uploadPhoto} ${cat.label}`}
-                          className="p-1.5 text-zinc-400 hover:text-[#4ade80] rounded cursor-pointer"
+                          className="min-h-[38px] min-w-[38px] sm:min-h-0 sm:min-w-0 inline-flex items-center justify-center p-1.5 text-zinc-400 hover:text-[#4ade80] rounded cursor-pointer"
                         >
                           <ImagePlus className="w-3.5 h-3.5" />
                         </button>
@@ -829,7 +836,7 @@ export const ExpensesPage: React.FC = () => {
                           onClick={() => startEditingCategory(cat)}
                           title={t.expenses.editCategory}
                           aria-label={`${t.expenses.editCategory} ${cat.label}`}
-                          className="p-1.5 text-zinc-400 hover:text-[#4ade80] rounded cursor-pointer"
+                          className="min-h-[38px] min-w-[38px] sm:min-h-0 sm:min-w-0 inline-flex items-center justify-center p-1.5 text-zinc-400 hover:text-[#4ade80] rounded cursor-pointer"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
                         </button>
@@ -838,7 +845,7 @@ export const ExpensesPage: React.FC = () => {
                           onClick={() => handleDeleteCategory(cat.id, cat.key)}
                           aria-label={`${t.expenses.deleteCategoryTitle} ${cat.label}`}
                           title={t.expenses.deleteCategoryTitle}
-                          className="p-1.5 text-zinc-400 hover:text-red-400 rounded cursor-pointer"
+                          className="min-h-[38px] min-w-[38px] sm:min-h-0 sm:min-w-0 inline-flex items-center justify-center p-1.5 text-zinc-400 hover:text-red-400 rounded cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -881,8 +888,151 @@ export const ExpensesPage: React.FC = () => {
               </Button>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+            <>
+              {/* Mobile Expense Cards */}
+              <div className="md:hidden divide-y divide-[#27272a]">
+                {filteredExpenses.map((exp) => {
+                  const catItem = categoryMap[exp.category];
+                  const expQty = Number(exp.quantity || 0);
+                  const expUnitPrice = Number(exp.unitPrice || 0);
+                  return (
+                    <div key={exp.id} className="p-4 space-y-2.5">
+                      <div className="flex items-center justify-between gap-2 text-xs">
+                        <span className="font-mono tabular-nums text-zinc-400">
+                          {exp.date} · {exp.paymentMethod}
+                        </span>
+                        <span className="text-sm font-mono tabular-nums font-semibold text-zinc-100 shrink-0">
+                          {formatMoney(exp.amount, exp.currency)}
+                        </span>
+                      </div>
+
+                      <div className="flex items-start gap-2.5">
+                        {catItem?.photoUrl && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setLightboxItems([
+                                {
+                                  id: catItem.id,
+                                  fileName: `${catItem.label}.jpg`,
+                                  caption: catItem.label,
+                                  dataUrl: catItem.photoUrl!,
+                                  width: 320,
+                                  height: 320,
+                                },
+                              ])
+                            }
+                            className="w-10 h-10 rounded-md overflow-hidden border border-[#27272a] shrink-0 cursor-pointer"
+                          >
+                            <img
+                              src={catItem.photoUrl}
+                              alt={catItem.label}
+                              referrerPolicy="no-referrer"
+                              className="w-full h-full object-cover"
+                            />
+                          </button>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-zinc-100 leading-snug">
+                            {exp.title}
+                          </p>
+                          <p className="text-xs text-zinc-400 mt-1 break-words">
+                            <span className="text-[#4ade80]">
+                              {resolveCategoryLabel(exp.category, categoryLabels)}
+                            </span>
+                            {(expQty > 0 || expUnitPrice > 0) && (
+                              <>
+                                <span className="mx-1.5 text-zinc-600">·</span>
+                                <span className="font-mono tabular-nums text-zinc-300">
+                                  {expQty > 0 ? `${expQty} pcs` : ''}
+                                  {expQty > 0 && expUnitPrice > 0 ? ' × ' : ''}
+                                  {expUnitPrice > 0
+                                    ? `${formatMoney(expUnitPrice, exp.currency)}/pc`
+                                    : ''}
+                                </span>
+                              </>
+                            )}
+                            <span className="mx-1.5 text-zinc-600">·</span>
+                            <span>{renderCategoryContext(exp)}</span>
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#27272a]/70">
+                        <div>
+                          {exp.receiptCount > 0 && exp.receiptThumb ? (
+                            <button
+                              type="button"
+                              onClick={() => openReceiptsLightbox(exp)}
+                              className="inline-flex items-center gap-2 min-h-[38px] text-xs text-[#4ade80] hover:underline cursor-pointer"
+                            >
+                              <img
+                                src={exp.receiptThumb}
+                                alt="Receipt"
+                                referrerPolicy="no-referrer"
+                                className="w-8 h-8 rounded object-cover border border-[#27272a]"
+                              />
+                              <span className="font-mono tabular-nums">
+                                {exp.receiptCount} {t.expenses.receipt}
+                              </span>
+                            </button>
+                          ) : (
+                            <span className="text-xs text-zinc-600">—</span>
+                          )}
+                        </div>
+
+                        <div className="inline-flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingExpense(exp);
+                              setModalOpen(true);
+                            }}
+                            aria-label={`Edit ${exp.title}`}
+                            className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center bg-[#09090b] border border-[#27272a] text-zinc-300 hover:text-[#4ade80] rounded-lg cursor-pointer"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                          {confirmDeleteId === exp.id ? (
+                            <div className="inline-flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-lg px-2.5 min-h-[40px]">
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  if (user) await dbService.deleteExpense(user, exp);
+                                  setConfirmDeleteId(null);
+                                }}
+                                className="text-xs font-semibold text-red-400 hover:text-red-300 cursor-pointer"
+                              >
+                                {t.common.delete}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setConfirmDeleteId(null)}
+                                className="text-xs text-zinc-400 hover:text-zinc-200 cursor-pointer"
+                              >
+                                {t.common.no}
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setConfirmDeleteId(exp.id)}
+                              aria-label={`Delete ${exp.title}`}
+                              className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center bg-[#09090b] border border-[#27272a] text-zinc-300 hover:text-red-400 rounded-lg cursor-pointer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Desktop Expense Table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-[#27272a] bg-[#121214] text-xs font-medium text-zinc-400">
                     <th className="py-3 px-4">{t.expenses.date}</th>
@@ -1033,7 +1183,8 @@ export const ExpensesPage: React.FC = () => {
                   })}
                 </tbody>
               </table>
-            </div>
+              </div>
+            </>
           )}
         </Card>
       </div>

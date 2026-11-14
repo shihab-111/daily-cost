@@ -92,7 +92,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
       subtitle="Validates Bangladeshi carrier numbers (+8801XXXXXXXXX) and stores private delivery details."
       maxWidthClass="max-w-xl"
     >
-      <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
+      <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
         {errorMsg && (
           <div className="border border-red-500/30 bg-red-500/10 rounded-lg p-3 text-xs text-red-300">
             {errorMsg}
@@ -156,15 +156,25 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Preferred courier, size notes, or repeat buyer details..."
-            className="w-full px-3 py-2 text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-500 focus:outline-none focus:border-[#22c55e] focus:ring-1 focus:ring-[#22c55e]"
+            className="w-full px-3 py-2 text-base sm:text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-500 focus:outline-none focus:border-[#22c55e] focus:ring-1 focus:ring-[#22c55e]"
           />
         </div>
 
-        <div className="pt-4 border-t border-[#27272a] flex items-center justify-end gap-3">
-          <Button type="button" variant="secondary" onClick={onClose} disabled={saving}>
+        <div className="pt-4 border-t border-[#27272a] flex flex-col-reverse sm:flex-row sm:items-center justify-end gap-2.5 sm:gap-3">
+          <Button
+            type="button"
+            variant="secondary"
+            className="w-full sm:w-auto min-h-[44px] sm:min-h-0"
+            onClick={onClose}
+            disabled={saving}
+          >
             Cancel
           </Button>
-          <Button type="submit" disabled={saving}>
+          <Button
+            type="submit"
+            className="w-full sm:w-auto min-h-[44px] sm:min-h-0"
+            disabled={saving}
+          >
             {saving ? 'Saving...' : editingCustomer ? 'Update Customer' : 'Save Customer'}
           </Button>
         </div>

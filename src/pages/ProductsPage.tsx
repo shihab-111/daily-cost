@@ -99,14 +99,16 @@ export const ProductsPage: React.FC = () => {
           <Button
             variant="secondary"
             size="sm"
+            className="flex-1 md:flex-none min-h-[40px] md:min-h-0"
             disabled={filteredProducts.length === 0}
             onClick={() => exportProductsCsv(filteredProducts)}
           >
             <Download className="w-3.5 h-3.5 text-[#4ade80]" />
-            <span className="hidden sm:inline">{t.common.exportCsv}</span>
+            <span>{t.common.exportCsv}</span>
           </Button>
           <Button
             size="sm"
+            className="flex-1 md:flex-none min-h-[40px] md:min-h-0"
             onClick={() => {
               setEditingProduct(null);
               setModalOpen(true);
@@ -118,10 +120,10 @@ export const ProductsPage: React.FC = () => {
         </div>
       }
     >
-      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-5 sm:space-y-6">
         {/* Filter Toolbar */}
-        <Card className="p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-          <div className="flex-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        <Card className="p-3.5 sm:p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <div className="flex-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 min-w-0">
             <div className="relative flex-1 max-w-md">
               <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
@@ -129,11 +131,11 @@ export const ProductsPage: React.FC = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t.products.searchPlaceholder}
-                className="w-full pl-9 pr-3 py-2 text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-500 focus:outline-none focus:border-[#22c55e]"
+                className="w-full pl-9 pr-3 py-2 min-h-[42px] sm:min-h-0 text-base sm:text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-500 focus:outline-none focus:border-[#22c55e]"
               />
             </div>
 
-            <div className="flex items-center gap-1 p-1 bg-[#09090b] border border-[#27272a] rounded-lg overflow-x-auto">
+            <div className="flex items-center gap-1 p-1 bg-[#09090b] border border-[#27272a] rounded-lg overflow-x-auto no-scrollbar max-w-full">
               {(
                 [
                   { id: 'all', label: t.common.all },
@@ -146,7 +148,7 @@ export const ProductsPage: React.FC = () => {
                   key={st.id}
                   type="button"
                   onClick={() => setStatusFilter(st.id)}
-                  className={`px-2.5 py-1.5 text-xs font-medium rounded-md cursor-pointer whitespace-nowrap shrink-0 ${
+                  className={`px-2.5 min-h-[36px] sm:min-h-0 py-1.5 text-xs font-medium rounded-md cursor-pointer whitespace-nowrap shrink-0 ${
                     statusFilter === st.id
                       ? 'bg-[#22c55e] text-zinc-950 font-semibold'
                       : 'text-zinc-400 hover:text-zinc-100'
@@ -162,7 +164,7 @@ export const ProductsPage: React.FC = () => {
             aria-label="Filter by product category"
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="px-3 py-2 text-xs font-medium bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg focus:outline-none focus:border-[#22c55e]"
+            className="w-full lg:w-auto px-3 py-2 min-h-[42px] sm:min-h-0 text-base sm:text-xs font-medium bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg focus:outline-none focus:border-[#22c55e]"
           >
             <option value="all">{t.products.allCategories}</option>
             {PRODUCT_CATEGORIES.map((c) => (
@@ -203,8 +205,156 @@ export const ProductsPage: React.FC = () => {
               </Button>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+            <>
+              {/* Mobile Inventory Cards */}
+              <div className="md:hidden divide-y divide-[#27272a]">
+                {filteredProducts.map((prod) => {
+                  const status = getStockStatus(prod);
+                  return (
+                    <div key={prod.id} className="p-4 space-y-3">
+                      <div className="flex items-start gap-3">
+                        {prod.thumbnailUrl ? (
+                          <button
+                            type="button"
+                            onClick={() => openProductLightbox(prod)}
+                            className="relative w-12 h-12 rounded-lg overflow-hidden border border-[#27272a] shrink-0 cursor-pointer"
+                          >
+                            <img
+                              src={prod.thumbnailUrl}
+                              alt={prod.name}
+                              referrerPolicy="no-referrer"
+                              className="w-full h-full object-cover"
+                            />
+                          </button>
+                        ) : (
+                          <div className="w-12 h-12 rounded-lg bg-[#09090b] border border-[#27272a] flex items-center justify-center shrink-0">
+                            <Package className="w-5 h-5 text-zinc-600" />
+                          </div>
+                        )}
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-sm font-medium text-zinc-100 leading-snug line-clamp-2">
+                              {prod.name}
+                            </p>
+                            {status === 'in_stock' ? (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#4ade80] shrink-0">
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                {t.products.inStock}
+                              </span>
+                            ) : status === 'low_stock' ? (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-400 shrink-0">
+                                <AlertTriangle className="w-3.5 h-3.5" />
+                                {t.products.lowStock}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-red-400 shrink-0">
+                                <XCircle className="w-3.5 h-3.5" />
+                                {t.products.outOfStock}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-zinc-400 mt-1 truncate">
+                            <span className="font-mono text-[#4ade80]">{prod.sku}</span>
+                            <span className="mx-1.5 text-zinc-600">·</span>
+                            <span>{prod.category}</span>
+                            <span className="mx-1.5 text-zinc-600">·</span>
+                            <span className="font-mono tabular-nums">{prod.photoCount} photos</span>
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 p-2.5 rounded-lg bg-[#09090b] border border-[#27272a] text-xs">
+                        <div>
+                          <span className="block text-[11px] text-zinc-400">{t.products.cost}</span>
+                          <span className="font-mono tabular-nums text-zinc-200 font-medium">
+                            {formatMoney(prod.purchaseCost, prod.currency)}
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <span className="block text-[11px] text-zinc-400">{t.products.selling}</span>
+                          <span className="font-mono tabular-nums text-[#4ade80] font-semibold">
+                            {formatMoney(prod.sellingPrice, prod.currency)}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2 pt-1">
+                        <div className="inline-flex items-center gap-2 bg-[#09090b] border border-[#27272a] rounded-lg p-1">
+                          <button
+                            type="button"
+                            onClick={() => handleQuickStock(prod, -1)}
+                            disabled={prod.stockQty <= 0}
+                            aria-label="Decrease stock by 1"
+                            className="min-h-[36px] min-w-[36px] inline-flex items-center justify-center bg-[#18181b] border border-[#27272a] rounded-md hover:border-[#22c55e] text-zinc-200 disabled:opacity-40 cursor-pointer"
+                          >
+                            <Minus className="w-3.5 h-3.5" />
+                          </button>
+                          <span className="font-mono tabular-nums text-sm font-semibold text-zinc-100 min-w-[2.5rem] text-center">
+                            {prod.stockQty}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleQuickStock(prod, 1)}
+                            aria-label="Increase stock by 1"
+                            className="min-h-[36px] min-w-[36px] inline-flex items-center justify-center bg-[#18181b] border border-[#27272a] rounded-md hover:border-[#22c55e] text-zinc-200 cursor-pointer"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+
+                        <div className="inline-flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingProduct(prod);
+                              setModalOpen(true);
+                            }}
+                            aria-label={`Edit ${prod.name}`}
+                            className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center bg-[#09090b] border border-[#27272a] text-zinc-300 hover:text-[#4ade80] rounded-lg cursor-pointer"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                          {confirmDeleteId === prod.id ? (
+                            <div className="inline-flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-lg px-2.5 min-h-[40px]">
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  if (user) await dbService.deleteProduct(user, prod);
+                                  setConfirmDeleteId(null);
+                                }}
+                                className="text-xs font-semibold text-red-400 hover:text-red-300 cursor-pointer"
+                              >
+                                {t.common.delete}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setConfirmDeleteId(null)}
+                                className="text-xs text-zinc-400 hover:text-zinc-200 cursor-pointer"
+                              >
+                                {t.common.no}
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setConfirmDeleteId(prod.id)}
+                              aria-label={`Delete ${prod.name}`}
+                              className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center bg-[#09090b] border border-[#27272a] text-zinc-300 hover:text-red-400 rounded-lg cursor-pointer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Desktop Inventory Table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-[#27272a] bg-[#121214] text-xs font-medium text-zinc-400">
                     <th className="py-3 px-4">{t.products.photo}</th>
@@ -353,7 +503,8 @@ export const ProductsPage: React.FC = () => {
                   })}
                 </tbody>
               </table>
-            </div>
+              </div>
+            </>
           )}
         </Card>
       </div>

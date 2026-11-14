@@ -134,11 +134,11 @@ export const OverviewCharts: React.FC<OverviewChartsProps> = ({
     monthlyBudgetBdt > 0 ? Math.min(100, Math.round((monthSpentBdt / monthlyBudgetBdt) * 100)) : 0;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
       {/* Left: Expense & Cost Breakdown */}
-      <Card className="lg:col-span-7 p-6 space-y-6">
-        <div className="flex items-center justify-between gap-4 border-b border-[#27272a] pb-4">
-          <div>
+      <Card className="lg:col-span-7 p-4 sm:p-6 space-y-5 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 border-b border-[#27272a] pb-4">
+          <div className="min-w-0">
             <h2 className="text-sm font-semibold text-zinc-100">
               {mode === 'business'
                 ? 'Business Cost Breakdown (Ads vs. Inventory vs. Ops)'
@@ -148,15 +148,15 @@ export const OverviewCharts: React.FC<OverviewChartsProps> = ({
               Normalized in BDT (1 USD = ৳{usdToBdtRate})
             </p>
           </div>
-          <span className="text-xs font-mono tabular-nums text-[#4ade80]">
+          <span className="text-xs font-mono tabular-nums text-[#4ade80] shrink-0">
             Period Total: {formatMoney(totalExpenseBdt, 'BDT')}
           </span>
         </div>
 
         {/* Personal Monthly Budget Cap Bar */}
         {mode === 'personal' && monthlyBudgetBdt > 0 && (
-          <div className="p-4 rounded-lg bg-[#09090b] border border-[#27272a] space-y-2">
-            <div className="flex items-center justify-between text-xs">
+          <div className="p-3.5 sm:p-4 rounded-lg bg-[#09090b] border border-[#27272a] space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-1 text-xs">
               <span className="font-medium text-zinc-300">
                 This Month Budget Utilization ({budgetPct}%)
               </span>
@@ -183,9 +183,9 @@ export const OverviewCharts: React.FC<OverviewChartsProps> = ({
             const pct = Math.min(100, Math.round((row.value / maxBar) * 100));
             return (
               <div key={row.label} className="space-y-1.5">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-zinc-300 font-medium">{row.label}</span>
-                  <span className="font-mono tabular-nums text-zinc-100">
+                <div className="flex items-center justify-between gap-2 text-xs">
+                  <span className="text-zinc-300 font-medium truncate">{row.label}</span>
+                  <span className="font-mono tabular-nums text-zinc-100 shrink-0">
                     {formatMoney(row.value, 'BDT')}
                   </span>
                 </div>
@@ -259,9 +259,9 @@ export const OverviewCharts: React.FC<OverviewChartsProps> = ({
       </Card>
 
       {/* Right: Recent Activity Log */}
-      <Card className="lg:col-span-5 p-6 flex flex-col">
-        <div className="border-b border-[#27272a] pb-4 mb-4 flex items-center justify-between">
-          <div>
+      <Card className="lg:col-span-5 p-4 sm:p-6 flex flex-col">
+        <div className="border-b border-[#27272a] pb-4 mb-4 flex items-start sm:items-center justify-between gap-3">
+          <div className="min-w-0">
             <h2 className="text-sm font-semibold text-zinc-100">
               {mode === 'business' ? 'Business Activity Log' : 'Personal Activity Log'}
             </h2>
@@ -271,7 +271,7 @@ export const OverviewCharts: React.FC<OverviewChartsProps> = ({
                 : 'Latest personal daily expense entries'}
             </p>
           </div>
-          <span className="text-xs font-mono tabular-nums text-zinc-500">
+          <span className="text-xs font-mono tabular-nums text-zinc-500 shrink-0">
             {logs.length} events
           </span>
         </div>

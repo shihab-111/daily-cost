@@ -174,7 +174,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       title={editingProduct ? 'Edit Product & Inventory' : 'Add Product SKU'}
       subtitle="Track manufacturing cost, selling price, live stock units, and multi-photo assets."
     >
-      <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-5">
+      <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-5">
         {errorMsg && (
           <div className="border border-red-500/30 bg-red-500/10 rounded-lg p-3 text-xs text-red-300">
             {errorMsg}
@@ -190,7 +190,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g., Premium Cotton Panjabi — Midnight Black"
           />
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-2">
             <Input
               label="SKU / Code *"
               required
@@ -212,7 +212,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
             </Select>
           </div>
 
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-2">
             <Input
               label="Purchase Cost *"
               type="number"
@@ -245,7 +245,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
             </Select>
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-2">
             <Input
               label="Available Stock Qty *"
               type="number"
@@ -277,7 +277,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Fabric GSM, size ratios (M/L/XL), factory batch, or supplier contact..."
-            className="w-full px-3 py-2 text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-500 focus:outline-none focus:border-[#22c55e] focus:ring-1 focus:ring-[#22c55e]"
+            className="w-full px-3 py-2 text-base sm:text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-500 focus:outline-none focus:border-[#22c55e] focus:ring-1 focus:ring-[#22c55e]"
           />
         </div>
 
@@ -365,7 +365,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                         )
                       }
                       placeholder="Variant, size, or shot note..."
-                      className="w-full px-2.5 py-1 text-xs bg-[#09090b] text-zinc-100 border border-[#27272a] rounded focus:outline-none focus:border-[#22c55e]"
+                      className="w-full px-2.5 py-1.5 sm:py-1 text-base sm:text-xs bg-[#09090b] text-zinc-100 border border-[#27272a] rounded focus:outline-none focus:border-[#22c55e]"
                     />
                   </div>
                 </div>
@@ -374,11 +374,21 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           )}
         </div>
 
-        <div className="pt-4 border-t border-[#27272a] flex items-center justify-end gap-3">
-          <Button type="button" variant="secondary" onClick={onClose} disabled={saving}>
+        <div className="pt-4 border-t border-[#27272a] flex flex-col-reverse sm:flex-row sm:items-center justify-end gap-2.5 sm:gap-3">
+          <Button
+            type="button"
+            variant="secondary"
+            className="w-full sm:w-auto min-h-[44px] sm:min-h-0"
+            onClick={onClose}
+            disabled={saving}
+          >
             Cancel
           </Button>
-          <Button type="submit" disabled={saving || processingPhotos}>
+          <Button
+            type="submit"
+            className="w-full sm:w-auto min-h-[44px] sm:min-h-0"
+            disabled={saving || processingPhotos}
+          >
             {saving ? 'Saving...' : editingProduct ? 'Update Product' : 'Save Product'}
           </Button>
         </div>

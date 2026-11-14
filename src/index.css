@@ -11,12 +11,14 @@
 @layer base {
   html {
     color-scheme: dark;
+    overflow-x: clip;
   }
 
   body {
     background-color: #09090b;
     color: #f4f4f5;
     font-family: var(--font-sans);
+    overflow-x: clip;
   }
 
   h1, h2, h3, .font-display {
@@ -26,6 +28,15 @@
   .tabular-nums {
     font-variant-numeric: tabular-nums;
   }
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 @media print {

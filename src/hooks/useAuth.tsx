@@ -60,6 +60,7 @@ interface AuthContextValue {
   authLoading: boolean;
   verifyingTenant: boolean;
   isAuthorized: boolean;
+  isAdmin: boolean;
   denialReason: 'unverified_email' | null;
   authError: string | null;
   verificationSent: boolean;
@@ -86,6 +87,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [authLoading, setAuthLoading] = useState(true);
   const [verifyingTenant, setVerifyingTenant] = useState(false);
   const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [denialReason, setDenialReason] = useState<'unverified_email' | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
   const [verificationSent, setVerificationSent] = useState(false);
@@ -122,10 +124,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               throw err;
             }
           }
+
+          const [adminStatus] = await Promise.all([
+            dbService.checkIsAdmin(nextUser).catch(() => false),
+            dbService.recordUserLogin(nextUser, resolvedDefaults).catch(() => undefined),
+          ]);
+          setIsAdmin(adminStatus);
           setAuthError(null);
+        } else {
+          setIsAdmin(false);
         }
       } catch (err) {
         setIsAuthorized(false);
+        setIsAdmin(false);
         setAuthError(
           formatReadableError(err, t.authErrors.initFailed, t.authErrors.permissionDenied)
         );
@@ -144,6 +155,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (!nextUser) {
         setIsAuthorized(false);
+        setIsAdmin(false);
         setAuthLoading(false);
         setVerifyingTenant(false);
         setVerificationSent(false);
@@ -190,9 +202,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loginWithEmail = useCallback(
     async (email: string, password: string, rememberMe: boolean) => {
       setAuthError(null);
+      dbService.markFreshLoginAttempt();
       try {
         await signInWithUserEmail(email, password, rememberMe);
       } catch (err) {
+        dbService.clearSessionLoginMarker();
         setAuthError(mapAuthError(err, t.authErrors.signInFailed));
         throw err;
       }
@@ -255,9 +269,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [hydrateTenant]);
 
   const logout = useCallback(async () => {
+    const currentUid = auth.currentUser?.uid;
     setAuthError(null);
     setVerificationSent(false);
     setVerificationNotice(null);
+    setIsAdmin(false);
+    dbService.clearSessionLoginMarker(currentUid);
     await signOutUser();
   }, []);
 
@@ -270,6 +287,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         authLoading,
         verifyingTenant,
         isAuthorized,
+        isAdmin,
         denialReason,
         authError,
         verificationSent,

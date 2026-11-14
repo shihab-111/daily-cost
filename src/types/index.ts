@@ -286,3 +286,26 @@ export interface CustomerReceipt {
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
+
+export interface UserDirectoryEntry {
+  id: string;
+  userId: string;
+  email: string;
+  displayName: string;
+  businessName: string;
+  loginCount: number;
+  firstLoginAt?: Timestamp;
+  lastLoginAt?: Timestamp;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+export interface AdminUser {
+  id: string;
+  userId: string;
+  email: string;
+  role: 'admin';
+  addedBy: string;
+  createdAt?: Timestamp;
+}
+

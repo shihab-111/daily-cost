@@ -53,7 +53,7 @@ export const Input: React.FC<InputProps> = ({ label, error, className, id, ...pr
       <input
         id={inputId}
         className={cn(
-          'w-full px-3 py-2 text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-500 focus:outline-none focus:border-[#22c55e] focus:ring-1 focus:ring-[#22c55e] disabled:opacity-50',
+          'w-full px-3 py-2 text-base sm:text-sm min-h-[42px] sm:min-h-0 bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-500 focus:outline-none focus:border-[#22c55e] focus:ring-1 focus:ring-[#22c55e] disabled:opacity-50',
           error && 'border-red-500/60',
           className
         )}
@@ -81,7 +81,7 @@ export const Select: React.FC<SelectProps> = ({ label, error, className, id, chi
       <select
         id={selectId}
         className={cn(
-          'w-full px-3 py-2 text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg focus:outline-none focus:border-[#22c55e] focus:ring-1 focus:ring-[#22c55e]',
+          'w-full px-3 py-2 text-base sm:text-sm min-h-[42px] sm:min-h-0 bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg focus:outline-none focus:border-[#22c55e] focus:ring-1 focus:ring-[#22c55e]',
           error && 'border-red-500/60',
           className
         )}
@@ -131,20 +131,20 @@ export const Modal: React.FC<{
     >
       <div
         className={cn(
-          'bg-[#121214] border border-[#27272a] w-full sm:rounded-xl flex flex-col max-h-screen sm:max-h-[92vh] overflow-hidden',
+          'bg-[#121214] border border-[#27272a] w-full sm:rounded-xl flex flex-col h-[100dvh] sm:h-auto sm:max-h-[92vh] overflow-hidden',
           maxWidthClass
         )}
       >
-        <div className="px-6 py-4 border-b border-[#27272a] flex items-center justify-between gap-4 shrink-0">
-          <div>
-            <h2 className="text-base font-semibold text-zinc-100">{title}</h2>
-            {subtitle && <p className="text-xs text-zinc-400 mt-0.5">{subtitle}</p>}
+        <div className="px-4 py-3 sm:px-6 sm:py-4 border-b border-[#27272a] flex items-center justify-between gap-3 shrink-0">
+          <div className="min-w-0">
+            <h2 className="text-base font-semibold text-zinc-100 truncate">{title}</h2>
+            {subtitle && <p className="text-xs text-zinc-400 mt-0.5 line-clamp-2">{subtitle}</p>}
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close modal"
-            className="p-2 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg cursor-pointer"
+            className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 inline-flex items-center justify-center p-2 -mr-1 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg cursor-pointer shrink-0"
           >
             <X className="w-4 h-4" />
           </button>

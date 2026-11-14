@@ -33,6 +33,13 @@ service cloud.firestore {
       return isVerified() && request.auth.uid == ownerUid;
     }
 
+    function isAdmin() {
+      return isVerified() && (
+        request.auth.token.email == 'shihabahmmed700@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
     function isValidOptionalBusinessId(data) {
       return !('businessId' in data) || (data.businessId is string && data.businessId.size() <= 128 && data.businessId.matches('^[a-zA-Z0-9_\\-]*$'));
     }
@@ -350,12 +357,90 @@ service cloud.firestore {
         && data.updatedAt is timestamp;
     }
 
+    function isValidUserDirectoryEntry(data) {
+      return data.keys().hasAll([
+          'userId', 'email', 'displayName', 'businessName',
+          'loginCount', 'firstLoginAt', 'lastLoginAt', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'userId', 'email', 'displayName', 'businessName',
+          'loginCount', 'firstLoginAt', 'lastLoginAt', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.userId)
+        && data.email is string && data.email.size() >= 3 && data.email.size() <= 254
+        && data.displayName is string && data.displayName.size() <= 120
+        && data.businessName is string && data.businessName.size() <= 140
+        && data.loginCount is int && data.loginCount >= 1 && data.loginCount <= 1000000
+        && data.firstLoginAt is timestamp
+        && data.lastLoginAt is timestamp
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidAdminUser(data) {
+      return data.keys().hasAll(['userId', 'email', 'role', 'addedBy', 'createdAt'])
+        && data.keys().hasOnly(['userId', 'email', 'role', 'addedBy', 'createdAt'])
+        && isValidId(data.userId)
+        && data.email is string && data.email.size() >= 3 && data.email.size() <= 254
+        && data.role == 'admin'
+        && data.addedBy is string && data.addedBy.size() >= 1 && data.addedBy.size() <= 128
+        && data.createdAt is timestamp;
+    }
+
     // --- Collection Rules (Strict Per-Tenant userId Isolation) ---
+
+    // 0. Admin Directory (/admins/{adminUid})
+    match /admins/{adminUid} {
+      allow get: if isVerified() && isValidId(adminUid) && (isOwner(adminUid) || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isAdmin()
+        && isValidId(adminUid)
+        && isValidAdminUser(incoming())
+        && incoming().userId == adminUid
+        && incoming().addedBy == request.auth.uid
+        && incoming().createdAt == request.time;
+      allow update: if false;
+      allow delete: if isAdmin() && isValidId(adminUid) && adminUid != request.auth.uid;
+    }
+
+    // 0b. Verified User Login Directory (/userDirectory/{userId})
+    match /userDirectory/{userId} {
+      allow get: if isVerified() && isValidId(userId) && ((isOwner(userId) && (resource == null || existing().userId == request.auth.uid)) || isAdmin());
+      allow list: if isAdmin() || (isVerified() && resource.data.userId == request.auth.uid);
+      allow create: if isVerified()
+        && isValidId(userId)
+        && isOwner(userId)
+        && isValidUserDirectoryEntry(incoming())
+        && incoming().userId == request.auth.uid
+        && incoming().email == request.auth.token.email
+        && incoming().loginCount == 1
+        && incoming().firstLoginAt == request.time
+        && incoming().lastLoginAt == request.time
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isVerified()
+        && isValidId(userId)
+        && isOwner(userId)
+        && isValidUserDirectoryEntry(incoming())
+        && existing().userId == request.auth.uid
+        && incoming().userId == existing().userId
+        && incoming().email == request.auth.token.email
+        && incoming().firstLoginAt == existing().firstLoginAt
+        && incoming().createdAt == existing().createdAt
+        && incoming().lastLoginAt == request.time
+        && incoming().updatedAt == request.time
+        && incoming().loginCount >= existing().loginCount
+        && incoming().loginCount <= existing().loginCount + 1
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'email', 'displayName', 'businessName', 'loginCount', 'lastLoginAt', 'updatedAt'
+        ]);
+      allow delete: if false;
+    }
 
     // 1. Per-User Settings (/settings/{userId})
     match /settings/{userId} {
-      allow get: if isVerified() && isValidId(userId) && isOwner(userId) && (resource == null || existing().userId == request.auth.uid);
-      allow list: if isVerified() && resource.data.userId == request.auth.uid;
+      allow get: if isVerified() && isValidId(userId) && ((isOwner(userId) && (resource == null || existing().userId == request.auth.uid)) || isAdmin());
+      allow list: if isAdmin() || (isVerified() && resource.data.userId == request.auth.uid);
       allow create: if isVerified()
         && isValidId(userId)
         && isOwner(userId)
@@ -632,10 +717,10 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
-    // 10. Multi-Business Profiles (strictly owned by userId)
+    // 10. Multi-Business Profiles (strictly owned by userId, readable by admin)
     match /businesses/{businessId} {
-      allow get: if isVerified() && isValidId(businessId) && (existing().userId == request.auth.uid || (resource == null && businessId == ('biz_default_' + request.auth.uid)));
-      allow list: if isVerified() && resource.data.userId == request.auth.uid;
+      allow get: if isVerified() && isValidId(businessId) && (existing().userId == request.auth.uid || (resource == null && businessId == ('biz_default_' + request.auth.uid)) || isAdmin());
+      allow list: if isAdmin() || (isVerified() && resource.data.userId == request.auth.uid);
       allow create: if isVerified()
         && isValidId(businessId)
         && isValidBusinessProfile(incoming())

@@ -99,7 +99,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({ receipt }) => {
       <div
         className={cn(
           'border-b',
-          isThermal ? 'px-5 py-4' : 'px-7 sm:px-9 py-6',
+          isThermal ? 'px-4 py-4 sm:px-5' : 'px-4 py-4 sm:px-9 sm:py-6',
           isDark ? 'border-zinc-800' : 'border-slate-200',
           isThermal && 'border-dashed'
         )}
@@ -219,7 +219,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({ receipt }) => {
         </div>
       </div>
 
-      <div className={cn(isThermal ? 'p-5 space-y-4' : 'p-7 sm:p-9 space-y-6')}>
+      <div className={cn(isThermal ? 'p-4 space-y-4 sm:p-5' : 'p-4 space-y-4 sm:p-9 sm:space-y-6')}>
         {/* Customer & Delivery Panel */}
         <div
           className={cn(
@@ -302,15 +302,19 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({ receipt }) => {
         {/* Line Items Table */}
         <div>
           <div
-            className="rounded-md px-3.5 py-2 text-[11px] font-mono font-semibold uppercase tracking-wider text-white grid grid-cols-12 gap-2 items-center"
+            className="rounded-md px-2.5 sm:px-3.5 py-2 text-[11px] font-mono font-semibold uppercase tracking-wider text-white grid grid-cols-12 gap-1.5 sm:gap-2 items-center"
             style={{ backgroundColor: accent }}
           >
-            <div className="col-span-6">Item</div>
+            <div className={cn(isThermal ? 'col-span-6' : 'col-span-5 sm:col-span-6')}>Item</div>
             {!isThermal && <div className="col-span-2 text-right">Qty</div>}
             <div className={cn(isThermal ? 'col-span-3 text-right' : 'col-span-2 text-right')}>
               {isThermal ? 'Rate' : 'Unit'}
             </div>
-            <div className={cn(isThermal ? 'col-span-3 text-right' : 'col-span-2 text-right')}>
+            <div
+              className={cn(
+                isThermal ? 'col-span-3 text-right' : 'col-span-3 sm:col-span-2 text-right'
+              )}
+            >
               Total
             </div>
           </div>
@@ -325,9 +329,9 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({ receipt }) => {
             {receipt.items.map((item, idx) => (
               <div
                 key={idx}
-                className="px-3.5 py-2.5 grid grid-cols-12 gap-2 items-center text-xs"
+                className="px-2.5 sm:px-3.5 py-2.5 grid grid-cols-12 gap-1.5 sm:gap-2 items-center text-xs"
               >
-                <div className="col-span-6 min-w-0">
+                <div className={cn(isThermal ? 'col-span-6' : 'col-span-5 sm:col-span-6', 'min-w-0')}>
                   <p className="font-medium break-words">
                     {item.name || 'Product Item'}
                   </p>
@@ -366,7 +370,12 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({ receipt }) => {
                   {formatMoney(item.unitPrice, receipt.currency)}
                 </div>
 
-                <div className="col-span-3 sm:col-span-2 text-right font-mono font-semibold tabular-nums">
+                <div
+                  className={cn(
+                    isThermal ? 'col-span-3' : 'col-span-3 sm:col-span-2',
+                    'text-right font-mono font-semibold tabular-nums'
+                  )}
+                >
                   {formatMoney(item.total, receipt.currency)}
                 </div>
               </div>

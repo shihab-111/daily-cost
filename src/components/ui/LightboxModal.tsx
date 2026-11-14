@@ -49,12 +49,12 @@ export const LightboxModal: React.FC<LightboxModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/95 flex flex-col justify-between p-4 sm:p-6 no-print"
+      className="fixed inset-0 z-50 bg-black/95 flex flex-col justify-between p-3 sm:p-6 no-print"
       role="dialog"
       aria-modal="true"
       aria-label="Asset Viewer"
     >
-      <div className="flex items-center justify-between gap-4 text-zinc-100">
+      <div className="flex items-center justify-between gap-3 text-zinc-100">
         <div className="min-w-0">
           <p className="text-sm font-medium truncate">{current.fileName}</p>
           <p className="text-xs font-mono tabular-nums text-zinc-400">
@@ -66,29 +66,29 @@ export const LightboxModal: React.FC<LightboxModalProps> = ({
           <button
             type="button"
             onClick={handleDownload}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#18181b] border border-[#27272a] hover:bg-zinc-800 rounded-lg cursor-pointer"
+            className="inline-flex items-center gap-1.5 min-h-[40px] px-3 py-1.5 text-xs font-medium bg-[#18181b] border border-[#27272a] hover:bg-zinc-800 rounded-lg cursor-pointer"
           >
             <Download className="w-3.5 h-3.5 text-[#4ade80]" />
-            {t.common.download}
+            <span className="hidden xs:inline sm:inline">{t.common.download}</span>
           </button>
           <button
             type="button"
             onClick={onClose}
             aria-label={t.common.close}
-            className="p-2 bg-[#18181b] border border-[#27272a] hover:bg-zinc-800 rounded-lg cursor-pointer"
+            className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center p-2 bg-[#18181b] border border-[#27272a] hover:bg-zinc-800 rounded-lg cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center relative my-4">
+      <div className="flex-1 flex items-center justify-center relative my-3 sm:my-4 min-h-0">
         {index > 0 && (
           <button
             type="button"
             onClick={() => setIndex((i) => i - 1)}
             aria-label="Previous image"
-            className="fixed left-4 sm:left-8 top-1/2 -translate-y-1/2 p-2.5 bg-[#18181b] border border-[#27272a] text-zinc-100 rounded-full hover:bg-zinc-800 cursor-pointer"
+            className="fixed left-2.5 sm:left-8 top-1/2 -translate-y-1/2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center bg-[#18181b]/90 border border-[#27272a] text-zinc-100 rounded-full hover:bg-zinc-800 cursor-pointer z-10"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
@@ -97,21 +97,21 @@ export const LightboxModal: React.FC<LightboxModalProps> = ({
           src={current.dataUrl}
           alt={current.caption || current.fileName}
           referrerPolicy="no-referrer"
-          className="max-w-full max-h-[78vh] object-contain rounded-lg"
+          className="max-w-full max-h-[70vh] sm:max-h-[78vh] object-contain rounded-lg"
         />
         {index < items.length - 1 && (
           <button
             type="button"
             onClick={() => setIndex((i) => i + 1)}
             aria-label="Next image"
-            className="fixed right-4 sm:right-8 top-1/2 -translate-y-1/2 p-2.5 bg-[#18181b] border border-[#27272a] text-zinc-100 rounded-full hover:bg-zinc-800 cursor-pointer"
+            className="fixed right-2.5 sm:right-8 top-1/2 -translate-y-1/2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center bg-[#18181b]/90 border border-[#27272a] text-zinc-100 rounded-full hover:bg-zinc-800 cursor-pointer z-10"
           >
             <ChevronRight className="w-5 h-5" />
           </button>
         )}
       </div>
 
-      <div className="text-center text-xs text-zinc-300">
+      <div className="text-center text-xs text-zinc-300 pb-[env(safe-area-inset-bottom)]">
         {current.caption || t.common.noCaption}
       </div>
     </div>

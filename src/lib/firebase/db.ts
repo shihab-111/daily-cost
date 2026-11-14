@@ -11,6 +11,7 @@ import {
   ProductPhoto,
   ReceiptAsset,
   ReceiptTemplate,
+  UserDirectoryEntry,
   UserSettings,
 } from '../../types';
 import {
@@ -22,6 +23,7 @@ import {
   SettingsFormValues,
 } from '../validators/schemas';
 import * as activityService from '../services/activityService';
+import * as adminService from '../services/adminService';
 import * as businessService from '../services/businessService';
 import * as categoryService from '../services/categoryService';
 import * as customerService from '../services/customerService';
@@ -174,6 +176,25 @@ export interface BusinessDataAdapter {
     receipt: CustomerReceipt,
     activeMode?: AppMode
   ): Promise<void>;
+  checkIsAdmin(user: User): Promise<boolean>;
+  recordUserLogin(
+    user: User,
+    defaults?: { businessName?: string; ownerName?: string }
+  ): Promise<void>;
+  markFreshLoginAttempt(): void;
+  clearSessionLoginMarker(uid?: string): void;
+  subscribeAllUserDirectory(
+    onData: (entries: UserDirectoryEntry[]) => void,
+    onError: (err: Error) => void
+  ): () => void;
+  subscribeAllSettingsForAdmin(
+    onData: (items: UserSettings[]) => void,
+    onError: (err: Error) => void
+  ): () => void;
+  subscribeAllBusinessesForAdmin(
+    onData: (items: BusinessProfile[]) => void,
+    onError: (err: Error) => void
+  ): () => void;
 }
 
 class FirestoreBusinessAdapter implements BusinessDataAdapter {
@@ -208,6 +229,13 @@ class FirestoreBusinessAdapter implements BusinessDataAdapter {
   subscribeCustomerReceipts = receiptService.subscribeCustomerReceipts;
   saveCustomerReceipt = receiptService.saveCustomerReceipt;
   deleteCustomerReceipt = receiptService.deleteCustomerReceipt;
+  checkIsAdmin = adminService.checkIsAdmin;
+  recordUserLogin = adminService.recordUserLogin;
+  markFreshLoginAttempt = adminService.markFreshLoginAttempt;
+  clearSessionLoginMarker = adminService.clearSessionLoginMarker;
+  subscribeAllUserDirectory = adminService.subscribeAllUserDirectory;
+  subscribeAllSettingsForAdmin = adminService.subscribeAllSettingsForAdmin;
+  subscribeAllBusinessesForAdmin = adminService.subscribeAllBusinessesForAdmin;
 }
 
 export const dbService: BusinessDataAdapter = new FirestoreBusinessAdapter();

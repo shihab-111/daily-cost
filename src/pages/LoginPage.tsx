@@ -17,6 +17,7 @@ import { EKTALLY_LOGO_URL } from '../lib/utils';
 import { loginSchema, registerSchema } from '../lib/validators/schemas';
 import { Button } from '../components/ui';
 import { LanguageToggle } from '../components/ui/LanguageToggle';
+import { BotanicalBackdropCanvas } from '../components/auth/BotanicalBackdropCanvas';
 
 interface LoginPageProps {
   initialMode?: 'login' | 'register';
@@ -173,7 +174,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
   };
 
   return (
-    <div className="relative min-h-screen bg-[#050507] text-zinc-100 grid grid-cols-1 lg:grid-cols-2 lg:grid-rows-[1fr_auto]">
+    <div className="relative min-h-screen overflow-x-clip bg-[#050507] text-zinc-100 grid grid-cols-1 lg:grid-cols-2 lg:grid-rows-[1fr_auto]">
       {/* Shared Modern Black & Light Green Backdrop (Full on mobile, Left half on desktop) */}
       <div
         aria-hidden="true"
@@ -182,25 +183,26 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
         <div className="absolute -top-32 -left-24 w-[420px] h-[420px] rounded-full bg-[#4ade80]/15 blur-[110px]" />
         <div className="absolute -bottom-36 -right-20 w-[460px] h-[460px] rounded-full bg-[#22c55e]/15 blur-[120px]" />
         <div className="absolute inset-0 opacity-60 [background-image:linear-gradient(to_right,rgba(74,222,128,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(74,222,128,0.06)_1px,transparent_1px)] [background-size:48px_48px] [mask-image:radial-gradient(ellipse_at_center,black_35%,transparent_80%)]" />
+        <BotanicalBackdropCanvas />
       </div>
 
       {/* 1. Brand Mark & Hero Statement (Mobile: Top | Desktop: Left Top/Center) */}
-      <div className="relative z-10 lg:col-start-1 lg:row-start-1 flex flex-col justify-between p-6 pb-4 sm:p-10 sm:pb-6 lg:p-14 lg:pb-8">
-        <div className="flex items-center justify-between gap-4">
+      <div className="relative z-10 lg:col-start-1 lg:row-start-1 flex flex-col justify-between p-4 pb-3 sm:p-10 sm:pb-6 lg:p-14 lg:pb-8">
+        <div className="flex items-center justify-between gap-3">
           <img
             src={EKTALLY_LOGO_URL}
             alt="EkTally"
             referrerPolicy="no-referrer"
-            className="h-8 sm:h-9 w-auto object-contain shrink-0"
+            className="h-7 sm:h-9 w-auto object-contain shrink-0"
           />
           <LanguageToggle />
         </div>
 
-        <div className="mt-6 lg:my-auto lg:py-8 max-w-xl">
-          <p className="text-xs font-mono text-[#4ade80] mb-2.5 tracking-wide">
+        <div className="mt-5 sm:mt-6 lg:my-auto lg:py-8 max-w-xl">
+          <p className="text-xs font-mono text-[#4ade80] mb-2 tracking-wide">
             {t.login.kicker}
           </p>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-white tracking-tight leading-[1.15] text-balance mb-3">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-white tracking-tight leading-[1.15] text-balance mb-2.5 sm:mb-3">
             {t.login.headlinePrefix}{' '}
             <span className="text-[#4ade80]">{t.login.headlineHighlight}</span>{' '}
             {t.login.headlineSuffix}
@@ -212,12 +214,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
       </div>
 
       {/* 2. Tenant Auth Panel (Mobile: Middle, before Dual Workspace | Desktop: Right Column) */}
-      <div className="relative z-10 lg:col-start-2 lg:row-start-1 lg:row-span-2 flex items-center justify-center px-6 py-4 sm:px-10 sm:py-6 lg:p-16 lg:bg-[#07080a] overflow-hidden">
+      <div className="relative z-10 lg:col-start-2 lg:row-start-1 lg:row-span-2 flex items-center justify-center px-4 py-3 sm:px-10 sm:py-6 lg:p-16 lg:bg-[#07080a] overflow-hidden">
         <div
           aria-hidden="true"
           className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] h-[480px] rounded-full bg-[#22c55e]/[0.06] blur-[120px]"
         />
-        <div className="relative z-10 w-full max-w-md bg-[#0e1012] border border-[#4ade80]/15 rounded-xl p-6 sm:p-8 shadow-[0_24px_80px_-24px_rgba(34,197,94,0.12)]">
+        <div className="relative z-10 w-full max-w-md bg-[#0e1012] border border-[#4ade80]/15 rounded-xl p-5 sm:p-8 shadow-[0_24px_80px_-24px_rgba(34,197,94,0.12)]">
           <div className="mb-5">
             <div className="inline-flex items-center gap-2 text-xs font-medium text-[#4ade80] mb-2">
               {mode === 'login' ? <Lock className="w-3.5 h-3.5" /> : <UserPlus className="w-3.5 h-3.5" />}
@@ -314,7 +316,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                 <button
                   type="button"
                   onClick={() => switchAuthTab('login')}
-                  className={`py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer ${
+                  className={`min-h-[40px] sm:min-h-0 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer ${
                     mode === 'login'
                       ? 'bg-[#22c55e] text-zinc-950 font-semibold'
                       : 'text-zinc-400 hover:text-zinc-100'
@@ -325,7 +327,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                 <button
                   type="button"
                   onClick={() => switchAuthTab('register')}
-                  className={`py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer ${
+                  className={`min-h-[40px] sm:min-h-0 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer ${
                     mode === 'register'
                       ? 'bg-[#22c55e] text-zinc-950 font-semibold'
                       : 'text-zinc-400 hover:text-zinc-100'
@@ -355,7 +357,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                         value={displayName}
                         onChange={(e) => setDisplayName(e.target.value)}
                         placeholder={t.login.namePlaceholder}
-                        className="w-full px-3 py-2 text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-600 focus:outline-none focus:border-[#22c55e]"
+                        className="w-full px-3 py-2 min-h-[42px] sm:min-h-0 text-base sm:text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-600 focus:outline-none focus:border-[#22c55e]"
                       />
                     </div>
                     <div>
@@ -369,7 +371,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                         value={businessName}
                         onChange={(e) => setBusinessName(e.target.value)}
                         placeholder={t.login.businessPlaceholder}
-                        className="w-full px-3 py-2 text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-600 focus:outline-none focus:border-[#22c55e]"
+                        className="w-full px-3 py-2 min-h-[42px] sm:min-h-0 text-base sm:text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-600 focus:outline-none focus:border-[#22c55e]"
                       />
                     </div>
                   </div>
@@ -391,7 +393,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder={t.login.emailPlaceholder}
-                    className="w-full px-3 py-2 text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-600 focus:outline-none focus:border-[#22c55e]"
+                    className="w-full px-3 py-2 min-h-[42px] sm:min-h-0 text-base sm:text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-600 focus:outline-none focus:border-[#22c55e]"
                   />
                 </div>
 
@@ -412,13 +414,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                           ? t.login.passwordPlaceholderLogin
                           : t.login.passwordPlaceholderRegister
                       }
-                      className="w-full pl-3 pr-10 py-2 text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-600 focus:outline-none focus:border-[#22c55e]"
+                      className="w-full pl-3 pr-11 py-2 min-h-[42px] sm:min-h-0 text-base sm:text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-600 focus:outline-none focus:border-[#22c55e]"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword((s) => !s)}
                       aria-label={showPassword ? t.login.hidePassword : t.login.showPassword}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-zinc-500 hover:text-zinc-200 cursor-pointer"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 min-h-[40px] min-w-[40px] inline-flex items-center justify-center text-zinc-500 hover:text-zinc-200 cursor-pointer"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -438,13 +440,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder={t.login.reenterPassword}
-                      className="w-full px-3 py-2 text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-600 focus:outline-none focus:border-[#22c55e]"
+                      className="w-full px-3 py-2 min-h-[42px] sm:min-h-0 text-base sm:text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-600 focus:outline-none focus:border-[#22c55e]"
                     />
                   </div>
                 )}
 
                 {mode === 'login' && (
-                  <label className="flex items-center gap-2.5 text-xs text-zinc-400 cursor-pointer select-none">
+                  <label className="flex items-center gap-2.5 min-h-[36px] text-xs text-zinc-400 cursor-pointer select-none">
                     <input
                       type="checkbox"
                       checked={rememberMe}
@@ -455,7 +457,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                   </label>
                 )}
 
-                <Button type="submit" disabled={submitting} className="w-full py-2.5">
+                <Button type="submit" disabled={submitting} className="w-full min-h-[44px] py-2.5">
                   {submitting
                     ? mode === 'login'
                       ? t.login.signingIn
@@ -471,7 +473,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
       </div>
 
       {/* 3. Architectural Highlights (Mobile: Bottom, after Login | Desktop: Left Bottom) */}
-      <div className="relative z-10 lg:col-start-1 lg:row-start-2 px-6 pt-4 pb-10 sm:px-10 sm:pb-12 lg:px-14 lg:pt-0 lg:pb-14">
+      <div className="relative z-10 lg:col-start-1 lg:row-start-2 px-4 pt-4 pb-8 sm:px-10 sm:pb-12 lg:px-14 lg:pt-0 lg:pb-14">
         <div className="border-t border-[#4ade80]/15 pt-6 grid grid-cols-1 sm:grid-cols-3 gap-5 max-w-xl">
           <div>
             <p className="text-xs font-medium text-[#86efac]">{t.login.highlight1Title}</p>

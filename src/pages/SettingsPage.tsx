@@ -182,18 +182,18 @@ export const SettingsPage: React.FC = () => {
     <DashboardShell businessName={activeBusiness?.name || businessName}>
       <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
         {/* Multi-Business Manager */}
-        <Card className="p-6 space-y-5">
+        <Card className="p-4 sm:p-6 space-y-5">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#27272a] pb-3">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 min-w-0">
               <Building2 className="w-4 h-4 text-[#4ade80] shrink-0" />
-              <div>
+              <div className="min-w-0">
                 <h2 className="text-sm font-semibold text-zinc-100">
                   {t.business.manageBusinesses}
                 </h2>
                 <p className="text-xs text-zinc-400">{t.business.manageBusinessesDesc}</p>
               </div>
             </div>
-            <span className="text-xs font-mono tabular-nums text-zinc-400">
+            <span className="text-xs font-mono tabular-nums text-zinc-400 shrink-0">
               {businesses.length}
             </span>
           </div>
@@ -217,9 +217,13 @@ export const SettingsPage: React.FC = () => {
               value={newBusinessName}
               onChange={(e) => setNewBusinessName(e.target.value)}
               placeholder={t.business.yourBusinessName + ' (' + t.business.businessPlaceholder + ')'}
-              className="flex-1 px-3 py-2 text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-500 focus:outline-none focus:border-[#22c55e]"
+              className="flex-1 px-3 py-2 min-h-[42px] sm:min-h-0 text-base sm:text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-500 focus:outline-none focus:border-[#22c55e]"
             />
-            <Button type="submit" disabled={bizSaving || !newBusinessName.trim()}>
+            <Button
+              type="submit"
+              className="w-full sm:w-auto min-h-[42px] sm:min-h-0"
+              disabled={bizSaving || !newBusinessName.trim()}
+            >
               <Plus className="w-4 h-4" />
               {t.business.addNewBusiness}
             </Button>
@@ -236,30 +240,33 @@ export const SettingsPage: React.FC = () => {
                 >
                   <div className="flex items-center gap-2.5 min-w-0 flex-1">
                     {isEditing ? (
-                      <div className="flex items-center gap-2 flex-1 max-w-md">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-1 w-full max-w-md">
                         <input
                           type="text"
                           maxLength={140}
                           value={editingBizName}
                           onChange={(e) => setEditingBizName(e.target.value)}
-                          className="flex-1 px-2.5 py-1.5 text-sm bg-[#121214] text-zinc-100 border border-[#22c55e]/60 rounded-lg focus:outline-none"
+                          className="w-full sm:flex-1 px-2.5 py-2 sm:py-1.5 text-base sm:text-sm bg-[#121214] text-zinc-100 border border-[#22c55e]/60 rounded-lg focus:outline-none"
                         />
-                        <Button
-                          type="button"
-                          size="sm"
-                          disabled={bizSaving || !editingBizName.trim()}
-                          onClick={() => handleSaveRename(biz)}
-                        >
-                          <Check className="w-3.5 h-3.5" />
-                          {t.business.saveName}
-                        </Button>
-                        <button
-                          type="button"
-                          onClick={() => setEditingBizId(null)}
-                          className="text-xs text-zinc-400 hover:text-zinc-200 px-2 py-1 cursor-pointer"
-                        >
-                          {t.expenses.cancelEdit}
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            className="flex-1 sm:flex-none min-h-[38px] sm:min-h-0"
+                            disabled={bizSaving || !editingBizName.trim()}
+                            onClick={() => handleSaveRename(biz)}
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                            {t.business.saveName}
+                          </Button>
+                          <button
+                            type="button"
+                            onClick={() => setEditingBizId(null)}
+                            className="text-xs text-zinc-400 hover:text-zinc-200 px-2.5 min-h-[38px] sm:min-h-0 cursor-pointer"
+                          >
+                            {t.expenses.cancelEdit}
+                          </button>
+                        </div>
                       </div>
                     ) : (
                       <>
@@ -291,12 +298,13 @@ export const SettingsPage: React.FC = () => {
                   </div>
 
                   {!isEditing && (
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex flex-wrap items-center gap-2 shrink-0">
                       {!isSelected && (
                         <Button
                           type="button"
                           variant="secondary"
                           size="sm"
+                          className="min-h-[38px] sm:min-h-0"
                           onClick={() => setActiveBusinessId(biz.id)}
                         >
                           {t.business.switchBusiness}
@@ -311,13 +319,13 @@ export const SettingsPage: React.FC = () => {
                         }}
                         title={t.business.rename}
                         aria-label={`${t.business.rename} ${biz.name}`}
-                        className="p-1.5 text-zinc-400 hover:text-[#4ade80] rounded-md cursor-pointer"
+                        className="min-h-[38px] min-w-[38px] sm:min-h-0 sm:min-w-0 inline-flex items-center justify-center p-1.5 text-zinc-400 hover:text-[#4ade80] rounded-md cursor-pointer"
                       >
                         <Edit3 className="w-4 h-4" />
                       </button>
                       {!biz.isDefault &&
                         (confirmDeleteBizId === biz.id ? (
-                          <div className="inline-flex items-center gap-1.5 bg-red-500/10 border border-red-500/30 rounded px-2 py-0.5">
+                          <div className="inline-flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded px-2.5 py-1.5 sm:py-0.5">
                             <button
                               type="button"
                               disabled={bizSaving}
@@ -339,7 +347,7 @@ export const SettingsPage: React.FC = () => {
                             type="button"
                             onClick={() => setConfirmDeleteBizId(biz.id)}
                             aria-label={`${t.common.delete} ${biz.name}`}
-                            className="p-1.5 text-zinc-400 hover:text-red-400 rounded-md cursor-pointer"
+                            className="min-h-[38px] min-w-[38px] sm:min-h-0 sm:min-w-0 inline-flex items-center justify-center p-1.5 text-zinc-400 hover:text-red-400 rounded-md cursor-pointer"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -352,12 +360,12 @@ export const SettingsPage: React.FC = () => {
           </div>
         </Card>
 
-        <Card className="p-6">
+        <Card className="p-4 sm:p-6">
           <form onSubmit={handleSaveSettings} className="space-y-5">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#27272a] pb-3">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 min-w-0">
                 <Building2 className="w-4 h-4 text-[#4ade80] shrink-0" />
-                <div>
+                <div className="min-w-0">
                   <h2 className="text-sm font-semibold text-zinc-100">
                     {t.settings.sectionTitle}
                   </h2>
@@ -444,7 +452,11 @@ export const SettingsPage: React.FC = () => {
             </div>
 
             <div className="flex justify-end">
-              <Button type="submit" disabled={savingSettings}>
+              <Button
+                type="submit"
+                className="w-full sm:w-auto min-h-[44px] sm:min-h-0"
+                disabled={savingSettings}
+              >
                 {savingSettings ? t.common.saving : t.settings.saveSettings}
               </Button>
             </div>
@@ -452,9 +464,9 @@ export const SettingsPage: React.FC = () => {
         </Card>
 
         {/* Multi-Tenant Isolation & Export */}
-        <Card className="p-6 space-y-5">
+        <Card className="p-4 sm:p-6 space-y-5">
           <div className="flex items-center gap-2 border-b border-[#27272a] pb-3">
-            <ShieldCheck className="w-4 h-4 text-[#4ade80]" />
+            <ShieldCheck className="w-4 h-4 text-[#4ade80] shrink-0" />
             <div>
               <h2 className="text-sm font-semibold text-zinc-100">
                 {t.settings.privacyTitle}
@@ -466,7 +478,7 @@ export const SettingsPage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="p-4 rounded-lg bg-[#09090b] border border-[#27272a] space-y-1">
+            <div className="p-4 rounded-lg bg-[#09090b] border border-[#27272a] space-y-1 min-w-0">
               <p className="text-[11px] font-mono text-zinc-400 uppercase">
                 {t.settings.verifiedAccount}
               </p>
@@ -481,11 +493,12 @@ export const SettingsPage: React.FC = () => {
                 <Wallet className="w-3.5 h-3.5 text-[#4ade80]" />
                 <span>{t.settings.downloadBackups}</span>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-1 sm:flex sm:flex-wrap gap-2">
                 <Button
                   type="button"
                   variant="secondary"
                   size="sm"
+                  className="w-full sm:w-auto min-h-[40px] sm:min-h-0"
                   disabled={expenses.length === 0}
                   onClick={() => exportExpensesCsv(expenses, categoryLabels)}
                 >
@@ -496,6 +509,7 @@ export const SettingsPage: React.FC = () => {
                   type="button"
                   variant="secondary"
                   size="sm"
+                  className="w-full sm:w-auto min-h-[40px] sm:min-h-0"
                   disabled={products.length === 0}
                   onClick={() => exportProductsCsv(products)}
                 >

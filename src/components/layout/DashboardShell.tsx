@@ -13,6 +13,7 @@ import {
   Plus,
   Receipt,
   Settings,
+  ShieldCheck,
   User as UserIcon,
   Users,
   X,
@@ -34,7 +35,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
   children,
   headerAction,
 }) => {
-  const { user, logout } = useAuth();
+  const { user, isAdmin, logout } = useAuth();
   const { t } = useLanguage();
   const {
     mode,
@@ -98,10 +99,11 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, [bizMenuOpen]);
 
-  const currentNav =
-    navItems.find((item) =>
-      item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to)
-    ) || navItems[0];
+  const currentNav = location.pathname.startsWith('/admin')
+    ? { to: '/admin', label: t.nav.adminPortal, icon: ShieldCheck }
+    : navItems.find((item) =>
+        item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to)
+      ) || navItems[0];
 
   const displayBusinessName = activeBusiness?.name || businessName;
 
@@ -161,9 +163,9 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
           type="button"
           onClick={() => setMobileOpen(false)}
           aria-label="Close sidebar"
-          className="lg:hidden p-1.5 text-zinc-400 hover:text-zinc-100 rounded-md cursor-pointer"
+          className="lg:hidden min-h-[44px] min-w-[44px] inline-flex items-center justify-center -mr-2 text-zinc-400 hover:text-zinc-100 rounded-md cursor-pointer"
         >
-          <X className="w-4 h-4" />
+          <X className="w-5 h-5" />
         </button>
       </div>
 
@@ -188,7 +190,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
                   setSidebarAddOpen((prev) => !prev);
                   setBizError(null);
                 }}
-                className="inline-flex items-center gap-1 text-[11px] font-medium text-[#4ade80] hover:text-[#86efac] cursor-pointer whitespace-nowrap shrink-0"
+                className="inline-flex items-center gap-1 text-[11px] font-medium text-[#4ade80] hover:text-[#86efac] cursor-pointer whitespace-nowrap shrink-0 py-1"
               >
                 <Plus className="w-3 h-3" />
                 {sidebarAddOpen ? t.expenses.cancelEdit : t.business.addBusiness}
@@ -200,7 +202,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
                 aria-label={t.business.switchBusiness}
                 value={activeBusinessId}
                 onChange={(e) => setActiveBusinessId(e.target.value)}
-                className="w-full px-2.5 py-1.5 text-xs font-medium bg-[#121214] text-zinc-100 border border-[#27272a] rounded-md focus:outline-none focus:border-[#22c55e] truncate"
+                className="w-full px-2.5 py-2 text-base sm:text-xs font-medium bg-[#121214] text-zinc-100 border border-[#27272a] rounded-md focus:outline-none focus:border-[#22c55e] truncate"
               >
                 {businesses.map((b) => (
                   <option key={b.id} value={b.id}>
@@ -222,13 +224,13 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
                   value={sidebarBizName}
                   onChange={(e) => setSidebarBizName(e.target.value)}
                   placeholder={t.business.businessPlaceholder}
-                  className="w-full px-2.5 py-1.5 text-xs bg-[#121214] text-zinc-100 border border-[#27272a] rounded-md placeholder:text-zinc-500 focus:outline-none focus:border-[#22c55e]"
+                  className="w-full px-2.5 py-1.5 text-base sm:text-xs bg-[#121214] text-zinc-100 border border-[#27272a] rounded-md placeholder:text-zinc-500 focus:outline-none focus:border-[#22c55e]"
                 />
                 {bizError && <p className="text-[11px] text-red-400">{bizError}</p>}
                 <button
                   type="submit"
                   disabled={bizSaving || !sidebarBizName.trim()}
-                  className="w-full px-2.5 py-1.5 text-xs font-semibold bg-[#22c55e] hover:bg-[#16a34a] text-zinc-950 rounded-md disabled:opacity-50 transition-colors cursor-pointer"
+                  className="w-full px-2.5 py-2 text-xs font-semibold bg-[#22c55e] hover:bg-[#16a34a] text-zinc-950 rounded-md disabled:opacity-50 transition-colors cursor-pointer"
                 >
                   {bizSaving ? t.common.saving : t.business.saveName}
                 </button>
@@ -254,7 +256,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
               onClick={() => setMobileOpen(false)}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap',
+                  'flex items-center gap-3 px-3 min-h-[44px] lg:min-h-0 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap',
                   isActive
                     ? 'bg-[#22c55e]/15 text-[#4ade80] border border-[#22c55e]/30'
                     : 'text-zinc-400 hover:text-zinc-100 hover:bg-[#18181b] border border-transparent'
@@ -266,6 +268,29 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
             </NavLink>
           );
         })}
+
+        {isAdmin && (
+          <div className="pt-3 mt-3 border-t border-[#27272a]">
+            <NavLink
+              to="/admin"
+              onClick={() => setMobileOpen(false)}
+              className={({ isActive }) =>
+                cn(
+                  'flex items-center justify-between gap-2 px-3 min-h-[44px] lg:min-h-0 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap',
+                  isActive
+                    ? 'bg-[#22c55e]/15 text-[#4ade80] border border-[#22c55e]/30'
+                    : 'text-zinc-400 hover:text-zinc-100 hover:bg-[#18181b] border border-transparent'
+                )
+              }
+            >
+              <span className="flex items-center gap-3 min-w-0">
+                <ShieldCheck className="w-4 h-4 shrink-0 text-[#4ade80]" />
+                <span className="truncate">{t.nav.adminPortal}</span>
+              </span>
+              <span className="text-[10px] font-mono text-[#4ade80] uppercase">/admin</span>
+            </NavLink>
+          </div>
+        )}
       </nav>
 
       <div className="p-3 border-t border-[#27272a] bg-[#09090b]/60 shrink-0">
@@ -297,7 +322,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
         <button
           type="button"
           onClick={logout}
-          className="mt-1 w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-zinc-300 hover:text-zinc-100 hover:bg-[#18181b] border border-transparent hover:border-[#27272a] rounded-lg transition-colors cursor-pointer whitespace-nowrap"
+          className="mt-1 w-full flex items-center justify-center gap-2 px-3 min-h-[44px] lg:min-h-0 py-2 text-xs font-medium text-zinc-300 hover:text-zinc-100 hover:bg-[#18181b] border border-transparent hover:border-[#27272a] rounded-lg transition-colors cursor-pointer whitespace-nowrap"
         >
           <LogOut className="w-3.5 h-3.5" />
           {t.common.signOut}
@@ -324,13 +349,13 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
       )}
 
       <div className="flex-1 min-w-0 flex flex-col">
-        <header className="h-14 bg-[#121214] border-b border-[#27272a] px-4 sm:px-6 flex items-center justify-between gap-3 sticky top-0 z-30 no-print">
-          <div className="flex items-center gap-3 min-w-0">
+        <header className="h-14 bg-[#121214] border-b border-[#27272a] px-3 sm:px-6 flex items-center justify-between gap-2 sm:gap-3 sticky top-0 z-30 no-print">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
             <button
               type="button"
               onClick={() => setMobileOpen(true)}
               aria-label="Open navigation menu"
-              className="lg:hidden p-2 -ml-2 text-zinc-400 hover:text-zinc-100 rounded-lg cursor-pointer shrink-0"
+              className="lg:hidden min-h-[44px] min-w-[44px] inline-flex items-center justify-center -ml-1.5 text-zinc-400 hover:text-zinc-100 rounded-lg cursor-pointer shrink-0"
             >
               <Menu className="w-5 h-5" />
             </button>
@@ -339,16 +364,18 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
                 {workspaceLabel}
               </span>
               <span className="text-zinc-600 hidden xl:inline">/</span>
-              <h1 className="font-semibold text-zinc-100 truncate">{currentNav.label}</h1>
+              <h1 className="font-semibold text-zinc-100 truncate text-sm sm:text-base">
+                {currentNav.label}
+              </h1>
             </div>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
             <LanguageToggle className="hidden md:inline-flex" />
 
-            {/* Multi-Business Switcher + Quick Add Business Name */}
+            {/* Multi-Business Switcher + Quick Add Business Name (Desktop Header) */}
             {mode === 'business' && (
-              <div ref={bizDropdownRef} className="relative shrink-0">
+              <div ref={bizDropdownRef} className="hidden md:block relative shrink-0">
                 <button
                   type="button"
                   onClick={() => {
@@ -360,14 +387,12 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
                   className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium bg-[#09090b] border border-[#27272a] hover:border-zinc-600 text-zinc-100 rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
                 >
                   <Building2 className="w-3.5 h-3.5 text-[#4ade80] shrink-0" />
-                  <span className="max-w-[96px] sm:max-w-[140px] truncate">
-                    {displayBusinessName}
-                  </span>
+                  <span className="max-w-[140px] truncate">{displayBusinessName}</span>
                   <ChevronDown className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
                 </button>
 
                 {bizMenuOpen && (
-                  <div className="absolute right-0 mt-1.5 w-72 bg-[#121214] border border-[#27272a] rounded-xl shadow-2xl p-2.5 z-50 space-y-2">
+                  <div className="absolute right-0 mt-1.5 w-[min(18rem,calc(100vw-2rem))] bg-[#121214] border border-[#27272a] rounded-xl shadow-2xl p-2.5 z-50 space-y-2">
                     <div className="flex items-center justify-between px-1.5">
                       <span className="text-[11px] font-medium text-zinc-400">
                         {t.business.manageBusinesses}
@@ -424,7 +449,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
                           value={newBizName}
                           onChange={(e) => setNewBizName(e.target.value)}
                           placeholder={t.business.businessPlaceholder}
-                          className="flex-1 min-w-0 px-2.5 py-1.5 text-xs bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-500 focus:outline-none focus:border-[#22c55e]"
+                          className="flex-1 min-w-0 px-2.5 py-1.5 text-base sm:text-xs bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-500 focus:outline-none focus:border-[#22c55e]"
                         />
                         <button
                           type="submit"
@@ -451,35 +476,71 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
                 type="button"
                 onClick={() => setMode('business')}
                 className={cn(
-                  'inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer whitespace-nowrap shrink-0',
+                  'inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 sm:py-1 text-[11px] sm:text-xs font-medium rounded-md transition-colors cursor-pointer whitespace-nowrap shrink-0',
                   mode === 'business'
                     ? 'bg-[#22c55e] text-zinc-950 font-semibold'
                     : 'text-zinc-400 hover:text-zinc-100'
                 )}
               >
-                <Briefcase className="w-3.5 h-3.5" />
+                <Briefcase className="w-3.5 h-3.5 shrink-0" />
                 <span>{t.nav.business}</span>
               </button>
               <button
                 type="button"
                 onClick={() => setMode('personal')}
                 className={cn(
-                  'inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer whitespace-nowrap shrink-0',
+                  'inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 sm:py-1 text-[11px] sm:text-xs font-medium rounded-md transition-colors cursor-pointer whitespace-nowrap shrink-0',
                   mode === 'personal'
                     ? 'bg-[#22c55e] text-zinc-950 font-semibold'
                     : 'text-zinc-400 hover:text-zinc-100'
                 )}
               >
-                <UserIcon className="w-3.5 h-3.5" />
+                <UserIcon className="w-3.5 h-3.5 shrink-0" />
                 <span>{t.nav.personal}</span>
               </button>
             </div>
 
-            {headerAction}
+            {headerAction && <div className="hidden md:flex items-center gap-2 shrink-0">{headerAction}</div>}
           </div>
         </header>
 
-        <main className="flex-1">{children}</main>
+        {/* Mobile Non-Sticky Workspace & Page Actions Bar */}
+        {(mode === 'business' || headerAction) && (
+          <div className="md:hidden bg-[#121214]/70 border-b border-[#27272a] px-4 py-2.5 flex flex-col gap-2 no-print">
+            {mode === 'business' && (
+              <div className="flex items-center justify-between gap-2">
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-zinc-400 shrink-0">
+                  <Building2 className="w-3.5 h-3.5 text-[#4ade80]" />
+                  <span>{t.business.activeBusinessLabel}</span>
+                </span>
+                {businesses.length > 0 ? (
+                  <select
+                    aria-label={t.business.switchBusiness}
+                    value={activeBusinessId}
+                    onChange={(e) => setActiveBusinessId(e.target.value)}
+                    className="flex-1 min-w-0 max-w-[65%] px-2.5 py-1.5 text-sm font-medium bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg focus:outline-none focus:border-[#22c55e] truncate"
+                  >
+                    {businesses.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <span className="text-xs font-medium text-zinc-200 truncate">{displayBusinessName}</span>
+                )}
+              </div>
+            )}
+
+            {headerAction && (
+              <div className="flex flex-wrap items-center gap-2 [&>div]:flex [&>div]:flex-wrap [&>div]:w-full [&>div]:gap-2">
+                {headerAction}
+              </div>
+            )}
+          </div>
+        )}
+
+        <main className="flex-1 pb-[env(safe-area-inset-bottom)]">{children}</main>
       </div>
     </div>
   );

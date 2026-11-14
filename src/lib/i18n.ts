@@ -45,6 +45,7 @@ export interface TranslationStrings {
     business: string;
     personal: string;
     workspaceOwner: string;
+    adminPortal: string;
   };
   login: {
     kicker: string;
@@ -244,6 +245,43 @@ export interface TranslationStrings {
     duplicateBusiness: string;
     confirmDeleteBusiness: string;
   };
+  admin: {
+    portalTitle: string;
+    portalSubtitle: string;
+    directLinkLabel: string;
+    copyLink: string;
+    linkCopied: string;
+    exportUsersCsv: string;
+    totalUsers: string;
+    loggedInToday: string;
+    totalLogins: string;
+    totalBusinesses: string;
+    searchPlaceholder: string;
+    filterAll: string;
+    filterToday: string;
+    filterLast7Days: string;
+    filterPending: string;
+    sortLatestLogin: string;
+    sortMostLogins: string;
+    sortNameAsc: string;
+    sortFirstSeen: string;
+    userColumn: string;
+    emailColumn: string;
+    businessesColumn: string;
+    lastLoginColumn: string;
+    firstSeenColumn: string;
+    loginCountColumn: string;
+    pendingNextLogin: string;
+    justNow: string;
+    noUsersTitle: string;
+    noUsersDesc: string;
+    showingCount: string;
+    usersWord: string;
+    accessDeniedTitle: string;
+    accessDeniedDesc: string;
+    backToDashboard: string;
+    adminBadge: string;
+  };
   authErrors: {
     initFailed: string;
     permissionDenied: string;
@@ -306,6 +344,7 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       business: 'Business',
       personal: 'Personal',
       workspaceOwner: 'Workspace Owner',
+      adminPortal: 'Admin Portal',
     },
     login: {
       kicker: 'EkTally · Dual-Mode Business & Personal Ledger',
@@ -513,6 +552,43 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       duplicateBusiness: 'A business with this name already exists.',
       confirmDeleteBusiness: 'Delete?',
     },
+    admin: {
+      portalTitle: 'Admin User & Login Monitor',
+      portalSubtitle: 'Real-time directory of verified accounts, businesses, and login timestamps (Asia/Dhaka).',
+      directLinkLabel: 'Direct Admin Link',
+      copyLink: 'Copy /admin Link',
+      linkCopied: 'Link Copied',
+      exportUsersCsv: 'Export Users CSV',
+      totalUsers: 'Total Users',
+      loggedInToday: 'Active Today (Dhaka)',
+      totalLogins: 'Total Recorded Logins',
+      totalBusinesses: 'Businesses Created',
+      searchPlaceholder: 'Search by user name, email, business name, or UID...',
+      filterAll: 'All Users',
+      filterToday: 'Today',
+      filterLast7Days: 'Last 7 Days',
+      filterPending: 'Awaiting Next Login',
+      sortLatestLogin: 'Latest Login',
+      sortMostLogins: 'Most Logins',
+      sortNameAsc: 'Name (A-Z)',
+      sortFirstSeen: 'Newest Account',
+      userColumn: 'User',
+      emailColumn: 'Email Address',
+      businessesColumn: 'Businesses',
+      lastLoginColumn: 'Last Login Time',
+      firstSeenColumn: 'First Seen / Created',
+      loginCountColumn: 'Logins',
+      pendingNextLogin: 'Awaiting next sign-in',
+      justNow: 'Just now',
+      noUsersTitle: 'No Matching Users',
+      noUsersDesc: 'Try clearing the search query or switching the activity filter.',
+      showingCount: 'Showing',
+      usersWord: 'users',
+      accessDeniedTitle: 'Admin Access Required',
+      accessDeniedDesc: 'This portal (/admin) is restricted to authorized administrators. Sign in with an admin account to view user counts and login timestamps.',
+      backToDashboard: 'Back to Dashboard',
+      adminBadge: 'ADMIN',
+    },
     authErrors: {
       initFailed: 'Unable to initialize your private workspace.',
       permissionDenied: 'Permission denied by database rules. Verify your email or try signing in again.',
@@ -573,6 +649,7 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       business: 'ব্যবসা',
       personal: 'ব্যক্তিগত',
       workspaceOwner: 'অ্যাকাউন্ট মালিক',
+      adminPortal: 'অ্যাডমিন পোর্টাল',
     },
     login: {
       kicker: 'EkTally · ব্যবসা ও ব্যক্তিগত হিসাবের দ্বৈত প্ল্যাটফর্ম',
@@ -778,6 +855,43 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       cannotDeletePrimary: 'মূল ব্যবসা মুছে ফেলা যাবে না (তবে নাম পরিবর্তন করতে পারবেন)।',
       duplicateBusiness: 'এই নামে ইতোমধ্যেই একটি ব্যবসা রয়েছে।',
       confirmDeleteBusiness: 'মুছবেন?',
+    },
+    admin: {
+      portalTitle: 'অ্যাডমিন ইউজার ও লগইন মনিটর',
+      portalSubtitle: 'ভেরিফায়েড ইউজার সংখ্যা, ব্যবসার তালিকা এবং লগইনের সময় (ঢাকা সময়) রিয়েল-টাইমে দেখুন।',
+      directLinkLabel: 'সরাসরি অ্যাডমিন লিংক',
+      copyLink: '/admin লিংক কপি',
+      linkCopied: 'কপি হয়েছে',
+      exportUsersCsv: 'ইউজার CSV ডাউনলোড',
+      totalUsers: 'মোট ইউজার',
+      loggedInToday: 'আজ লগইন করেছে',
+      totalLogins: 'মোট রেকর্ডকৃত লগইন',
+      totalBusinesses: 'মোট ব্যবসা প্রোফাইল',
+      searchPlaceholder: 'নাম, ইমেইল, ব্যবসার নাম বা UID দিয়ে খুঁজুন...',
+      filterAll: 'সব ইউজার',
+      filterToday: 'আজকের লগইন',
+      filterLast7Days: 'গত ৭ দিন',
+      filterPending: 'পরবর্তী লগইনের অপেক্ষায়',
+      sortLatestLogin: 'সর্বশেষ লগইন',
+      sortMostLogins: 'সর্বোচ্চ লগইন',
+      sortNameAsc: 'নাম (A-Z)',
+      sortFirstSeen: 'নতুন অ্যাকাউন্ট',
+      userColumn: 'ইউজার',
+      emailColumn: 'ইমেইল ঠিকানা',
+      businessesColumn: 'ব্যবসাসমূহ',
+      lastLoginColumn: 'সর্বশেষ লগইন সময়',
+      firstSeenColumn: 'প্রথম দেখা / অ্যাকাউন্ট তৈরি',
+      loginCountColumn: 'লগইন সংখ্যা',
+      pendingNextLogin: 'পরবর্তী লগইনের পর আপডেট হবে',
+      justNow: 'এইমাত্র',
+      noUsersTitle: 'কোনো ইউজার পাওয়া যায়নি',
+      noUsersDesc: 'সার্চ টেক্সট বা ফিল্টার পরিবর্তন করে আবার দেখুন।',
+      showingCount: 'দেখানো হচ্ছে',
+      usersWord: 'জন ইউজার',
+      accessDeniedTitle: 'অ্যাডমিন অনুমতি প্রয়োজন',
+      accessDeniedDesc: 'এই পোর্টাল (/admin) শুধুমাত্র অনুমোদিত অ্যাডমিনদের জন্য সংরক্ষিত। ইউজার সংখ্যা ও লগইন সময় দেখতে অ্যাডমিন অ্যাকাউন্ট দিয়ে সাইন ইন করুন।',
+      backToDashboard: 'ড্যাশবোর্ডে ফিরে যান',
+      adminBadge: 'ADMIN',
     },
     authErrors: {
       initFailed: 'আপনার প্রাইভেট ওয়ার্কস্পেস চালু করা যায়নি।',

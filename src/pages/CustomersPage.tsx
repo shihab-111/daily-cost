@@ -60,6 +60,7 @@ export const CustomersPage: React.FC = () => {
       headerAction={
         <Button
           size="sm"
+          className="w-full md:w-auto min-h-[40px] md:min-h-0"
           onClick={() => {
             setEditingCustomer(null);
             setModalOpen(true);
@@ -70,31 +71,31 @@ export const CustomersPage: React.FC = () => {
         </Button>
       }
     >
-      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-5 sm:space-y-6">
         {/* Customer Metrics */}
-        <section className="grid grid-cols-1 sm:grid-cols-3 gap-4" aria-label="Customer Metrics">
-          <Card className="p-5">
+        <section className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4" aria-label="Customer Metrics">
+          <Card className="p-4 sm:p-5">
             <p className="text-xs font-medium text-zinc-400">{t.customers.savedCustomers}</p>
-            <p className="text-2xl font-semibold font-mono tabular-nums text-zinc-100 mt-2">
+            <p className="text-xl sm:text-2xl font-semibold font-mono tabular-nums text-zinc-100 mt-1.5 sm:mt-2">
               {metrics.totalCustomers.toLocaleString('en-BD')}
             </p>
           </Card>
-          <Card className="p-5">
+          <Card className="p-4 sm:p-5">
             <p className="text-xs font-medium text-zinc-400">{t.customers.recordedOrders}</p>
-            <p className="text-2xl font-semibold font-mono tabular-nums text-zinc-100 mt-2">
+            <p className="text-xl sm:text-2xl font-semibold font-mono tabular-nums text-zinc-100 mt-1.5 sm:mt-2">
               {metrics.totalOrders.toLocaleString('en-BD')}
             </p>
           </Card>
-          <Card className="p-5">
+          <Card className="p-4 sm:p-5">
             <p className="text-xs font-medium text-zinc-400">{t.customers.lifetimeValue}</p>
-            <p className="text-2xl font-semibold font-mono tabular-nums text-[#4ade80] mt-2">
+            <p className="text-xl sm:text-2xl font-semibold font-mono tabular-nums text-[#4ade80] mt-1.5 sm:mt-2">
               {formatMoney(metrics.totalSpent, 'BDT')}
             </p>
           </Card>
         </section>
 
         {/* Search Bar */}
-        <Card className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <Card className="p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="relative flex-1 max-w-md">
             <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
@@ -102,10 +103,10 @@ export const CustomersPage: React.FC = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t.customers.searchPlaceholder}
-              className="w-full pl-9 pr-3 py-2 text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-500 focus:outline-none focus:border-[#22c55e]"
+              className="w-full pl-9 pr-3 py-2 min-h-[42px] sm:min-h-0 text-base sm:text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-500 focus:outline-none focus:border-[#22c55e]"
             />
           </div>
-          <span className="text-xs font-mono tabular-nums text-zinc-400">
+          <span className="text-xs font-mono tabular-nums text-zinc-400 shrink-0">
             {t.customers.showingOf} {filteredCustomers.length} / {businessCustomers.length} {t.customers.customersWord}
           </span>
         </Card>
@@ -138,8 +139,107 @@ export const CustomersPage: React.FC = () => {
               </Button>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+            <>
+              {/* Mobile Customer Cards */}
+              <div className="md:hidden divide-y divide-[#27272a]">
+                {filteredCustomers.map((c) => {
+                  const fullAddress = [c.address, c.district].filter(Boolean).join(', ');
+                  return (
+                    <div key={c.id} className="p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-zinc-100 truncate">{c.name}</p>
+                          {c.email && (
+                            <p className="text-xs text-zinc-400 truncate mt-0.5">{c.email}</p>
+                          )}
+                        </div>
+                        <span className="font-mono tabular-nums text-xs text-[#4ade80] shrink-0">
+                          {c.phone}
+                        </span>
+                      </div>
+
+                      {fullAddress && (
+                        <p className="text-xs text-zinc-300 leading-relaxed">{fullAddress}</p>
+                      )}
+
+                      <div className="grid grid-cols-2 gap-2 p-2.5 rounded-lg bg-[#09090b] border border-[#27272a] text-xs">
+                        <div>
+                          <span className="block text-[11px] text-zinc-400">{t.customers.orders}</span>
+                          <span className="font-mono tabular-nums text-zinc-100 font-medium">
+                            {c.totalOrders || 0}
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <span className="block text-[11px] text-zinc-400">
+                            {t.customers.totalSpent}
+                          </span>
+                          <span className="font-mono tabular-nums text-[#4ade80] font-semibold">
+                            {formatMoney(c.totalSpent || 0, 'BDT')}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 pt-1">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          className="flex-1 min-h-[40px]"
+                          onClick={() => navigate('/receipts', { state: { customer: c } })}
+                        >
+                          <FileText className="w-3.5 h-3.5 text-[#4ade80]" />
+                          <span>{t.customers.receiptBtn}</span>
+                        </Button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingCustomer(c);
+                            setModalOpen(true);
+                          }}
+                          aria-label={`Edit ${c.name}`}
+                          className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center bg-[#09090b] border border-[#27272a] text-zinc-300 hover:text-[#4ade80] rounded-lg cursor-pointer"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        {confirmDeleteId === c.id ? (
+                          <div className="inline-flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-lg px-2.5 min-h-[40px]">
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                if (user) await dbService.deleteCustomer(user, c);
+                                setConfirmDeleteId(null);
+                              }}
+                              className="text-xs font-semibold text-red-400 hover:text-red-300 cursor-pointer"
+                            >
+                              {t.common.delete}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setConfirmDeleteId(null)}
+                              className="text-xs text-zinc-400 hover:text-zinc-200 cursor-pointer"
+                            >
+                              {t.common.no}
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDeleteId(c.id)}
+                            aria-label={`Delete ${c.name}`}
+                            className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center bg-[#09090b] border border-[#27272a] text-zinc-300 hover:text-red-400 rounded-lg cursor-pointer"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Desktop Customers Table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-[#27272a] bg-[#121214] text-xs font-medium text-zinc-400">
                     <th className="py-3 px-4">{t.customers.customer}</th>
@@ -229,7 +329,8 @@ export const CustomersPage: React.FC = () => {
                   ))}
                 </tbody>
               </table>
-            </div>
+              </div>
+            </>
           )}
         </Card>
       </div>
