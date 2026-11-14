@@ -1,8 +1,6 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Navigate, useSearchParams } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import {
-  CheckCircle2,
-  ExternalLink,
   Eye,
   EyeOff,
   Lock,
@@ -14,12 +12,6 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useLanguage } from '../context/LanguageContext';
-import {
-  obtainGoogleCredentialsForBridge,
-  preloadGoogleGis,
-  renderGoogleIdButton,
-  waitForGoogleGis,
-} from '../lib/firebase/auth';
 import { EKTALLY_LOGO_URL } from '../lib/utils';
 import { loginSchema, registerSchema } from '../lib/validators/schemas';
 import { Button } from '../components/ui';
@@ -28,21 +20,6 @@ import { LanguageToggle } from '../components/ui/LanguageToggle';
 interface LoginPageProps {
   initialMode?: 'login' | 'register';
 }
-
-interface OAuthBridgeMessage {
-  type: 'ektally-google-auth';
-  idToken?: string;
-  accessToken?: string;
-}
-
-const GOOGLE_ICON = (
-  <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
-    <path
-      fill="currentColor"
-      d="M21.35 11.1h-9.17v2.73h6.51c-.33 3.81-3.5 5.44-6.5 5.44C8.36 19.27 5 16.25 5 12c0-4.1 3.2-7.27 7.2-7.27 3.09 0 4.9 1.97 4.9 1.97L19 4.72S16.56 2 12.1 2C6.42 2 2.03 6.8 2.03 12c0 5.05 4.13 10 10.22 10 5.35 0 9.25-3.67 9.25-9.09 0-1.15-.15-1.81-.15-1.81Z"
-    />
-  </svg>
-);
 
 export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) => {
   const {
@@ -57,19 +34,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
     setVerificationNotice,
     loginWithEmail,
     registerWithEmail,
-    loginWithGoogle,
-    loginWithGoogleIdToken,
-    loginWithGoogleCredentials,
     resendVerification,
     refreshVerificationStatus,
     logout,
     clearError,
   } = useAuth();
-  const { language, t } = useLanguage();
-  const [searchParams] = useSearchParams();
-
-  const isOAuthBridge = searchParams.get('oauth') === 'google';
-  const rememberParam = searchParams.get('remember');
+  const { t } = useLanguage();
 
   const [mode, setMode] = useState<'login' | 'register'>(initialMode);
   const [displayName, setDisplayName] = useState('');
@@ -77,179 +47,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(rememberParam !== '0');
+  const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
 
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [checkingVerify, setCheckingVerify] = useState(false);
   const [resendingVerify, setResendingVerify] = useState(false);
-  const [gisReady, setGisReady] = useState(false);
-  const [bridgeTokens, setBridgeTokens] = useState<{ idToken?: string; accessToken?: string } | null>(
-    null
-  );
-
-  const gisContainerRef = useRef<HTMLDivElement | null>(null);
-  const popupRef = useRef<Window | null>(null);
-  const popupWatcherRef = useRef<number | null>(null);
-  const rememberMeRef = useRef(rememberMe);
-  rememberMeRef.current = rememberMe;
-
-  const isEmbeddedIframe = (() => {
-    try {
-      return typeof window !== 'undefined' && window.self !== window.top;
-    } catch {
-      return true;
-    }
-  })();
-
-  const clearPopupWatcher = useCallback(() => {
-    if (popupWatcherRef.current !== null) {
-      window.clearInterval(popupWatcherRef.current);
-      popupWatcherRef.current = null;
-    }
-    popupRef.current = null;
-  }, []);
-
-  useEffect(() => {
-    return () => clearPopupWatcher();
-  }, [clearPopupWatcher]);
-
-  const sendTokensToOpener = useCallback(
-    (tokens: { idToken?: string; accessToken?: string }) => {
-      if (typeof window === 'undefined') return false;
-      if (window.opener && !window.opener.closed) {
-        try {
-          const payload: OAuthBridgeMessage = {
-            type: 'ektally-google-auth',
-            idToken: tokens.idToken,
-            accessToken: tokens.accessToken,
-          };
-          window.opener.postMessage(payload, window.location.origin);
-          setBridgeTokens(tokens);
-          window.setTimeout(() => {
-            try {
-              window.close();
-            } catch {
-              // Some mobile browsers disallow window.close(); fallback UI remains visible
-            }
-          }, 150);
-          return true;
-        } catch {
-          return false;
-        }
-      }
-      return false;
-    },
-    []
-  );
-
-  const handleGoogleCredential = useCallback(
-    async (idToken: string) => {
-      setFormError(null);
-      if (isOAuthBridge && sendTokensToOpener({ idToken })) {
-        return;
-      }
-      setSubmitting(true);
-      try {
-        await loginWithGoogleIdToken(idToken, rememberMeRef.current);
-      } catch {
-        // authError handled by context
-      } finally {
-        setSubmitting(false);
-      }
-    },
-    [isOAuthBridge, loginWithGoogleIdToken, sendTokensToOpener]
-  );
-
-  // Listen for OAuth credentials sent from the same-origin top-level popup bridge (/login?oauth=google)
-  useEffect(() => {
-    if (typeof window === 'undefined' || isOAuthBridge) return;
-    const onMessage = async (event: MessageEvent) => {
-      if (event.origin !== window.location.origin) return;
-      const data = event.data as OAuthBridgeMessage | undefined;
-      if (!data || data.type !== 'ektally-google-auth') return;
-      if (!data.idToken && !data.accessToken) return;
-
-      clearPopupWatcher();
-      setFormError(null);
-      setSubmitting(true);
-      try {
-        await loginWithGoogleCredentials(
-          { idToken: data.idToken, accessToken: data.accessToken },
-          rememberMeRef.current
-        );
-      } catch {
-        // authError handled by context
-      } finally {
-        setSubmitting(false);
-      }
-    };
-
-    window.addEventListener('message', onMessage);
-    return () => window.removeEventListener('message', onMessage);
-  }, [clearPopupWatcher, isOAuthBridge, loginWithGoogleCredentials]);
-
-  // Render Google Identity Services button ONLY when top-level (not in an embedded iframe)
-  useEffect(() => {
-    const shouldMountGis =
-      !isEmbeddedIframe &&
-      (isOAuthBridge || (!user && !authLoading && !verifyingTenant));
-
-    if (!shouldMountGis) {
-      setGisReady(false);
-      return;
-    }
-
-    let cancelled = false;
-    let observer: ResizeObserver | null = null;
-
-    const renderButtonInContainer = () => {
-      const container = gisContainerRef.current;
-      if (!container) return false;
-      const width = container.clientWidth || 340;
-      return renderGoogleIdButton(container, {
-        width,
-        locale: language === 'bn' ? 'bn' : 'en',
-        isEmbeddedIframe: false,
-        onCredential: handleGoogleCredential,
-      });
-    };
-
-    preloadGoogleGis();
-    waitForGoogleGis(6000).then((loaded) => {
-      if (cancelled || !loaded) return;
-      const rendered = renderButtonInContainer();
-      if (rendered) {
-        setGisReady(true);
-        const container = gisContainerRef.current;
-        if (container && typeof ResizeObserver !== 'undefined') {
-          let lastWidth = Math.round(container.clientWidth);
-          observer = new ResizeObserver((entries) => {
-            const nextWidth = Math.round(entries[0]?.contentRect.width || 0);
-            if (nextWidth > 0 && Math.abs(nextWidth - lastWidth) >= 16) {
-              lastWidth = nextWidth;
-              renderButtonInContainer();
-            }
-          });
-          observer.observe(container);
-        }
-      }
-    });
-
-    return () => {
-      cancelled = true;
-      observer?.disconnect();
-    };
-  }, [
-    user,
-    authLoading,
-    verifyingTenant,
-    language,
-    isEmbeddedIframe,
-    isOAuthBridge,
-    handleGoogleCredential,
-  ]);
 
   // Automatically detect when user completes email verification in another tab/app
   useEffect(() => {
@@ -262,7 +66,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
     return () => window.clearInterval(intervalId);
   }, [user, isAuthorized, denialReason, refreshVerificationStatus]);
 
-  if (user && isAuthorized && !bridgeTokens) {
+  if (user && isAuthorized) {
     return <Navigate to="/" replace />;
   }
 
@@ -318,87 +122,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
     }
   };
 
-  const handleGoogleLogin = () => {
-    setFormError(null);
-    clearError();
-
-    // Inside embedded iframe (both PC & mobile preview), open a same-origin top-level popup bridge synchronously
-    if (isEmbeddedIframe && !isOAuthBridge) {
-      const bridgeUrl = `${window.location.origin}/login?oauth=google&remember=${
-        rememberMe ? '1' : '0'
-      }`;
-      const width = 480;
-      const height = 640;
-      const left = Math.max(0, Math.round((window.screen.width - width) / 2));
-      const top = Math.max(0, Math.round((window.screen.height - height) / 2));
-      const popup = window.open(
-        bridgeUrl,
-        'ektally_google_oauth',
-        `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=yes,status=no`
-      );
-
-      if (!popup) {
-        setFormError(t.login.googlePopupBlocked);
-        return;
-      }
-
-      popupRef.current = popup;
-      setSubmitting(true);
-      clearPopupWatcher();
-      popupRef.current = popup;
-      popupWatcherRef.current = window.setInterval(() => {
-        if (!popupRef.current || popupRef.current.closed) {
-          clearPopupWatcher();
-          setSubmitting(false);
-        }
-      }, 450);
-      return;
-    }
-
-    // Standalone tab OR inside the top-level /login?oauth=google popup bridge
-    if (isOAuthBridge && window.opener && !window.opener.closed) {
-      setSubmitting(true);
-      obtainGoogleCredentialsForBridge()
-        .then((tokens) => {
-          if (!sendTokensToOpener(tokens)) {
-            return loginWithGoogleCredentials(tokens, rememberMe);
-          }
-          return undefined;
-        })
-        .catch((err) => {
-          setFormError(
-            err instanceof Error ? err.message : 'Unable to complete Google sign-in.'
-          );
-        })
-        .finally(() => {
-          setSubmitting(false);
-        });
-      return;
-    }
-
-    setSubmitting(true);
-    loginWithGoogle(rememberMe)
-      .catch(() => {
-        // authError handled by context
-      })
-      .finally(() => {
-        setSubmitting(false);
-      });
-  };
-
-  const handleBridgeCompleteLocally = async () => {
-    if (!bridgeTokens) return;
-    setSubmitting(true);
-    try {
-      await loginWithGoogleCredentials(bridgeTokens, rememberMe);
-      setBridgeTokens(null);
-    } catch {
-      // authError handled by context
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   const handleSendVerification = async () => {
     setVerificationNotice(null);
     setResendingVerify(true);
@@ -435,93 +158,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
       setCheckingVerify(false);
     }
   };
-
-  // Focused top-level Google Sign-In bridge screen (/login?oauth=google)
-  if (isOAuthBridge) {
-    return (
-      <div className="min-h-screen bg-[#050507] text-zinc-100 flex flex-col justify-between p-6">
-        <div className="flex items-center justify-between gap-4 max-w-md w-full mx-auto">
-          <img
-            src={EKTALLY_LOGO_URL}
-            alt="EkTally"
-            referrerPolicy="no-referrer"
-            className="h-8 w-auto object-contain"
-          />
-          <LanguageToggle />
-        </div>
-
-        <div className="max-w-md w-full mx-auto bg-[#0e1012] border border-[#4ade80]/20 rounded-xl p-6 space-y-5 shadow-[0_24px_80px_-24px_rgba(34,197,94,0.16)]">
-          {bridgeTokens ? (
-            <div className="text-center space-y-4 py-2">
-              <CheckCircle2 className="w-10 h-10 text-[#4ade80] mx-auto" />
-              <div className="space-y-1">
-                <h1 className="text-lg font-semibold text-white">{t.login.googleBridgeDone}</h1>
-              </div>
-              <Button
-                type="button"
-                onClick={handleBridgeCompleteLocally}
-                disabled={submitting}
-                className="w-full"
-              >
-                {t.login.googleBridgeOpenHere}
-              </Button>
-            </div>
-          ) : (
-            <>
-              <div className="space-y-1.5">
-                <h1 className="text-xl font-semibold text-white tracking-tight">
-                  {t.login.googleBridgeTitle}
-                </h1>
-                <p className="text-xs text-zinc-400 leading-relaxed">{t.login.googleBridgeDesc}</p>
-              </div>
-
-              {(formError || authError) && (
-                <div className="border border-red-500/30 bg-red-500/10 rounded-lg p-3 text-xs text-red-300 leading-relaxed">
-                  {formError || authError}
-                </div>
-              )}
-
-              <div className="space-y-3">
-                <div
-                  ref={gisContainerRef}
-                  className={
-                    gisReady
-                      ? 'w-full min-h-[42px] flex items-center justify-center overflow-hidden rounded-lg'
-                      : 'w-full h-0 overflow-hidden opacity-0 pointer-events-none'
-                  }
-                />
-
-                <Button
-                  type="button"
-                  variant={gisReady ? 'secondary' : 'primary'}
-                  disabled={submitting}
-                  onClick={handleGoogleLogin}
-                  className="w-full py-2.5"
-                >
-                  {GOOGLE_ICON}
-                  {submitting ? t.login.signingIn : t.login.continueWithGoogle}
-                </Button>
-              </div>
-
-              {typeof window !== 'undefined' && window.opener && (
-                <button
-                  type="button"
-                  onClick={() => window.close()}
-                  className="w-full text-xs text-zinc-400 hover:text-zinc-200 py-1 cursor-pointer"
-                >
-                  {t.login.cancel}
-                </button>
-              )}
-            </>
-          )}
-        </div>
-
-        <p className="text-[11px] text-zinc-500 text-center max-w-md mx-auto">
-          {t.login.authSubtitle}
-        </p>
-      </div>
-    );
-  }
 
   return (
     <div className="relative min-h-screen bg-[#050507] text-zinc-100 grid grid-cols-1 lg:grid-cols-2 lg:grid-rows-[1fr_auto]">
@@ -639,18 +275,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                 >
                   <MailCheck className="w-3.5 h-3.5 text-[#4ade80]" />
                   {verificationSent ? t.login.resendVerification : t.login.sendVerification}
-                </Button>
-
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={handleGoogleLogin}
-                  disabled={submitting}
-                  className="w-full"
-                >
-                  {GOOGLE_ICON}
-                  {t.login.useGoogleInstead}
                 </Button>
 
                 <Button
@@ -828,54 +452,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                     : t.login.createPrivateAccount}
                 </Button>
               </form>
-
-              <div className="relative flex items-center py-1">
-                <div className="flex-1 border-t border-[#27272a]" />
-                <span className="px-3 text-[11px] text-zinc-500">{t.login.or}</span>
-                <div className="flex-1 border-t border-[#27272a]" />
-              </div>
-
-              {/* Google Sign-In: Same-origin top-level bridge inside iframes, GIS + native popup fallback in standalone tabs */}
-              <div className="space-y-2.5">
-                {!isEmbeddedIframe && (
-                  <div
-                    ref={gisContainerRef}
-                    className={
-                      gisReady
-                        ? 'w-full min-h-[42px] flex items-center justify-center overflow-hidden rounded-lg'
-                        : 'w-full h-0 overflow-hidden opacity-0 pointer-events-none'
-                    }
-                  />
-                )}
-
-                <Button
-                  type="button"
-                  variant={gisReady && !isEmbeddedIframe ? 'ghost' : 'secondary'}
-                  size={gisReady && !isEmbeddedIframe ? 'sm' : 'md'}
-                  disabled={submitting}
-                  onClick={handleGoogleLogin}
-                  className={gisReady && !isEmbeddedIframe ? 'w-full text-xs' : 'w-full py-2.5'}
-                >
-                  {GOOGLE_ICON}
-                  {gisReady && !isEmbeddedIframe
-                    ? t.login.googlePopupFallback
-                    : t.login.continueWithGoogle}
-                </Button>
-
-                {(isEmbeddedIframe || authError || formError) && (
-                  <div className="pt-0.5 text-center">
-                    <a
-                      href={typeof window !== 'undefined' ? window.location.href : '/login'}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center gap-1.5 text-xs text-[#4ade80] hover:text-[#86efac] transition-colors py-1"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5 shrink-0" />
-                      <span>{t.login.openInFullTab}</span>
-                    </a>
-                  </div>
-                )}
-              </div>
             </div>
           )}
         </div>

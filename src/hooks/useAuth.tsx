@@ -5,10 +5,7 @@ import {
   isUserVerified,
   registerWithUserEmail,
   sendVerificationToUser,
-  signInWithGoogleCredentials,
-  signInWithGoogleIdToken,
   signInWithUserEmail,
-  signInWithUserGoogle,
   signOutUser,
 } from '../lib/firebase/auth';
 import { dbService } from '../lib/firebase/db';
@@ -74,12 +71,6 @@ interface AuthContextValue {
     displayName: string,
     businessName: string
   ) => Promise<{ verificationSent: boolean; verificationError?: string }>;
-  loginWithGoogle: (rememberMe?: boolean) => Promise<void>;
-  loginWithGoogleIdToken: (idToken: string, rememberMe?: boolean) => Promise<void>;
-  loginWithGoogleCredentials: (
-    tokens: { idToken?: string; accessToken?: string },
-    rememberMe?: boolean
-  ) => Promise<void>;
   resendVerification: () => Promise<void>;
   refreshVerificationStatus: () => Promise<boolean>;
   logout: () => Promise<void>;
@@ -153,12 +144,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const mapAuthError = useCallback((err: unknown, fallback: string): string => {
     const code = (err as { code?: string })?.code || '';
-    const msg = err instanceof Error ? err.message : '';
     if (code === 'auth/operation-not-allowed') {
-      return 'Email/Password sign-in is not enabled in Firebase Console (Authentication → Sign-in method → Email/Password). You can enable it there or use Continue with Google.';
+      return 'Email/Password sign-in is not enabled in Firebase Console (Authentication → Sign-in method → Email/Password).';
     }
     if (code === 'auth/email-already-in-use') {
-      return 'An account with this email already exists. Please switch to Sign In or use Continue with Google.';
+      return 'An account with this email already exists. Please switch to Sign In instead.';
     }
     if (code === 'auth/invalid-email') {
       return 'Please enter a valid email address.';
@@ -175,19 +165,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       code === 'auth/user-not-found'
     ) {
       return 'Invalid email or password.';
-    }
-    if (code === 'auth/popup-blocked') {
-      return 'Google sign-in popup was blocked by your browser. Please allow popups or tap "Open in full browser tab".';
-    }
-    if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
-      return 'Google sign-in window closed before completing. Please try again.';
-    }
-    if (
-      code === 'auth/web-storage-unsupported' ||
-      msg.toLowerCase().includes('sessionstorage') ||
-      msg.toLowerCase().includes('initial state')
-    ) {
-      return 'Your current browser frame partitions sessionStorage. Use the Google Sign-In popup button or open EkTally in a full browser tab.';
     }
     return formatReadableError(err, fallback);
   }, []);
@@ -241,45 +218,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     [hydrateTenant, mapAuthError]
   );
 
-  const loginWithGoogle = useCallback(
-    async (rememberMe = true) => {
-      setAuthError(null);
-      try {
-        await signInWithUserGoogle(rememberMe);
-      } catch (err) {
-        setAuthError(mapAuthError(err, 'Google sign-in was cancelled or blocked.'));
-        throw err;
-      }
-    },
-    [mapAuthError]
-  );
-
-  const loginWithGoogleIdToken = useCallback(
-    async (idToken: string, rememberMe = true) => {
-      setAuthError(null);
-      try {
-        await signInWithGoogleIdToken(idToken, rememberMe);
-      } catch (err) {
-        setAuthError(mapAuthError(err, 'Google sign-in failed. Please try again.'));
-        throw err;
-      }
-    },
-    [mapAuthError]
-  );
-
-  const loginWithGoogleCredentials = useCallback(
-    async (tokens: { idToken?: string; accessToken?: string }, rememberMe = true) => {
-      setAuthError(null);
-      try {
-        await signInWithGoogleCredentials(tokens, rememberMe);
-      } catch (err) {
-        setAuthError(mapAuthError(err, 'Google sign-in failed. Please try again.'));
-        throw err;
-      }
-    },
-    [mapAuthError]
-  );
-
   const resendVerification = useCallback(async () => {
     if (!auth.currentUser) return;
     await sendVerificationToUser(auth.currentUser);
@@ -321,9 +259,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setVerificationNotice,
         loginWithEmail,
         registerWithEmail,
-        loginWithGoogle,
-        loginWithGoogleIdToken,
-        loginWithGoogleCredentials,
         resendVerification,
         refreshVerificationStatus,
         logout,

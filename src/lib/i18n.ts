@@ -82,22 +82,11 @@ export interface TranslationStrings {
     creatingWorkspace: string;
     signInWithEmail: string;
     createPrivateAccount: string;
-    or: string;
-    continueWithGoogle: string;
-    openInFullTab: string;
     checkSpamHint: string;
     verificationAutoDetect: string;
-    googlePopupFallback: string;
-    googlePopupBlocked: string;
-    useGoogleInstead: string;
-    googleBridgeTitle: string;
-    googleBridgeDesc: string;
-    googleBridgeDone: string;
-    googleBridgeOpenHere: string;
     verificationSentNotice: string;
     verificationNotYetNotice: string;
     verificationTooManyNotice: string;
-    cancel: string;
   };
   dashboard: {
     addProduct: string;
@@ -300,22 +289,11 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       creatingWorkspace: 'Creating workspace...',
       signInWithEmail: 'Sign In with Email',
       createPrivateAccount: 'Create Private Account',
-      or: 'or',
-      continueWithGoogle: 'Continue with Google',
-      openInFullTab: 'Open in full browser tab for Google Sign-In',
       checkSpamHint: 'Check both your Inbox and Spam/Junk folder for the verification link.',
       verificationAutoDetect: 'Checking automatically every few seconds once you click the link.',
-      googlePopupFallback: 'Or use Google Sign-In popup',
-      googlePopupBlocked: 'Popup was blocked by your browser. Allow popups or tap "Open in full browser tab" below.',
-      useGoogleInstead: 'Or Continue with Google (Instant Verified Access)',
-      googleBridgeTitle: 'Sign in with Google',
-      googleBridgeDesc: 'Complete Google authentication in this secure window to unlock your EkTally workspace.',
-      googleBridgeDone: 'Google sign-in succeeded! Returning to EkTally...',
-      googleBridgeOpenHere: 'Open EkTally in this window',
       verificationSentNotice: 'Verification link sent. Open your inbox or spam folder, confirm, then click "I\'ve Verified".',
       verificationNotYetNotice: 'Email is not verified yet. Please click the verification link in your inbox or spam folder first.',
       verificationTooManyNotice: 'Too many verification emails sent recently. Please check your inbox/spam or wait 1 minute.',
-      cancel: 'Cancel',
     },
     dashboard: {
       addProduct: 'Add Product',
@@ -520,22 +498,11 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       creatingWorkspace: 'অ্যাকাউন্ট তৈরি হচ্ছে...',
       signInWithEmail: 'ইমেইল দিয়ে সাইন ইন',
       createPrivateAccount: 'প্রাইভেট অ্যাকাউন্ট তৈরি করুন',
-      or: 'অথবা',
-      continueWithGoogle: 'Google দিয়ে চালিয়ে যান',
-      openInFullTab: 'Google সাইন-ইনের জন্য পূর্ণ ব্রাউজার ট্যাবে খুলুন',
       checkSpamHint: 'ভেরিফিকেশন লিংকটি পেতে আপনার Inbox এবং Spam/Junk ফোল্ডার উভয়ই চেক করুন।',
       verificationAutoDetect: 'লিংকে ক্লিক করার সাথে সাথেই স্বয়ংক্রিয়ভাবে যাচাই হয়ে যাবে।',
-      googlePopupFallback: 'অথবা Google পপ-আপ দিয়ে সাইন ইন করুন',
-      googlePopupBlocked: 'ব্রাউজারে পপ-আপ ব্লক করা হয়েছে। পপ-আপ অনুমতি দিন অথবা নিচের "পূর্ণ ব্রাউজার ট্যাবে খুলুন" চাপুন।',
-      useGoogleInstead: 'অথবা Google দিয়ে সাথে সাথে লগইন করুন',
-      googleBridgeTitle: 'Google দিয়ে সাইন ইন করুন',
-      googleBridgeDesc: 'আপনার EkTally ওয়ার্কস্পেসে প্রবেশ করতে এই নিরাপদ উইন্ডোতে Google লগইন সম্পন্ন করুন।',
-      googleBridgeDone: 'Google সাইন-ইন সম্পন্ন হয়েছে! EkTally-তে ফিরে যাচ্ছে...',
-      googleBridgeOpenHere: 'এই উইন্ডোতেই EkTally খুলুন',
       verificationSentNotice: 'ভেরিফিকেশন লিংক পাঠানো হয়েছে। ইনবক্স বা স্প্যাম ফোল্ডার চেক করে লিংকে ক্লিক করুন এবং "ভেরিফাই করেছি" চাপুন।',
       verificationNotYetNotice: 'ইমেইল এখনও ভেরিফাই হয়নি। অনুগ্রহ করে ইনবক্স বা স্প্যাম ফোল্ডারের লিংকে ক্লিক করুন।',
       verificationTooManyNotice: 'অনেকবার ইমেইল পাঠানো হয়েছে। অনুগ্রহ করে ইনবক্স/স্প্যাম চেক করুন অথবা ১ মিনিট অপেক্ষা করুন।',
-      cancel: 'বাতিল',
     },
     dashboard: {
       addProduct: 'পণ্য যোগ করুন',
