@@ -48,12 +48,18 @@ export function subscribeCustomers(
 export async function saveCustomer(
   user: User,
   values: CustomerFormValues,
-  existing?: Customer
+  existing?: Customer,
+  businessId?: string
 ): Promise<string> {
   const customerId = existing ? existing.id : generateSafeId('cst');
   const path = `customers/${customerId}`;
 
+  const resolvedBusinessId = (
+    businessId !== undefined ? businessId : existing?.businessId || ''
+  ).slice(0, 128);
+
   const payloadBase = {
+    businessId: resolvedBusinessId,
     name: values.name.trim().slice(0, 140),
     phone: values.phone.trim().slice(0, 20),
     email: values.email.trim().slice(0, 140),
@@ -89,6 +95,7 @@ export async function saveCustomer(
 
   await logActivity(user, {
     mode: 'business',
+    businessId: resolvedBusinessId,
     action: existing ? 'customer_updated' : 'customer_created',
     summary: `${existing ? 'Updated' : 'Added'} customer: ${payloadBase.name} (${payloadBase.phone})`,
     entityType: 'customer',
@@ -131,6 +138,7 @@ export async function deleteCustomer(user: User, customer: Customer): Promise<vo
 
   await logActivity(user, {
     mode: 'business',
+    businessId: customer.businessId || '',
     action: 'customer_deleted',
     summary: `Removed customer: ${customer.name} (${customer.phone})`,
     entityType: 'customer',

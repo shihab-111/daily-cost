@@ -9,6 +9,7 @@ import {
   query,
   serverTimestamp,
   setDoc,
+  updateDoc,
   where,
   writeBatch,
 } from 'firebase/firestore';
@@ -99,6 +100,9 @@ export async function ensureDefaultExpenseCategories(user: User): Promise<void> 
         mode: item.mode,
         key: item.key,
         label: item.label,
+        photoUrl: '',
+        quantity: 0,
+        unitPrice: 0,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
@@ -154,15 +158,29 @@ export function subscribeExpenseCategories(
   );
 }
 
+export interface ExpenseCategoryOptions {
+  photoUrl?: string;
+  quantity?: number;
+  unitPrice?: number;
+}
+
 export async function addExpenseCategory(
   user: User,
   mode: AppMode,
-  label: string
+  label: string,
+  options?: ExpenseCategoryOptions
 ): Promise<ExpenseCategoryItem> {
   const cleanLabel = label.trim().slice(0, 60);
   const key = generateCategoryKey(cleanLabel);
   const catId = generateSafeId('cat');
   const path = `expenseCategories/${catId}`;
+
+  const photoUrl = (options?.photoUrl || '').slice(0, 80000);
+  const quantity = Math.max(0, Math.min(9999999, Math.round((options?.quantity ?? 0) * 100) / 100));
+  const unitPrice = Math.max(
+    0,
+    Math.min(999999999, Math.round((options?.unitPrice ?? 0) * 100) / 100)
+  );
 
   try {
     await setDoc(doc(db, 'expenseCategories', catId), {
@@ -170,6 +188,9 @@ export async function addExpenseCategory(
       mode,
       key,
       label: cleanLabel,
+      photoUrl,
+      quantity,
+      unitPrice,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
@@ -183,7 +204,50 @@ export async function addExpenseCategory(
     mode,
     key,
     label: cleanLabel,
+    photoUrl,
+    quantity,
+    unitPrice,
   };
+}
+
+export async function updateExpenseCategory(
+  _user: User,
+  categoryDocId: string,
+  updates: {
+    label?: string;
+    photoUrl?: string;
+    quantity?: number;
+    unitPrice?: number;
+  }
+): Promise<void> {
+  const path = `expenseCategories/${categoryDocId}`;
+  const payload: Record<string, unknown> = {
+    updatedAt: serverTimestamp(),
+  };
+  if (updates.label !== undefined && updates.label.trim().length > 0) {
+    payload.label = updates.label.trim().slice(0, 60);
+  }
+  if (updates.photoUrl !== undefined) {
+    payload.photoUrl = updates.photoUrl.slice(0, 80000);
+  }
+  if (updates.quantity !== undefined) {
+    payload.quantity = Math.max(
+      0,
+      Math.min(9999999, Math.round((Number(updates.quantity) || 0) * 100) / 100)
+    );
+  }
+  if (updates.unitPrice !== undefined) {
+    payload.unitPrice = Math.max(
+      0,
+      Math.min(999999999, Math.round((Number(updates.unitPrice) || 0) * 100) / 100)
+    );
+  }
+
+  try {
+    await updateDoc(doc(db, 'expenseCategories', categoryDocId), payload);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, path);
+  }
 }
 
 export async function deleteExpenseCategory(
@@ -216,6 +280,9 @@ export async function restoreDefaultExpenseCategories(
       mode,
       key,
       label,
+      photoUrl: '',
+      quantity: 0,
+      unitPrice: 0,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });

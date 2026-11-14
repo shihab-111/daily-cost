@@ -1,12 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   Briefcase,
+  Building2,
+  Check,
+  ChevronDown,
   FileText,
   LayoutDashboard,
   LogOut,
   Menu,
   Package,
+  Plus,
   Receipt,
   Settings,
   User as UserIcon,
@@ -25,22 +29,6 @@ interface DashboardShellProps {
   headerAction?: React.ReactNode;
 }
 
-const BUSINESS_NAV = [
-  { to: '/', label: 'Overview', icon: LayoutDashboard },
-  { to: '/expenses', label: 'Business Expenses', icon: Receipt },
-  { to: '/products', label: 'Product Inventory', icon: Package },
-  { to: '/customers', label: 'Customers (BD)', icon: Users },
-  { to: '/receipts', label: 'Receipt Studio', icon: FileText },
-  { to: '/settings', label: 'Settings & Data', icon: Settings },
-];
-
-const PERSONAL_NAV = [
-  { to: '/', label: 'Personal Overview', icon: LayoutDashboard },
-  { to: '/expenses', label: 'Daily Expenses', icon: Receipt },
-  { to: '/receipts', label: 'Receipt Studio', icon: FileText },
-  { to: '/settings', label: 'Settings & Budget', icon: Settings },
-];
-
 export const DashboardShell: React.FC<DashboardShellProps> = ({
   businessName,
   children,
@@ -48,9 +36,27 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
 }) => {
   const { user, logout } = useAuth();
   const { t } = useLanguage();
-  const { mode, setMode } = useMode();
+  const {
+    mode,
+    setMode,
+    businesses,
+    activeBusiness,
+    activeBusinessId,
+    setActiveBusinessId,
+    addBusiness,
+  } = useMode();
+
   const [mobileOpen, setMobileOpen] = useState(false);
   const [avatarFailed, setAvatarFailed] = useState(false);
+
+  const [bizMenuOpen, setBizMenuOpen] = useState(false);
+  const [newBizName, setNewBizName] = useState('');
+  const [sidebarAddOpen, setSidebarAddOpen] = useState(false);
+  const [sidebarBizName, setSidebarBizName] = useState('');
+  const [bizSaving, setBizSaving] = useState(false);
+  const [bizError, setBizError] = useState<string | null>(null);
+
+  const bizDropdownRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -80,15 +86,61 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
     }
   }, [mode, location.pathname, navigate]);
 
+  useEffect(() => {
+    if (!bizMenuOpen) return;
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (bizDropdownRef.current && !bizDropdownRef.current.contains(event.target as Node)) {
+        setBizMenuOpen(false);
+        setBizError(null);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [bizMenuOpen]);
+
   const currentNav =
     navItems.find((item) =>
       item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to)
     ) || navItems[0];
 
+  const displayBusinessName = activeBusiness?.name || businessName;
+
   const workspaceLabel =
     mode === 'business'
-      ? businessName
+      ? displayBusinessName
       : `${user?.displayName || businessName} · ${t.nav.personal}`;
+
+  const handleHeaderAddBusiness = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newBizName.trim()) return;
+    setBizError(null);
+    setBizSaving(true);
+    try {
+      await addBusiness(newBizName);
+      setNewBizName('');
+      setBizMenuOpen(false);
+    } catch (err) {
+      setBizError(err instanceof Error ? err.message : 'Unable to add business.');
+    } finally {
+      setBizSaving(false);
+    }
+  };
+
+  const handleSidebarAddBusiness = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!sidebarBizName.trim()) return;
+    setBizError(null);
+    setBizSaving(true);
+    try {
+      await addBusiness(sidebarBizName);
+      setSidebarBizName('');
+      setSidebarAddOpen(false);
+    } catch (err) {
+      setBizError(err instanceof Error ? err.message : 'Unable to add business.');
+    } finally {
+      setBizSaving(false);
+    }
+  };
 
   const sidebarContent = (
     <div className="flex flex-col h-full w-[260px] bg-[#121214] border-r border-[#27272a] shrink-0">
@@ -122,6 +174,69 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
             {mode === 'business' ? t.nav.business : t.nav.personal}
           </span>
         </div>
+
+        {mode === 'business' && (
+          <div className="p-2.5 rounded-lg bg-[#09090b] border border-[#27272a] space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-zinc-400 truncate">
+                <Building2 className="w-3.5 h-3.5 text-[#4ade80] shrink-0" />
+                <span className="truncate">{t.business.activeBusinessLabel}</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setSidebarAddOpen((prev) => !prev);
+                  setBizError(null);
+                }}
+                className="inline-flex items-center gap-1 text-[11px] font-medium text-[#4ade80] hover:text-[#86efac] cursor-pointer whitespace-nowrap shrink-0"
+              >
+                <Plus className="w-3 h-3" />
+                {sidebarAddOpen ? t.expenses.cancelEdit : t.business.addBusiness}
+              </button>
+            </div>
+
+            {businesses.length > 0 ? (
+              <select
+                aria-label={t.business.switchBusiness}
+                value={activeBusinessId}
+                onChange={(e) => setActiveBusinessId(e.target.value)}
+                className="w-full px-2.5 py-1.5 text-xs font-medium bg-[#121214] text-zinc-100 border border-[#27272a] rounded-md focus:outline-none focus:border-[#22c55e] truncate"
+              >
+                {businesses.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className="px-2.5 py-1.5 text-xs font-medium text-zinc-200 bg-[#121214] border border-[#27272a] rounded-md truncate">
+                {displayBusinessName}
+              </div>
+            )}
+
+            {sidebarAddOpen && (
+              <form onSubmit={handleSidebarAddBusiness} className="space-y-1.5 pt-1">
+                <input
+                  type="text"
+                  maxLength={140}
+                  value={sidebarBizName}
+                  onChange={(e) => setSidebarBizName(e.target.value)}
+                  placeholder={t.business.businessPlaceholder}
+                  className="w-full px-2.5 py-1.5 text-xs bg-[#121214] text-zinc-100 border border-[#27272a] rounded-md placeholder:text-zinc-500 focus:outline-none focus:border-[#22c55e]"
+                />
+                {bizError && <p className="text-[11px] text-red-400">{bizError}</p>}
+                <button
+                  type="submit"
+                  disabled={bizSaving || !sidebarBizName.trim()}
+                  className="w-full px-2.5 py-1.5 text-xs font-semibold bg-[#22c55e] hover:bg-[#16a34a] text-zinc-950 rounded-md disabled:opacity-50 transition-colors cursor-pointer"
+                >
+                  {bizSaving ? t.common.saving : t.business.saveName}
+                </button>
+              </form>
+            )}
+          </div>
+        )}
+
         <div className="flex items-center justify-between px-1 md:hidden">
           <span className="text-[11px] text-zinc-400">{t.common.languageLabel}</span>
           <LanguageToggle />
@@ -215,7 +330,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
               type="button"
               onClick={() => setMobileOpen(true)}
               aria-label="Open navigation menu"
-              className="lg:hidden p-2 -ml-2 text-zinc-400 hover:text-zinc-100 rounded-lg cursor-pointer"
+              className="lg:hidden p-2 -ml-2 text-zinc-400 hover:text-zinc-100 rounded-lg cursor-pointer shrink-0"
             >
               <Menu className="w-5 h-5" />
             </button>
@@ -228,8 +343,104 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             <LanguageToggle className="hidden md:inline-flex" />
+
+            {/* Multi-Business Switcher + Quick Add Business Name */}
+            {mode === 'business' && (
+              <div ref={bizDropdownRef} className="relative shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBizMenuOpen((prev) => !prev);
+                    setBizError(null);
+                  }}
+                  aria-expanded={bizMenuOpen}
+                  aria-label={t.business.switchBusiness}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium bg-[#09090b] border border-[#27272a] hover:border-zinc-600 text-zinc-100 rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                >
+                  <Building2 className="w-3.5 h-3.5 text-[#4ade80] shrink-0" />
+                  <span className="max-w-[96px] sm:max-w-[140px] truncate">
+                    {displayBusinessName}
+                  </span>
+                  <ChevronDown className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                </button>
+
+                {bizMenuOpen && (
+                  <div className="absolute right-0 mt-1.5 w-72 bg-[#121214] border border-[#27272a] rounded-xl shadow-2xl p-2.5 z-50 space-y-2">
+                    <div className="flex items-center justify-between px-1.5">
+                      <span className="text-[11px] font-medium text-zinc-400">
+                        {t.business.manageBusinesses}
+                      </span>
+                      <span className="text-[11px] font-mono tabular-nums text-zinc-500">
+                        {businesses.length || 1}
+                      </span>
+                    </div>
+
+                    <div className="max-h-48 overflow-y-auto space-y-1">
+                      {businesses.map((b) => {
+                        const selected = b.id === activeBusinessId;
+                        return (
+                          <button
+                            key={b.id}
+                            type="button"
+                            onClick={() => {
+                              setActiveBusinessId(b.id);
+                              setBizMenuOpen(false);
+                              setBizError(null);
+                            }}
+                            className={cn(
+                              'w-full flex items-center justify-between gap-2 px-2.5 py-2 text-xs rounded-lg transition-colors cursor-pointer text-left',
+                              selected
+                                ? 'bg-[#22c55e]/15 text-[#4ade80] border border-[#22c55e]/30'
+                                : 'text-zinc-200 hover:bg-[#18181b] border border-transparent'
+                            )}
+                          >
+                            <span className="truncate font-medium">{b.name}</span>
+                            <span className="inline-flex items-center gap-1.5 shrink-0">
+                              {b.isDefault && (
+                                <span className="text-[10px] font-mono text-zinc-400">
+                                  {t.business.primaryBusiness}
+                                </span>
+                              )}
+                              {selected && <Check className="w-3.5 h-3.5 text-[#4ade80]" />}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <form
+                      onSubmit={handleHeaderAddBusiness}
+                      className="pt-2 border-t border-[#27272a] space-y-1.5"
+                    >
+                      <label className="block text-[11px] font-medium text-zinc-300 px-0.5">
+                        {t.business.yourBusinessName}
+                      </label>
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="text"
+                          maxLength={140}
+                          value={newBizName}
+                          onChange={(e) => setNewBizName(e.target.value)}
+                          placeholder={t.business.businessPlaceholder}
+                          className="flex-1 min-w-0 px-2.5 py-1.5 text-xs bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-500 focus:outline-none focus:border-[#22c55e]"
+                        />
+                        <button
+                          type="submit"
+                          disabled={bizSaving || !newBizName.trim()}
+                          className="px-2.5 py-1.5 text-xs font-semibold bg-[#22c55e] hover:bg-[#16a34a] text-zinc-950 rounded-lg disabled:opacity-50 transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                        >
+                          {bizSaving ? t.common.saving : t.expenses.addCategoryBtn}
+                        </button>
+                      </div>
+                      {bizError && <p className="text-[11px] text-red-400 px-0.5">{bizError}</p>}
+                    </form>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Instant Dual-Mode Switch */}
             <div
               role="group"

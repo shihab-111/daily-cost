@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useLanguage } from '../context/LanguageContext';
+import { useMode } from '../context/ModeContext';
 import { useProducts, useSettings } from '../hooks/useBusinessData';
 import { dbService } from '../lib/firebase/db';
 import {
@@ -30,6 +31,7 @@ import { Button, Card } from '../components/ui';
 export const ProductsPage: React.FC = () => {
   const { user } = useAuth();
   const { t } = useLanguage();
+  const { activeBusiness, matchesBusiness } = useMode();
   const { products, loading } = useProducts(user, Boolean(user));
   const { settings } = useSettings(user, Boolean(user));
 
@@ -42,13 +44,18 @@ export const ProductsPage: React.FC = () => {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [lightboxItems, setLightboxItems] = useState<LightboxImageItem[] | null>(null);
 
-  const businessName = settings?.businessName || 'EkTally';
+  const businessName = activeBusiness?.name || settings?.businessName || 'EkTally';
   const defaultCurrency = settings?.currencyCode || 'BDT';
   const defaultThreshold = settings?.lowStockThreshold ?? 5;
 
+  const businessProducts = useMemo(
+    () => products.filter((prod) => matchesBusiness(prod.businessId)),
+    [products, matchesBusiness]
+  );
+
   const filteredProducts = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    return products.filter((prod) => {
+    return businessProducts.filter((prod) => {
       const status = getStockStatus(prod);
       if (statusFilter !== 'all' && status !== statusFilter) return false;
       if (categoryFilter !== 'all' && prod.category !== categoryFilter) return false;
@@ -60,7 +67,7 @@ export const ProductsPage: React.FC = () => {
         prod.notes.toLowerCase().includes(q)
       );
     });
-  }, [products, statusFilter, categoryFilter, searchQuery]);
+  }, [businessProducts, statusFilter, categoryFilter, searchQuery]);
 
   const openProductLightbox = async (product: Product) => {
     if (!user) return;

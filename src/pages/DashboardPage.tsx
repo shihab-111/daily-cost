@@ -30,7 +30,7 @@ import { Button, Card } from '../components/ui';
 export const DashboardPage: React.FC = () => {
   const { user } = useAuth();
   const { t } = useLanguage();
-  const { mode } = useMode();
+  const { mode, activeBusiness, matchesBusiness } = useMode();
   const { expenses, loading: expLoading } = useExpenses(user, Boolean(user));
   const { modeCategories, categoryLabels } = useExpenseCategories(user, Boolean(user), mode);
   const { products, loading: prodLoading } = useProducts(user, Boolean(user));
@@ -43,20 +43,35 @@ export const DashboardPage: React.FC = () => {
   const [expenseModalOpen, setExpenseModalOpen] = useState(false);
   const [productModalOpen, setProductModalOpen] = useState(false);
 
-  const businessName = settings?.businessName || 'EkTally';
+  const businessName = activeBusiness?.name || settings?.businessName || 'EkTally';
   const defaultCurrency = settings?.currencyCode || 'BDT';
   const usdToBdtRate = settings?.usdToBdtRate || 120;
   const defaultThreshold = settings?.lowStockThreshold ?? 5;
   const monthlyBudgetBdt = settings?.personalMonthlyBudget ?? 25000;
 
+  const businessProducts = useMemo(
+    () => products.filter((p) => matchesBusiness(p.businessId)),
+    [products, matchesBusiness]
+  );
+
   const modeExpenses = useMemo(
-    () => expenses.filter((e) => (e.mode || 'business') === mode),
-    [expenses, mode]
+    () =>
+      expenses.filter(
+        (e) =>
+          (e.mode || 'business') === mode &&
+          (mode === 'personal' || matchesBusiness(e.businessId))
+      ),
+    [expenses, mode, matchesBusiness]
   );
 
   const modeLogs = useMemo(
-    () => logs.filter((l) => (l.mode || 'business') === mode),
-    [logs, mode]
+    () =>
+      logs.filter(
+        (l) =>
+          (l.mode || 'business') === mode &&
+          (mode === 'personal' || matchesBusiness(l.businessId))
+      ),
+    [logs, mode, matchesBusiness]
   );
 
   const filteredExpenses = useMemo(
@@ -76,18 +91,18 @@ export const DashboardPage: React.FC = () => {
       .filter((e) => e.category === 'facebook_ads' || e.category === 'marketing_promo')
       .reduce((sum, e) => sum + convertToBdt(e.amount, e.currency, usdToBdtRate), 0);
 
-    const inventoryCostValueBdt = products.reduce(
+    const inventoryCostValueBdt = businessProducts.reduce(
       (sum, p) =>
         sum + convertToBdt(p.purchaseCost * p.stockQty, p.currency, usdToBdtRate),
       0
     );
-    const inventoryRetailValueBdt = products.reduce(
+    const inventoryRetailValueBdt = businessProducts.reduce(
       (sum, p) =>
         sum + convertToBdt(p.sellingPrice * p.stockQty, p.currency, usdToBdtRate),
       0
     );
-    const totalUnits = products.reduce((sum, p) => sum + p.stockQty, 0);
-    const lowOrOutCount = products.filter((p) => getStockStatus(p) !== 'in_stock').length;
+    const totalUnits = businessProducts.reduce((sum, p) => sum + p.stockQty, 0);
+    const lowOrOutCount = businessProducts.filter((p) => getStockStatus(p) !== 'in_stock').length;
 
     return {
       totalExpensesBdt,
@@ -99,7 +114,7 @@ export const DashboardPage: React.FC = () => {
       totalUnits,
       lowOrOutCount,
     };
-  }, [filteredExpenses, products, usdToBdtRate]);
+  }, [filteredExpenses, businessProducts, usdToBdtRate]);
 
   const personalKpis = useMemo(() => {
     const todayDhaka = getTodayDhakaDate();
@@ -217,8 +232,8 @@ export const DashboardPage: React.FC = () => {
               <Button
                 variant="secondary"
                 size="sm"
-                disabled={products.length === 0}
-                onClick={() => exportProductsCsv(products)}
+                disabled={businessProducts.length === 0}
+                onClick={() => exportProductsCsv(businessProducts)}
               >
                 <Download className="w-3.5 h-3.5 text-[#4ade80]" />
                 {t.dashboard.inventoryCsv}
@@ -270,7 +285,7 @@ export const DashboardPage: React.FC = () => {
                 {prodLoading ? '—' : businessKpis.totalUnits.toLocaleString('en-BD')}
               </p>
               <p className="text-xs font-mono tabular-nums text-zinc-500 mt-1.5">
-                {products.length} {t.dashboard.skus} ·{' '}
+                {businessProducts.length} {t.dashboard.skus} ·{' '}
                 <span className={businessKpis.lowOrOutCount > 0 ? 'text-amber-400' : 'text-[#4ade80]'}>
                   {businessKpis.lowOrOutCount} {t.dashboard.lowOutAlert}
                 </span>

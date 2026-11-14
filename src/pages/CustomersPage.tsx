@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Edit3, FileText, Plus, Search, Trash2, Users } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useLanguage } from '../context/LanguageContext';
+import { useMode } from '../context/ModeContext';
 import { useCustomers, useSettings } from '../hooks/useBusinessData';
 import { dbService } from '../lib/firebase/db';
 import { formatMoney } from '../lib/utils';
@@ -14,6 +15,7 @@ import { Button, Card } from '../components/ui';
 export const CustomersPage: React.FC = () => {
   const { user } = useAuth();
   const { t } = useLanguage();
+  const { activeBusiness, matchesBusiness } = useMode();
   const { customers, loading } = useCustomers(user, Boolean(user));
   const { settings } = useSettings(user, Boolean(user));
   const navigate = useNavigate();
@@ -23,29 +25,34 @@ export const CustomersPage: React.FC = () => {
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
-  const businessName = settings?.businessName || 'EkTally';
+  const businessName = activeBusiness?.name || settings?.businessName || 'EkTally';
+
+  const businessCustomers = useMemo(
+    () => customers.filter((c) => matchesBusiness(c.businessId)),
+    [customers, matchesBusiness]
+  );
 
   const filteredCustomers = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return customers;
-    return customers.filter(
+    if (!q) return businessCustomers;
+    return businessCustomers.filter(
       (c) =>
         c.name.toLowerCase().includes(q) ||
         c.phone.toLowerCase().includes(q) ||
         c.district.toLowerCase().includes(q) ||
         c.address.toLowerCase().includes(q)
     );
-  }, [customers, searchQuery]);
+  }, [businessCustomers, searchQuery]);
 
   const metrics = useMemo(() => {
-    const totalOrders = customers.reduce((sum, c) => sum + (c.totalOrders || 0), 0);
-    const totalSpent = customers.reduce((sum, c) => sum + (c.totalSpent || 0), 0);
+    const totalOrders = businessCustomers.reduce((sum, c) => sum + (c.totalOrders || 0), 0);
+    const totalSpent = businessCustomers.reduce((sum, c) => sum + (c.totalSpent || 0), 0);
     return {
-      totalCustomers: customers.length,
+      totalCustomers: businessCustomers.length,
       totalOrders,
       totalSpent,
     };
-  }, [customers]);
+  }, [businessCustomers]);
 
   return (
     <DashboardShell
@@ -99,7 +106,7 @@ export const CustomersPage: React.FC = () => {
             />
           </div>
           <span className="text-xs font-mono tabular-nums text-zinc-400">
-            {t.customers.showingOf} {filteredCustomers.length} / {customers.length} {t.customers.customersWord}
+            {t.customers.showingOf} {filteredCustomers.length} / {businessCustomers.length} {t.customers.customersWord}
           </span>
         </Card>
 

@@ -2,6 +2,7 @@ import { User } from 'firebase/auth';
 import {
   ActivityLog,
   AppMode,
+  BusinessProfile,
   Customer,
   CustomerReceipt,
   Expense,
@@ -21,6 +22,7 @@ import {
   SettingsFormValues,
 } from '../validators/schemas';
 import * as activityService from '../services/activityService';
+import * as businessService from '../services/businessService';
 import * as categoryService from '../services/categoryService';
 import * as customerService from '../services/customerService';
 import * as expenseService from '../services/expenseService';
@@ -51,6 +53,14 @@ export interface BusinessDataAdapter {
     user: User,
     defaults?: { businessName?: string; ownerName?: string }
   ): Promise<void>;
+  subscribeBusinesses(
+    user: User,
+    onData: (businesses: BusinessProfile[]) => void,
+    onError: (err: Error) => void
+  ): () => void;
+  addBusiness(user: User, name: string): Promise<BusinessProfile>;
+  renameBusiness(user: User, business: BusinessProfile, newName: string): Promise<void>;
+  deleteBusiness(user: User, business: BusinessProfile): Promise<void>;
   subscribeExpenses(
     user: User,
     onData: (items: Expense[]) => void,
@@ -61,7 +71,22 @@ export interface BusinessDataAdapter {
     onData: (items: ExpenseCategoryItem[]) => void,
     onError: (err: Error) => void
   ): () => void;
-  addExpenseCategory(user: User, mode: AppMode, label: string): Promise<ExpenseCategoryItem>;
+  addExpenseCategory(
+    user: User,
+    mode: AppMode,
+    label: string,
+    options?: categoryService.ExpenseCategoryOptions
+  ): Promise<ExpenseCategoryItem>;
+  updateExpenseCategory(
+    user: User,
+    categoryDocId: string,
+    updates: {
+      label?: string;
+      photoUrl?: string;
+      quantity?: number;
+      unitPrice?: number;
+    }
+  ): Promise<void>;
   deleteExpenseCategory(user: User, categoryDocId: string): Promise<void>;
   restoreDefaultExpenseCategories(
     user: User,
@@ -94,7 +119,8 @@ export interface BusinessDataAdapter {
     values: ExpenseFormValues,
     receipts: StagedAssetInput[],
     removedReceiptIds: string[],
-    existing?: Expense
+    existing?: Expense,
+    businessId?: string
   ): Promise<string>;
   deleteExpense(user: User, expense: Expense): Promise<void>;
   fetchProductPhotos(productId: string, user: User): Promise<ProductPhoto[]>;
@@ -103,11 +129,17 @@ export interface BusinessDataAdapter {
     values: ProductFormValues,
     photos: StagedAssetInput[],
     removedPhotoIds: string[],
-    existing?: Product
+    existing?: Product,
+    businessId?: string
   ): Promise<string>;
   adjustProductStock(user: User, product: Product, newStockQty: number): Promise<void>;
   deleteProduct(user: User, product: Product): Promise<void>;
-  saveCustomer(user: User, values: CustomerFormValues, existing?: Customer): Promise<string>;
+  saveCustomer(
+    user: User,
+    values: CustomerFormValues,
+    existing?: Customer,
+    businessId?: string
+  ): Promise<string>;
   incrementCustomerOrderMetrics(
     customer: Customer,
     orderAmount: number,
@@ -134,7 +166,8 @@ export interface BusinessDataAdapter {
     user: User,
     values: CustomerReceiptFormValues,
     existing?: CustomerReceipt,
-    activeMode?: AppMode
+    activeMode?: AppMode,
+    businessId?: string
   ): Promise<string>;
   deleteCustomerReceipt(
     user: User,
@@ -145,9 +178,14 @@ export interface BusinessDataAdapter {
 
 class FirestoreBusinessAdapter implements BusinessDataAdapter {
   bootstrapWorkspace = settingsService.bootstrapUserWorkspace;
+  subscribeBusinesses = businessService.subscribeBusinesses;
+  addBusiness = businessService.addBusiness;
+  renameBusiness = businessService.renameBusiness;
+  deleteBusiness = businessService.deleteBusiness;
   subscribeExpenses = expenseService.subscribeExpenses;
   subscribeExpenseCategories = categoryService.subscribeExpenseCategories;
   addExpenseCategory = categoryService.addExpenseCategory;
+  updateExpenseCategory = categoryService.updateExpenseCategory;
   deleteExpenseCategory = categoryService.deleteExpenseCategory;
   restoreDefaultExpenseCategories = categoryService.restoreDefaultExpenseCategories;
   subscribeProducts = productService.subscribeProducts;

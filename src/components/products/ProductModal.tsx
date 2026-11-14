@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { User } from 'firebase/auth';
 import { ImagePlus, Trash2 } from 'lucide-react';
 import { CurrencyCode, Product } from '../../types';
+import { useMode } from '../../context/ModeContext';
 import { dbService, StagedAssetInput } from '../../lib/firebase/db';
 import { processImageAsset, tryUploadToStorageOrFallback } from '../../lib/firebase/storage';
 import { productSchema } from '../../lib/validators/schemas';
@@ -25,6 +26,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   editingProduct,
   onClose,
 }) => {
+  const { activeBusinessId } = useMode();
   const [name, setName] = useState('');
   const [sku, setSku] = useState('');
   const [category, setCategory] = useState<string>(PRODUCT_CATEGORIES[0]);
@@ -154,7 +156,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         parsed.data,
         photos,
         removedIds,
-        editingProduct || undefined
+        editingProduct || undefined,
+        editingProduct ? editingProduct.businessId : activeBusinessId
       );
       onClose();
     } catch (err) {

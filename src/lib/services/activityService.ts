@@ -16,6 +16,7 @@ export async function logActivity(
   user: User,
   entry: {
     mode: AppMode;
+    businessId?: string;
     action: ActivityLog['action'];
     summary: string;
     entityType: ActivityLog['entityType'];
@@ -30,6 +31,7 @@ export async function logActivity(
     await setDoc(doc(db, 'activityLogs', logId), {
       userId: user.uid,
       actorEmail: (user.email || 'user@bd-ledger.local').slice(0, 254),
+      businessId: (entry.mode === 'business' ? entry.businessId || '' : '').slice(0, 128),
       mode: entry.mode,
       action: entry.action,
       summary: entry.summary.trim().slice(0, 240) || 'Updated record',

@@ -31,6 +31,8 @@ export const expenseSchema = z.object({
     .max(64)
     .regex(/^[a-zA-Z0-9_-]+$/, 'Invalid category key format.'),
   amount: z.coerce.number().min(0, 'Amount cannot be negative.').max(999999999),
+  quantity: z.coerce.number().min(0, 'Quantity cannot be negative.').max(9999999).default(0),
+  unitPrice: z.coerce.number().min(0, 'Per piece price cannot be negative.').max(999999999).default(0),
   currency: z.enum(['BDT', 'USD']),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD date format.'),
   paymentMethod: z.enum(['bKash', 'Nagad', 'Rocket', 'Bank Transfer', 'Cash', 'Card']),
@@ -50,6 +52,9 @@ export const expenseCategorySchema = z.object({
     .trim()
     .min(1, 'Category name is required.')
     .max(60, 'Category name must be 60 characters or fewer.'),
+  photoUrl: z.string().max(80000).default(''),
+  quantity: z.coerce.number().min(0, 'Quantity cannot be negative.').max(9999999).default(0),
+  unitPrice: z.coerce.number().min(0, 'Per piece price cannot be negative.').max(999999999).default(0),
 });
 
 export const productSchema = z.object({
@@ -106,6 +111,14 @@ export const settingsSchema = z.object({
     })
     .transform((v) => (v ? normalizeBdPhone(v) : ''))
     .default(''),
+});
+
+export const businessProfileSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, 'Business name is required.')
+    .max(140, 'Business name must be 140 characters or fewer.'),
 });
 
 export const receiptLineItemSchema = z.object({

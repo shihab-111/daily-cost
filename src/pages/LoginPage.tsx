@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useLanguage } from '../context/LanguageContext';
+import { translateValidationMessage } from '../lib/i18n';
 import { EKTALLY_LOGO_URL } from '../lib/utils';
 import { loginSchema, registerSchema } from '../lib/validators/schemas';
 import { Button } from '../components/ui';
@@ -39,7 +40,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
     logout,
     clearError,
   } = useAuth();
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
 
   const [mode, setMode] = useState<'login' | 'register'>(initialMode);
   const [displayName, setDisplayName] = useState('');
@@ -83,7 +84,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
     if (mode === 'login') {
       const parsed = loginSchema.safeParse({ email, password, rememberMe });
       if (!parsed.success) {
-        setFormError(parsed.error.issues[0]?.message || 'Check your credentials.');
+        setFormError(
+          translateValidationMessage(
+            parsed.error.issues[0]?.message,
+            language,
+            t.authErrors.invalidCredential
+          )
+        );
         return;
       }
       setSubmitting(true);
@@ -103,7 +110,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
         confirmPassword,
       });
       if (!parsed.success) {
-        setFormError(parsed.error.issues[0]?.message || 'Check your registration fields.');
+        setFormError(
+          translateValidationMessage(
+            parsed.error.issues[0]?.message,
+            language,
+            t.authErrors.registerFailed
+          )
+        );
         return;
       }
       setSubmitting(true);
@@ -134,7 +147,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
         setVerificationNotice(t.login.verificationTooManyNotice);
       } else {
         setVerificationNotice(
-          err instanceof Error ? err.message : 'Unable to send verification email right now.'
+          err instanceof Error ? err.message : t.authErrors.sendVerificationFailed
         );
       }
     } finally {
@@ -152,7 +165,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
       }
     } catch (err) {
       setVerificationNotice(
-        err instanceof Error ? err.message : 'Unable to verify account status right now.'
+        err instanceof Error ? err.message : t.authErrors.checkVerificationFailed
       );
     } finally {
       setCheckingVerify(false);
@@ -341,7 +354,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                         required
                         value={displayName}
                         onChange={(e) => setDisplayName(e.target.value)}
-                        placeholder="Tariqul Islam"
+                        placeholder={t.login.namePlaceholder}
                         className="w-full px-3 py-2 text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-600 focus:outline-none focus:border-[#22c55e]"
                       />
                     </div>
@@ -355,7 +368,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                         required
                         value={businessName}
                         onChange={(e) => setBusinessName(e.target.value)}
-                        placeholder="Dhaka Craft BD"
+                        placeholder={t.login.businessPlaceholder}
                         className="w-full px-3 py-2 text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-600 focus:outline-none focus:border-[#22c55e]"
                       />
                     </div>
@@ -377,7 +390,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
+                    placeholder={t.login.emailPlaceholder}
                     className="w-full px-3 py-2 text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-600 focus:outline-none focus:border-[#22c55e]"
                   />
                 </div>
@@ -404,7 +417,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                     <button
                       type="button"
                       onClick={() => setShowPassword((s) => !s)}
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      aria-label={showPassword ? t.login.hidePassword : t.login.showPassword}
                       className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-zinc-500 hover:text-zinc-200 cursor-pointer"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}

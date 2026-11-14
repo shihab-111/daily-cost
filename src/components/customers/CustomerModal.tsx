@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { User } from 'firebase/auth';
 import { Customer } from '../../types';
+import { useMode } from '../../context/ModeContext';
 import { dbService } from '../../lib/firebase/db';
 import { customerSchema } from '../../lib/validators/schemas';
 import { BD_DISTRICTS } from '../../lib/utils';
@@ -19,6 +20,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
   editingCustomer,
   onClose,
 }) => {
+  const { activeBusinessId } = useMode();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -68,7 +70,12 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
 
     setSaving(true);
     try {
-      await dbService.saveCustomer(user, parsed.data, editingCustomer || undefined);
+      await dbService.saveCustomer(
+        user,
+        parsed.data,
+        editingCustomer || undefined,
+        editingCustomer ? editingCustomer.businessId : activeBusinessId
+      );
       onClose();
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Unable to save customer.');

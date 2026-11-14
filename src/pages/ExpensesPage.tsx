@@ -1,10 +1,24 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Download, Edit3, Plus, Receipt, RotateCcw, Search, SlidersHorizontal, Trash2, X } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Check,
+  Download,
+  Edit3,
+  ImagePlus,
+  Plus,
+  Receipt,
+  RotateCcw,
+  Search,
+  SlidersHorizontal,
+  Tag,
+  Trash2,
+  X,
+} from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useLanguage } from '../context/LanguageContext';
 import { useMode } from '../context/ModeContext';
 import { useExpenseCategories, useExpenses, useSettings } from '../hooks/useBusinessData';
 import { dbService } from '../lib/firebase/db';
+import { processImageAsset } from '../lib/firebase/storage';
 import {
   BUSINESS_EXPENSE_CATEGORIES,
   convertToBdt,
@@ -15,7 +29,7 @@ import {
   resolveCategoryLabel,
 } from '../lib/utils';
 import { expenseCategorySchema } from '../lib/validators/schemas';
-import { DateRangePreset, Expense, ExpenseCategory } from '../types';
+import { DateRangePreset, Expense, ExpenseCategory, ExpenseCategoryItem } from '../types';
 import { DashboardShell } from '../components/layout/DashboardShell';
 import { ExpenseModal } from '../components/expenses/ExpenseModal';
 import { LightboxImageItem, LightboxModal } from '../components/ui/LightboxModal';
@@ -24,9 +38,13 @@ import { Button, Card } from '../components/ui';
 export const ExpensesPage: React.FC = () => {
   const { user } = useAuth();
   const { t } = useLanguage();
-  const { mode } = useMode();
+  const { mode, activeBusiness, matchesBusiness } = useMode();
   const { expenses, loading } = useExpenses(user, Boolean(user));
-  const { modeCategories, categoryLabels } = useExpenseCategories(user, Boolean(user), mode);
+  const { modeCategories, categoryLabels, categoryMap } = useExpenseCategories(
+    user,
+    Boolean(user),
+    mode
+  );
   const { settings } = useSettings(user, Boolean(user));
 
   const [categoryFilter, setCategoryFilter] = useState<'all' | ExpenseCategory>('all');
@@ -37,8 +55,24 @@ export const ExpensesPage: React.FC = () => {
 
   const [manageCatsOpen, setManageCatsOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryQty, setNewCategoryQty] = useState('');
+  const [newCategoryUnitPrice, setNewCategoryUnitPrice] = useState('');
+  const [newCategoryPhoto, setNewCategoryPhoto] = useState('');
+  const [processingCatPhoto, setProcessingCatPhoto] = useState(false);
+
+  const [editingCatId, setEditingCatId] = useState<string | null>(null);
+  const [editCatLabel, setEditCatLabel] = useState('');
+  const [editCatQty, setEditCatQty] = useState('');
+  const [editCatUnitPrice, setEditCatUnitPrice] = useState('');
+  const [editCatPhoto, setEditCatPhoto] = useState('');
+
   const [catSaving, setCatSaving] = useState(false);
   const [catError, setCatError] = useState<string | null>(null);
+
+  const newCatFileRef = useRef<HTMLInputElement>(null);
+  const editCatFileRef = useRef<HTMLInputElement>(null);
+  const quickPhotoTargetRef = useRef<ExpenseCategoryItem | null>(null);
+  const quickCatFileRef = useRef<HTMLInputElement>(null);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
@@ -48,9 +82,10 @@ export const ExpensesPage: React.FC = () => {
   useEffect(() => {
     setCategoryFilter('all');
     setCatError(null);
+    setEditingCatId(null);
   }, [mode]);
 
-  const businessName = settings?.businessName || 'EkTally';
+  const businessName = activeBusiness?.name || settings?.businessName || 'EkTally';
   const defaultCurrency = settings?.currencyCode || 'BDT';
   const usdToBdtRate = settings?.usdToBdtRate || 120;
 
@@ -61,11 +96,114 @@ export const ExpensesPage: React.FC = () => {
     return Object.keys(defaults).filter((k) => !activeKeys.has(k)).length;
   }, [mode, modeCategories]);
 
+  const handleNewCatPhoto = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setProcessingCatPhoto(true);
+    setCatError(null);
+    try {
+      const processed = await processImageAsset(files[0]);
+      setNewCategoryPhoto(processed.thumbDataUrl);
+    } catch (err) {
+      setCatError(err instanceof Error ? err.message : 'Unable to process category photo.');
+    } finally {
+      setProcessingCatPhoto(false);
+      if (newCatFileRef.current) newCatFileRef.current.value = '';
+    }
+  };
+
+  const handleEditCatPhoto = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setProcessingCatPhoto(true);
+    setCatError(null);
+    try {
+      const processed = await processImageAsset(files[0]);
+      setEditCatPhoto(processed.thumbDataUrl);
+    } catch (err) {
+      setCatError(err instanceof Error ? err.message : 'Unable to process category photo.');
+    } finally {
+      setProcessingCatPhoto(false);
+      if (editCatFileRef.current) editCatFileRef.current.value = '';
+    }
+  };
+
+  const handleQuickCategoryPhoto = async (files: FileList | null) => {
+    const target = quickPhotoTargetRef.current;
+    if (!files || files.length === 0 || !user || !target) return;
+    setProcessingCatPhoto(true);
+    setCatError(null);
+    try {
+      const processed = await processImageAsset(files[0]);
+      await dbService.updateExpenseCategory(user, target.id, {
+        photoUrl: processed.thumbDataUrl,
+      });
+    } catch (err) {
+      setCatError(err instanceof Error ? err.message : 'Unable to upload category photo.');
+    } finally {
+      setProcessingCatPhoto(false);
+      quickPhotoTargetRef.current = null;
+      if (quickCatFileRef.current) quickCatFileRef.current.value = '';
+    }
+  };
+
+  const startEditingCategory = (cat: ExpenseCategoryItem) => {
+    setEditingCatId(cat.id);
+    setEditCatLabel(cat.label);
+    setEditCatQty(cat.quantity ? String(cat.quantity) : '');
+    setEditCatUnitPrice(cat.unitPrice ? String(cat.unitPrice) : '');
+    setEditCatPhoto(cat.photoUrl || '');
+    setCatError(null);
+  };
+
+  const handleSaveCategoryEdit = async (cat: ExpenseCategoryItem) => {
+    if (!user) return;
+    setCatError(null);
+    const parsed = expenseCategorySchema.safeParse({
+      mode,
+      label: editCatLabel,
+      photoUrl: editCatPhoto,
+      quantity: editCatQty || 0,
+      unitPrice: editCatUnitPrice || 0,
+    });
+    if (!parsed.success) {
+      setCatError(parsed.error.issues[0]?.message || 'Check category fields.');
+      return;
+    }
+    const normalized = parsed.data.label.toLowerCase();
+    if (
+      modeCategories.some(
+        (c) => c.id !== cat.id && c.label.trim().toLowerCase() === normalized
+      )
+    ) {
+      setCatError(t.expenses.duplicateCategory);
+      return;
+    }
+    setCatSaving(true);
+    try {
+      await dbService.updateExpenseCategory(user, cat.id, {
+        label: parsed.data.label,
+        photoUrl: parsed.data.photoUrl,
+        quantity: parsed.data.quantity,
+        unitPrice: parsed.data.unitPrice,
+      });
+      setEditingCatId(null);
+    } catch (err) {
+      setCatError(err instanceof Error ? err.message : 'Unable to update category.');
+    } finally {
+      setCatSaving(false);
+    }
+  };
+
   const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
     setCatError(null);
-    const parsed = expenseCategorySchema.safeParse({ mode, label: newCategoryName });
+    const parsed = expenseCategorySchema.safeParse({
+      mode,
+      label: newCategoryName,
+      photoUrl: newCategoryPhoto,
+      quantity: newCategoryQty || 0,
+      unitPrice: newCategoryUnitPrice || 0,
+    });
     if (!parsed.success) {
       setCatError(parsed.error.issues[0]?.message || 'Enter a category name.');
       return;
@@ -77,8 +215,15 @@ export const ExpensesPage: React.FC = () => {
     }
     setCatSaving(true);
     try {
-      await dbService.addExpenseCategory(user, mode, parsed.data.label);
+      await dbService.addExpenseCategory(user, mode, parsed.data.label, {
+        photoUrl: parsed.data.photoUrl,
+        quantity: parsed.data.quantity,
+        unitPrice: parsed.data.unitPrice,
+      });
       setNewCategoryName('');
+      setNewCategoryQty('');
+      setNewCategoryUnitPrice('');
+      setNewCategoryPhoto('');
     } catch (err) {
       setCatError(err instanceof Error ? err.message : 'Unable to add category.');
     } finally {
@@ -91,6 +236,7 @@ export const ExpensesPage: React.FC = () => {
     setCatError(null);
     try {
       await dbService.deleteExpenseCategory(user, catId);
+      if (editingCatId === catId) setEditingCatId(null);
       if (categoryFilter === catKey) {
         setCategoryFilter('all');
       }
@@ -114,8 +260,13 @@ export const ExpensesPage: React.FC = () => {
   };
 
   const modeExpenses = useMemo(
-    () => expenses.filter((exp) => (exp.mode || 'business') === mode),
-    [expenses, mode]
+    () =>
+      expenses.filter(
+        (exp) =>
+          (exp.mode || 'business') === mode &&
+          (mode === 'personal' || matchesBusiness(exp.businessId))
+      ),
+    [expenses, mode, matchesBusiness]
   );
 
   const filteredExpenses = useMemo(() => {
@@ -295,13 +446,21 @@ export const ExpensesPage: React.FC = () => {
                     key={cat.id}
                     type="button"
                     onClick={() => setCategoryFilter(cat.key)}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-md cursor-pointer whitespace-nowrap ${
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md cursor-pointer whitespace-nowrap ${
                       categoryFilter === cat.key
                         ? 'bg-[#18181b] text-[#4ade80]'
                         : 'text-zinc-400 hover:text-zinc-100'
                     }`}
                   >
-                    {cat.label}
+                    {cat.photoUrl && (
+                      <img
+                        src={cat.photoUrl}
+                        alt={cat.label}
+                        referrerPolicy="no-referrer"
+                        className="w-4 h-4 rounded-sm object-cover shrink-0"
+                      />
+                    )}
+                    <span>{cat.label}</span>
                   </button>
                 ))}
               </div>
@@ -334,56 +493,359 @@ export const ExpensesPage: React.FC = () => {
           </div>
 
           {manageCatsOpen && (
-            <div className="p-3.5 rounded-lg bg-[#09090b] border border-[#27272a] space-y-3">
-              <form onSubmit={handleAddCategory} className="flex flex-wrap items-center gap-2">
-                <input
-                  type="text"
-                  maxLength={60}
-                  value={newCategoryName}
-                  onChange={(e) => setNewCategoryName(e.target.value)}
-                  placeholder={t.expenses.addCategoryPlaceholder}
-                  className="flex-1 min-w-[200px] px-3 py-1.5 text-xs bg-[#121214] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-500 focus:outline-none focus:border-[#22c55e]"
-                />
-                <Button type="submit" size="sm" disabled={catSaving || !newCategoryName.trim()}>
-                  <Plus className="w-3.5 h-3.5" />
-                  {t.expenses.addCategoryBtn}
-                </Button>
-                {missingDefaultsCount > 0 && (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    disabled={catSaving}
-                    onClick={handleRestoreDefaults}
-                  >
-                    <RotateCcw className="w-3.5 h-3.5 text-[#4ade80]" />
-                    {t.expenses.restoreDefaults}
-                  </Button>
+            <div className="p-4 rounded-lg bg-[#09090b] border border-[#27272a] space-y-4">
+              <input
+                ref={quickCatFileRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => handleQuickCategoryPhoto(e.target.files)}
+              />
+              <input
+                ref={editCatFileRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => handleEditCatPhoto(e.target.files)}
+              />
+
+              {/* Add New Category with Photo, Quantity, and Per Pics Price */}
+              <form onSubmit={handleAddCategory} className="space-y-2.5">
+                <div className="flex flex-wrap items-end gap-2.5">
+                  <div className="shrink-0">
+                    <input
+                      ref={newCatFileRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleNewCatPhoto(e.target.files)}
+                    />
+                    {newCategoryPhoto ? (
+                      <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-[#27272a] group">
+                        <img
+                          src={newCategoryPhoto}
+                          alt="Category preview"
+                          referrerPolicy="no-referrer"
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setNewCategoryPhoto('')}
+                          aria-label={t.expenses.removePhoto}
+                          className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 flex items-center justify-center text-red-400 transition-opacity cursor-pointer"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={processingCatPhoto}
+                        onClick={() => newCatFileRef.current?.click()}
+                        title={t.expenses.uploadPhoto}
+                        className="w-10 h-10 rounded-lg border border-dashed border-[#27272a] hover:border-[#22c55e] bg-[#121214] flex items-center justify-center text-zinc-400 hover:text-[#4ade80] transition-colors cursor-pointer"
+                      >
+                        <ImagePlus className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex-1 min-w-[180px] space-y-1">
+                    <label className="block text-[11px] font-medium text-zinc-400">
+                      {t.expenses.category}
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={60}
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      placeholder={t.expenses.addCategoryPlaceholder}
+                      className="w-full px-3 py-1.5 text-xs bg-[#121214] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-500 focus:outline-none focus:border-[#22c55e]"
+                    />
+                  </div>
+
+                  <div className="w-24 space-y-1">
+                    <label className="block text-[11px] font-medium text-zinc-400">
+                      {t.expenses.quantity}
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="any"
+                      value={newCategoryQty}
+                      onChange={(e) => setNewCategoryQty(e.target.value)}
+                      placeholder="0"
+                      className="w-full px-2.5 py-1.5 text-xs font-mono tabular-nums bg-[#121214] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-600 focus:outline-none focus:border-[#22c55e]"
+                    />
+                  </div>
+
+                  <div className="w-32 space-y-1">
+                    <label className="block text-[11px] font-medium text-zinc-400">
+                      {t.expenses.perPiecePrice}
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={newCategoryUnitPrice}
+                      onChange={(e) => setNewCategoryUnitPrice(e.target.value)}
+                      placeholder="0.00"
+                      className="w-full px-2.5 py-1.5 text-xs font-mono tabular-nums bg-[#121214] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-600 focus:outline-none focus:border-[#22c55e]"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="submit"
+                      size="sm"
+                      disabled={catSaving || processingCatPhoto || !newCategoryName.trim()}
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      {t.expenses.addCategoryBtn}
+                    </Button>
+                    {missingDefaultsCount > 0 && (
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        disabled={catSaving}
+                        onClick={handleRestoreDefaults}
+                      >
+                        <RotateCcw className="w-3.5 h-3.5 text-[#4ade80]" />
+                        {t.expenses.restoreDefaults}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {(Number(newCategoryQty) > 0 || Number(newCategoryUnitPrice) > 0) && (
+                  <p className="text-[11px] font-mono tabular-nums text-zinc-400">
+                    {Number(newCategoryQty) || 0} × {formatMoney(Number(newCategoryUnitPrice) || 0, defaultCurrency)} ={' '}
+                    <span className="text-[#4ade80] font-semibold">
+                      {formatMoney(
+                        (Number(newCategoryQty) || 0) * (Number(newCategoryUnitPrice) || 0),
+                        defaultCurrency
+                      )}
+                    </span>
+                  </p>
                 )}
               </form>
 
-              {catError && (
-                <p className="text-xs text-red-400">{catError}</p>
-              )}
+              {catError && <p className="text-xs text-red-400">{catError}</p>}
 
-              <div className="flex flex-wrap gap-2">
-                {modeCategories.map((cat) => (
-                  <div
-                    key={cat.id}
-                    className="inline-flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 text-xs bg-[#18181b] border border-[#27272a] rounded-md text-zinc-200"
-                  >
-                    <span>{cat.label}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteCategory(cat.id, cat.key)}
-                      aria-label={`${t.expenses.deleteCategoryTitle} ${cat.label}`}
-                      title={t.expenses.deleteCategoryTitle}
-                      className="p-0.5 text-zinc-400 hover:text-red-400 rounded cursor-pointer"
+              {/* Editable Category Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5 pt-1 border-t border-[#27272a]">
+                {modeCategories.map((cat) => {
+                  const isEditing = editingCatId === cat.id;
+                  const qty = Number(cat.quantity || 0);
+                  const unitPrice = Number(cat.unitPrice || 0);
+                  const catTotal = qty * unitPrice;
+
+                  if (isEditing) {
+                    return (
+                      <div
+                        key={cat.id}
+                        className="p-3 bg-[#18181b] border border-[#22c55e]/50 rounded-lg space-y-2.5"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <div className="shrink-0">
+                            {editCatPhoto ? (
+                              <div className="relative w-11 h-11 rounded-lg overflow-hidden border border-[#27272a]">
+                                <img
+                                  src={editCatPhoto}
+                                  alt={editCatLabel}
+                                  referrerPolicy="no-referrer"
+                                  className="w-full h-full object-cover"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setEditCatPhoto('')}
+                                  aria-label={t.expenses.removePhoto}
+                                  className="absolute top-0.5 right-0.5 p-0.5 bg-black/80 text-red-400 rounded cursor-pointer"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => editCatFileRef.current?.click()}
+                                title={t.expenses.uploadPhoto}
+                                className="w-11 h-11 rounded-lg border border-dashed border-[#27272a] hover:border-[#22c55e] bg-[#09090b] flex items-center justify-center text-zinc-400 hover:text-[#4ade80] cursor-pointer"
+                              >
+                                <ImagePlus className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0 space-y-1">
+                            <input
+                              type="text"
+                              maxLength={60}
+                              value={editCatLabel}
+                              onChange={(e) => setEditCatLabel(e.target.value)}
+                              className="w-full px-2.5 py-1 text-xs bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-md focus:outline-none focus:border-[#22c55e]"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => editCatFileRef.current?.click()}
+                              className="text-[11px] text-[#4ade80] hover:underline cursor-pointer"
+                            >
+                              {editCatPhoto ? t.expenses.changePhoto : t.expenses.uploadPhoto}
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[10px] text-zinc-400 mb-0.5">
+                              {t.expenses.quantity}
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              step="any"
+                              value={editCatQty}
+                              onChange={(e) => setEditCatQty(e.target.value)}
+                              placeholder="0"
+                              className="w-full px-2 py-1 text-xs font-mono tabular-nums bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-md focus:outline-none focus:border-[#22c55e]"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] text-zinc-400 mb-0.5">
+                              {t.expenses.perPiecePrice}
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={editCatUnitPrice}
+                              onChange={(e) => setEditCatUnitPrice(e.target.value)}
+                              placeholder="0.00"
+                              className="w-full px-2 py-1 text-xs font-mono tabular-nums bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-md focus:outline-none focus:border-[#22c55e]"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setEditingCatId(null)}
+                            className="px-2.5 py-1 text-xs text-zinc-400 hover:text-zinc-200 rounded cursor-pointer"
+                          >
+                            {t.expenses.cancelEdit}
+                          </button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            disabled={catSaving || processingCatPhoto || !editCatLabel.trim()}
+                            onClick={() => handleSaveCategoryEdit(cat)}
+                          >
+                            <Check className="w-3 h-3" />
+                            {t.expenses.saveCategory}
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div
+                      key={cat.id}
+                      className="flex items-center justify-between gap-2.5 p-2.5 bg-[#121214] border border-[#27272a] rounded-lg"
                     >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ))}
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        {cat.photoUrl ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setLightboxItems([
+                                {
+                                  id: cat.id,
+                                  fileName: `${cat.label}.jpg`,
+                                  caption: cat.label,
+                                  dataUrl: cat.photoUrl!,
+                                  width: 320,
+                                  height: 320,
+                                },
+                              ])
+                            }
+                            className="w-10 h-10 rounded-md overflow-hidden border border-[#27272a] shrink-0 cursor-pointer"
+                          >
+                            <img
+                              src={cat.photoUrl}
+                              alt={cat.label}
+                              referrerPolicy="no-referrer"
+                              className="w-full h-full object-cover"
+                            />
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              quickPhotoTargetRef.current = cat;
+                              quickCatFileRef.current?.click();
+                            }}
+                            title={t.expenses.uploadPhoto}
+                            className="w-10 h-10 rounded-md bg-[#09090b] border border-dashed border-[#27272a] hover:border-[#22c55e] flex items-center justify-center text-zinc-500 hover:text-[#4ade80] shrink-0 cursor-pointer"
+                          >
+                            <Tag className="w-4 h-4" />
+                          </button>
+                        )}
+                        <div className="min-w-0">
+                          <div className="text-xs font-medium text-zinc-100 truncate">
+                            {cat.label}
+                          </div>
+                          {(qty > 0 || unitPrice > 0) && (
+                            <div className="text-[11px] font-mono tabular-nums text-zinc-400 truncate mt-0.5">
+                              {qty > 0 ? `${qty} pcs` : ''}
+                              {qty > 0 && unitPrice > 0 ? ' · ' : ''}
+                              {unitPrice > 0 ? `${formatMoney(unitPrice, defaultCurrency)}/pc` : ''}
+                              {catTotal > 0 ? (
+                                <span className="text-[#4ade80]">
+                                  {' '}
+                                  · {formatMoney(catTotal, defaultCurrency)}
+                                </span>
+                              ) : null}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-0.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            quickPhotoTargetRef.current = cat;
+                            quickCatFileRef.current?.click();
+                          }}
+                          title={cat.photoUrl ? t.expenses.changePhoto : t.expenses.uploadPhoto}
+                          aria-label={`${t.expenses.uploadPhoto} ${cat.label}`}
+                          className="p-1.5 text-zinc-400 hover:text-[#4ade80] rounded cursor-pointer"
+                        >
+                          <ImagePlus className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => startEditingCategory(cat)}
+                          title={t.expenses.editCategory}
+                          aria-label={`${t.expenses.editCategory} ${cat.label}`}
+                          className="p-1.5 text-zinc-400 hover:text-[#4ade80] rounded cursor-pointer"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteCategory(cat.id, cat.key)}
+                          aria-label={`${t.expenses.deleteCategoryTitle} ${cat.label}`}
+                          title={t.expenses.deleteCategoryTitle}
+                          className="p-1.5 text-zinc-400 hover:text-red-400 rounded cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -432,21 +894,66 @@ export const ExpensesPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#27272a] text-sm">
-                  {filteredExpenses.map((exp) => (
+                  {filteredExpenses.map((exp) => {
+                    const catItem = categoryMap[exp.category];
+                    const expQty = Number(exp.quantity || 0);
+                    const expUnitPrice = Number(exp.unitPrice || 0);
+                    return (
                     <tr key={exp.id} className="hover:bg-zinc-900/60 transition-colors">
                       <td className="py-3 px-4 text-xs font-mono tabular-nums text-zinc-400 whitespace-nowrap">
                         {exp.date}
                       </td>
                       <td className="py-3 px-4 max-w-md">
-                        <div className="font-medium text-zinc-100 truncate">
-                          {exp.title}
-                        </div>
-                        <div className="text-xs text-zinc-400 mt-0.5 truncate">
-                          <span className="text-[#4ade80]">
-                            {resolveCategoryLabel(exp.category, categoryLabels)}
-                          </span>
-                          <span className="mx-1.5 text-zinc-600">·</span>
-                          <span>{renderCategoryContext(exp)}</span>
+                        <div className="flex items-center gap-2.5">
+                          {catItem?.photoUrl && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setLightboxItems([
+                                  {
+                                    id: catItem.id,
+                                    fileName: `${catItem.label}.jpg`,
+                                    caption: catItem.label,
+                                    dataUrl: catItem.photoUrl!,
+                                    width: 320,
+                                    height: 320,
+                                  },
+                                ])
+                              }
+                              className="w-8 h-8 rounded-md overflow-hidden border border-[#27272a] shrink-0 cursor-pointer"
+                            >
+                              <img
+                                src={catItem.photoUrl}
+                                alt={catItem.label}
+                                referrerPolicy="no-referrer"
+                                className="w-full h-full object-cover"
+                              />
+                            </button>
+                          )}
+                          <div className="min-w-0">
+                            <div className="font-medium text-zinc-100 truncate">
+                              {exp.title}
+                            </div>
+                            <div className="text-xs text-zinc-400 mt-0.5 truncate">
+                              <span className="text-[#4ade80]">
+                                {resolveCategoryLabel(exp.category, categoryLabels)}
+                              </span>
+                              {(expQty > 0 || expUnitPrice > 0) && (
+                                <>
+                                  <span className="mx-1.5 text-zinc-600">·</span>
+                                  <span className="font-mono tabular-nums text-zinc-300">
+                                    {expQty > 0 ? `${expQty} pcs` : ''}
+                                    {expQty > 0 && expUnitPrice > 0 ? ' × ' : ''}
+                                    {expUnitPrice > 0
+                                      ? `${formatMoney(expUnitPrice, exp.currency)}/pc`
+                                      : ''}
+                                  </span>
+                                </>
+                              )}
+                              <span className="mx-1.5 text-zinc-600">·</span>
+                              <span>{renderCategoryContext(exp)}</span>
+                            </div>
+                          </div>
                         </div>
                       </td>
                       <td className="py-3 px-4 hidden md:table-cell text-xs text-zinc-300 whitespace-nowrap">
@@ -522,7 +1029,8 @@ export const ExpensesPage: React.FC = () => {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

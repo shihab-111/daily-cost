@@ -29,6 +29,10 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
     if (typeof document !== 'undefined') {
       document.documentElement.lang = language === 'bn' ? 'bn' : 'en';
+      document.title =
+        language === 'bn'
+          ? 'EkTally — ব্যবসা ও ব্যক্তিগত খরচের হিসাব'
+          : 'EkTally — Business & Personal Ledger';
     }
   }, [language]);
 

@@ -33,6 +33,10 @@ service cloud.firestore {
       return isVerified() && request.auth.uid == ownerUid;
     }
 
+    function isValidOptionalBusinessId(data) {
+      return !('businessId' in data) || (data.businessId is string && data.businessId.size() <= 128 && data.businessId.matches('^[a-zA-Z0-9_\\-]*$'));
+    }
+
     // --- Validation Blueprints ---
     function isValidUserSettings(data) {
       return data.keys().hasAll([
@@ -65,6 +69,8 @@ service cloud.firestore {
         && data.description is string && data.description.size() <= 4000
         && data.category is string && data.category.size() >= 1 && data.category.size() <= 64 && data.category.matches('^[a-zA-Z0-9_\\-]+$')
         && (data.amount is int || data.amount is float) && data.amount >= 0 && data.amount <= 999999999
+        && (!('quantity' in data) || ((data.quantity is int || data.quantity is float) && data.quantity >= 0 && data.quantity <= 9999999))
+        && (!('unitPrice' in data) || ((data.unitPrice is int || data.unitPrice is float) && data.unitPrice >= 0 && data.unitPrice <= 999999999))
         && data.currency in ['BDT', 'USD']
         && data.date is string && data.date.size() == 10 && data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
         && data.paymentMethod in ['bKash', 'Nagad', 'Rocket', 'Bank Transfer', 'Cash', 'Card'];
@@ -94,11 +100,12 @@ service cloud.firestore {
           'receiptThumb', 'receiptCount', 'createdAt', 'updatedAt'
         ])
         && data.keys().hasOnly([
-          'userId', 'userEmail', 'mode', 'title', 'description', 'category', 'amount', 'currency',
+          'userId', 'userEmail', 'businessId', 'mode', 'title', 'description', 'category', 'amount', 'quantity', 'unitPrice', 'currency',
           'date', 'paymentMethod', 'adAccountId', 'campaignName', 'partnerOrAgency',
           'modelName', 'photographerName', 'studioName', 'vendorOrCourier',
           'receiptThumb', 'receiptCount', 'createdAt', 'updatedAt'
         ])
+        && isValidOptionalBusinessId(data)
         && isValidExpenseFields(data)
         && isValidExpenseMeta(data);
     }
@@ -124,9 +131,10 @@ service cloud.firestore {
           'stockQty', 'lowStockThreshold', 'notes', 'thumbnailUrl', 'photoCount', 'createdAt', 'updatedAt'
         ])
         && data.keys().hasOnly([
-          'userId', 'userEmail', 'name', 'sku', 'category', 'purchaseCost', 'sellingPrice', 'currency',
+          'userId', 'userEmail', 'businessId', 'name', 'sku', 'category', 'purchaseCost', 'sellingPrice', 'currency',
           'stockQty', 'lowStockThreshold', 'notes', 'thumbnailUrl', 'photoCount', 'createdAt', 'updatedAt'
         ])
+        && isValidOptionalBusinessId(data)
         && isValidId(data.userId)
         && data.userEmail is string && data.userEmail.size() >= 3 && data.userEmail.size() <= 254
         && data.name is string && data.name.size() >= 1 && data.name.size() <= 200
@@ -166,9 +174,10 @@ service cloud.firestore {
           'totalOrders', 'totalSpent', 'lastOrderDate', 'createdAt', 'updatedAt'
         ])
         && data.keys().hasOnly([
-          'userId', 'name', 'phone', 'email', 'address', 'district', 'notes',
+          'userId', 'businessId', 'name', 'phone', 'email', 'address', 'district', 'notes',
           'totalOrders', 'totalSpent', 'lastOrderDate', 'createdAt', 'updatedAt'
         ])
+        && isValidOptionalBusinessId(data)
         && isValidId(data.userId)
         && data.name is string && data.name.size() >= 1 && data.name.size() <= 140
         && data.phone is string && data.phone.size() >= 11 && data.phone.size() <= 20
@@ -185,7 +194,8 @@ service cloud.firestore {
 
     function isValidActivityLog(data) {
       return data.keys().hasAll(['userId', 'actorEmail', 'mode', 'action', 'summary', 'entityType', 'entityId', 'amount', 'currency', 'createdAt'])
-        && data.keys().hasOnly(['userId', 'actorEmail', 'mode', 'action', 'summary', 'entityType', 'entityId', 'amount', 'currency', 'createdAt'])
+        && data.keys().hasOnly(['userId', 'actorEmail', 'businessId', 'mode', 'action', 'summary', 'entityType', 'entityId', 'amount', 'currency', 'createdAt'])
+        && isValidOptionalBusinessId(data)
         && isValidId(data.userId)
         && data.actorEmail is string && data.actorEmail.size() >= 3 && data.actorEmail.size() <= 254
         && data.mode in ['business', 'personal']
@@ -293,7 +303,7 @@ service cloud.firestore {
           'grandTotal', 'paidAmount', 'dueAmount', 'footerNote', 'createdAt', 'updatedAt'
         ])
         && data.keys().hasOnly([
-          'userId', 'userEmail', 'receiptNumber', 'issueDate', 'issueTime', 'memoTitle', 'status', 'paymentMethod',
+          'userId', 'userEmail', 'businessId', 'receiptNumber', 'issueDate', 'issueTime', 'memoTitle', 'status', 'paymentMethod',
           'businessName', 'businessTagline', 'businessPhone', 'businessAddress',
           'logoType', 'logoText', 'logoDataUrl', 'logoSize', 'logoPosition',
           'textStyle', 'fontSizeScale', 'accentColor', 'headerBgColor', 'paperStyle',
@@ -302,6 +312,7 @@ service cloud.firestore {
           'subtotal', 'deliveryCharge', 'discountAmount', 'vatPercent', 'vatAmount',
           'grandTotal', 'paidAmount', 'dueAmount', 'footerNote', 'createdAt', 'updatedAt'
         ])
+        && isValidOptionalBusinessId(data)
         && isValidReceiptBranding(data)
         && isValidReceiptCustomerAndItems(data)
         && isValidReceiptAmountsAndMeta(data);
@@ -309,11 +320,14 @@ service cloud.firestore {
 
     function isValidExpenseCategory(data) {
       return data.keys().hasAll(['userId', 'mode', 'key', 'label', 'createdAt', 'updatedAt'])
-        && data.keys().hasOnly(['userId', 'mode', 'key', 'label', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['userId', 'mode', 'key', 'label', 'photoUrl', 'quantity', 'unitPrice', 'createdAt', 'updatedAt'])
         && isValidId(data.userId)
         && data.mode in ['business', 'personal']
         && data.key is string && data.key.size() >= 1 && data.key.size() <= 64 && data.key.matches('^[a-zA-Z0-9_\\-]+$')
         && data.label is string && data.label.size() >= 1 && data.label.size() <= 60
+        && (!('photoUrl' in data) || (data.photoUrl is string && data.photoUrl.size() <= 80000))
+        && (!('quantity' in data) || ((data.quantity is int || data.quantity is float) && data.quantity >= 0 && data.quantity <= 9999999))
+        && (!('unitPrice' in data) || ((data.unitPrice is int || data.unitPrice is float) && data.unitPrice >= 0 && data.unitPrice <= 999999999))
         && data.createdAt is timestamp
         && data.updatedAt is timestamp;
     }
@@ -324,6 +338,16 @@ service cloud.firestore {
         && isValidId(data.userId)
         && data.seeded is bool && data.seeded == true
         && data.createdAt is timestamp;
+    }
+
+    function isValidBusinessProfile(data) {
+      return data.keys().hasAll(['userId', 'name', 'isDefault', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['userId', 'name', 'isDefault', 'createdAt', 'updatedAt'])
+        && isValidId(data.userId)
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 140
+        && data.isDefault is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
     }
 
     // --- Collection Rules (Strict Per-Tenant userId Isolation) ---
@@ -376,7 +400,7 @@ service cloud.firestore {
         && incoming().updatedAt == request.time
         && (
           incoming().diff(existing()).affectedKeys().hasOnly([
-            'mode', 'title', 'description', 'category', 'amount', 'currency', 'date', 'paymentMethod',
+            'businessId', 'mode', 'title', 'description', 'category', 'amount', 'quantity', 'unitPrice', 'currency', 'date', 'paymentMethod',
             'adAccountId', 'campaignName', 'partnerOrAgency', 'modelName', 'photographerName',
             'studioName', 'vendorOrCourier', 'receiptThumb', 'receiptCount', 'updatedAt'
           ]) ||
@@ -429,7 +453,7 @@ service cloud.firestore {
         && incoming().updatedAt == request.time
         && (
           incoming().diff(existing()).affectedKeys().hasOnly([
-            'name', 'sku', 'category', 'purchaseCost', 'sellingPrice', 'currency',
+            'businessId', 'name', 'sku', 'category', 'purchaseCost', 'sellingPrice', 'currency',
             'stockQty', 'lowStockThreshold', 'notes', 'thumbnailUrl', 'photoCount', 'updatedAt'
           ]) ||
           incoming().diff(existing()).affectedKeys().hasOnly(['stockQty', 'updatedAt']) ||
@@ -491,7 +515,7 @@ service cloud.firestore {
         && incoming().updatedAt == request.time
         && (
           incoming().diff(existing()).affectedKeys().hasOnly([
-            'name', 'phone', 'email', 'address', 'district', 'notes',
+            'businessId', 'name', 'phone', 'email', 'address', 'district', 'notes',
             'totalOrders', 'totalSpent', 'lastOrderDate', 'updatedAt'
           ]) ||
           incoming().diff(existing()).affectedKeys().hasOnly(['totalOrders', 'totalSpent', 'lastOrderDate', 'updatedAt'])
@@ -560,7 +584,7 @@ service cloud.firestore {
         && incoming().createdAt == existing().createdAt
         && incoming().updatedAt == request.time
         && incoming().diff(existing()).affectedKeys().hasOnly([
-          'receiptNumber', 'issueDate', 'issueTime', 'memoTitle', 'status', 'paymentMethod',
+          'businessId', 'receiptNumber', 'issueDate', 'issueTime', 'memoTitle', 'status', 'paymentMethod',
           'businessName', 'businessTagline', 'businessPhone', 'businessAddress',
           'logoType', 'logoText', 'logoDataUrl', 'logoSize', 'logoPosition',
           'textStyle', 'fontSizeScale', 'accentColor', 'headerBgColor', 'paperStyle',
@@ -591,7 +615,7 @@ service cloud.firestore {
         && incoming().key == existing().key
         && incoming().createdAt == existing().createdAt
         && incoming().updatedAt == request.time
-        && incoming().diff(existing()).affectedKeys().hasOnly(['label', 'updatedAt']);
+        && incoming().diff(existing()).affectedKeys().hasOnly(['label', 'photoUrl', 'quantity', 'unitPrice', 'updatedAt']);
       allow delete: if isVerified() && isValidId(categoryId) && existing().userId == request.auth.uid;
     }
 
@@ -606,6 +630,31 @@ service cloud.firestore {
         && incoming().userId == request.auth.uid
         && incoming().createdAt == request.time;
       allow update, delete: if false;
+    }
+
+    // 10. Multi-Business Profiles (strictly owned by userId)
+    match /businesses/{businessId} {
+      allow get: if isVerified() && isValidId(businessId) && (existing().userId == request.auth.uid || (resource == null && businessId == ('biz_default_' + request.auth.uid)));
+      allow list: if isVerified() && resource.data.userId == request.auth.uid;
+      allow create: if isVerified()
+        && isValidId(businessId)
+        && isValidBusinessProfile(incoming())
+        && incoming().userId == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isVerified()
+        && isValidId(businessId)
+        && isValidBusinessProfile(incoming())
+        && existing().userId == request.auth.uid
+        && incoming().userId == existing().userId
+        && incoming().isDefault == existing().isDefault
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'updatedAt']);
+      allow delete: if isVerified()
+        && isValidId(businessId)
+        && existing().userId == request.auth.uid
+        && existing().isDefault == false;
     }
   }
 }

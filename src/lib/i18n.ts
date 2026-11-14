@@ -24,6 +24,12 @@ export interface TranslationStrings {
     actions: string;
     status: string;
     loading: string;
+    download: string;
+    close: string;
+    noCaption: string;
+    errorTitle: string;
+    errorDesc: string;
+    reloadApp: string;
   };
   nav: {
     overview: string;
@@ -87,6 +93,11 @@ export interface TranslationStrings {
     verificationSentNotice: string;
     verificationNotYetNotice: string;
     verificationTooManyNotice: string;
+    namePlaceholder: string;
+    businessPlaceholder: string;
+    emailPlaceholder: string;
+    showPassword: string;
+    hidePassword: string;
   };
   dashboard: {
     addProduct: string;
@@ -141,6 +152,15 @@ export interface TranslationStrings {
     restoreDefaults: string;
     deleteCategoryTitle: string;
     duplicateCategory: string;
+    categoryPhoto: string;
+    uploadPhoto: string;
+    changePhoto: string;
+    removePhoto: string;
+    quantity: string;
+    perPiecePrice: string;
+    editCategory: string;
+    saveCategory: string;
+    cancelEdit: string;
   };
   products: {
     addProduct: string;
@@ -208,6 +228,36 @@ export interface TranslationStrings {
     allExpensesCsv: string;
     inventoryCsv: string;
   };
+  business: {
+    yourBusinessName: string;
+    activeBusinessLabel: string;
+    addBusiness: string;
+    addNewBusiness: string;
+    switchBusiness: string;
+    businessPlaceholder: string;
+    manageBusinesses: string;
+    manageBusinessesDesc: string;
+    primaryBusiness: string;
+    rename: string;
+    saveName: string;
+    cannotDeletePrimary: string;
+    duplicateBusiness: string;
+    confirmDeleteBusiness: string;
+  };
+  authErrors: {
+    initFailed: string;
+    permissionDenied: string;
+    operationNotAllowed: string;
+    emailInUse: string;
+    invalidEmail: string;
+    weakPassword: string;
+    tooManyRequests: string;
+    invalidCredential: string;
+    signInFailed: string;
+    registerFailed: string;
+    sendVerificationFailed: string;
+    checkVerificationFailed: string;
+  };
 }
 
 export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
@@ -235,6 +285,12 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       actions: 'Actions',
       status: 'Status',
       loading: 'Loading...',
+      download: 'Download',
+      close: 'Close',
+      noCaption: 'No caption provided',
+      errorTitle: 'Something went wrong',
+      errorDesc: 'An unexpected error occurred while rendering this view. Reload to recover.',
+      reloadApp: 'Reload Application',
     },
     nav: {
       overview: 'Overview',
@@ -301,6 +357,11 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       verificationSentNotice: 'Verification link sent. Open your inbox or spam folder, confirm, then click "I\'ve Verified".',
       verificationNotYetNotice: 'Email is not verified yet. Please click the verification link in your inbox or spam folder first.',
       verificationTooManyNotice: 'Too many verification emails sent recently. Please check your inbox/spam or wait 1 minute.',
+      namePlaceholder: 'e.g., Tanvir Ahmed',
+      businessPlaceholder: 'e.g., Dhakaiya Attire',
+      emailPlaceholder: 'you@business.com',
+      showPassword: 'Show password',
+      hidePassword: 'Hide password',
     },
     dashboard: {
       addProduct: 'Add Product',
@@ -355,6 +416,15 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       restoreDefaults: 'Restore Defaults',
       deleteCategoryTitle: 'Delete category',
       duplicateCategory: 'This category already exists in the current mode.',
+      categoryPhoto: 'Photo',
+      uploadPhoto: 'Add Photo',
+      changePhoto: 'Change Photo',
+      removePhoto: 'Remove Photo',
+      quantity: 'Quantity',
+      perPiecePrice: 'Per Pics Price',
+      editCategory: 'Edit category',
+      saveCategory: 'Save',
+      cancelEdit: 'Cancel',
     },
     products: {
       addProduct: 'Add Product',
@@ -426,6 +496,37 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       allExpensesCsv: 'All Expenses CSV',
       inventoryCsv: 'Inventory CSV',
     },
+    business: {
+      yourBusinessName: 'Add your business name',
+      activeBusinessLabel: 'Active Business',
+      addBusiness: 'Add Business',
+      addNewBusiness: 'Add New Business',
+      switchBusiness: 'Switch Business',
+      businessPlaceholder: 'e.g., Dhakaiya Attire',
+      manageBusinesses: 'Your Businesses',
+      manageBusinessesDesc:
+        'Create and switch between separate businesses. Each business keeps its own expenses, inventory, customers, and receipts.',
+      primaryBusiness: 'Primary',
+      rename: 'Rename',
+      saveName: 'Save',
+      cannotDeletePrimary: 'Primary business cannot be deleted (you can rename it).',
+      duplicateBusiness: 'A business with this name already exists.',
+      confirmDeleteBusiness: 'Delete?',
+    },
+    authErrors: {
+      initFailed: 'Unable to initialize your private workspace.',
+      permissionDenied: 'Permission denied by database rules. Verify your email or try signing in again.',
+      operationNotAllowed: 'Email/Password sign-in is not enabled in Firebase Authentication.',
+      emailInUse: 'An account with this email already exists. Try signing in instead.',
+      invalidEmail: 'Enter a valid email address.',
+      weakPassword: 'Password must be at least 6 characters.',
+      tooManyRequests: 'Too many attempts. Please wait a minute and try again.',
+      invalidCredential: 'Invalid email or password.',
+      signInFailed: 'Unable to sign in. Check your email and password.',
+      registerFailed: 'Unable to create your account. Please try again.',
+      sendVerificationFailed: 'Unable to send verification email right now.',
+      checkVerificationFailed: 'Unable to check verification status right now.',
+    },
   },
   bn: {
     common: {
@@ -451,6 +552,12 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       actions: 'অ্যাকশন',
       status: 'অবস্থা',
       loading: 'লোড হচ্ছে...',
+      download: 'ডাউনলোড',
+      close: 'বন্ধ করুন',
+      noCaption: 'কোনো ক্যাপশন নেই',
+      errorTitle: 'একটি সমস্যা হয়েছে',
+      errorDesc: 'পৃষ্ঠাটি লোড করতে গিয়ে একটি অনাকাঙ্ক্ষিত ত্রুটি ঘটেছে। পুনরায় লোড করুন।',
+      reloadApp: 'অ্যাপ পুনরায় লোড করুন',
     },
     nav: {
       overview: 'ওভারভিউ',
@@ -517,6 +624,11 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       verificationSentNotice: 'ভেরিফিকেশন লিংক পাঠানো হয়েছে। ইনবক্স বা স্প্যাম ফোল্ডার চেক করে লিংকে ক্লিক করুন এবং "ভেরিফাই করেছি" চাপুন।',
       verificationNotYetNotice: 'ইমেইল এখনও ভেরিফাই হয়নি। অনুগ্রহ করে ইনবক্স বা স্প্যাম ফোল্ডারের লিংকে ক্লিক করুন।',
       verificationTooManyNotice: 'অনেকবার ইমেইল পাঠানো হয়েছে। অনুগ্রহ করে ইনবক্স/স্প্যাম চেক করুন অথবা ১ মিনিট অপেক্ষা করুন।',
+      namePlaceholder: 'যেমন: তানভীর আহমেদ',
+      businessPlaceholder: 'যেমন: ঢাকাইয়া ফ্যাশন',
+      emailPlaceholder: 'you@business.com',
+      showPassword: 'পাসওয়ার্ড দেখুন',
+      hidePassword: 'পাসওয়ার্ড লুকান',
     },
     dashboard: {
       addProduct: 'পণ্য যোগ করুন',
@@ -571,6 +683,15 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       restoreDefaults: 'ডিফল্ট ফিরিয়ে আনুন',
       deleteCategoryTitle: 'ক্যাটাগরি মুছুন',
       duplicateCategory: 'এই ক্যাটাগরিটি ইতোমধ্যেই রয়েছে।',
+      categoryPhoto: 'ছবি',
+      uploadPhoto: 'ছবি যোগ করুন',
+      changePhoto: 'ছবি পরিবর্তন',
+      removePhoto: 'ছবি মুছুন',
+      quantity: 'পরিমাণ (পিস)',
+      perPiecePrice: 'প্রতি পিস মূল্য',
+      editCategory: 'ক্যাটাগরি সম্পাদনা',
+      saveCategory: 'সংরক্ষণ',
+      cancelEdit: 'বাতিল',
     },
     products: {
       addProduct: 'পণ্য যোগ করুন',
@@ -641,5 +762,56 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       allExpensesCsv: 'সব খরচের CSV',
       inventoryCsv: 'স্টক CSV',
     },
+    business: {
+      yourBusinessName: 'আপনার ব্যবসার নাম যোগ করুন',
+      activeBusinessLabel: 'বর্তমান ব্যবসা',
+      addBusiness: 'ব্যবসা যোগ করুন',
+      addNewBusiness: 'নতুন ব্যবসা যোগ করুন',
+      switchBusiness: 'ব্যবসা পরিবর্তন করুন',
+      businessPlaceholder: 'যেমন: ঢাকাইয়া ফ্যাশন',
+      manageBusinesses: 'আপনার ব্যবসাসমূহ',
+      manageBusinessesDesc:
+        'একাধিক ব্যবসা তৈরি ও পরিবর্তন করুন। প্রতিটি ব্যবসার খরচ, স্টক, কাস্টমার এবং রসিদ আলাদা থাকবে।',
+      primaryBusiness: 'মূল ব্যবসা',
+      rename: 'নাম বদলান',
+      saveName: 'সংরক্ষণ',
+      cannotDeletePrimary: 'মূল ব্যবসা মুছে ফেলা যাবে না (তবে নাম পরিবর্তন করতে পারবেন)।',
+      duplicateBusiness: 'এই নামে ইতোমধ্যেই একটি ব্যবসা রয়েছে।',
+      confirmDeleteBusiness: 'মুছবেন?',
+    },
+    authErrors: {
+      initFailed: 'আপনার প্রাইভেট ওয়ার্কস্পেস চালু করা যায়নি।',
+      permissionDenied: 'ডেটাবেজ নিরাপত্তার কারণে অনুমতি পাওয়া যায়নি। আপনার ইমেইল ভেরিফাই করুন বা পুনরায় সাইন ইন করুন।',
+      operationNotAllowed: 'Firebase Authentication-এ Email/Password সাইন-ইন চালু করা নেই।',
+      emailInUse: 'এই ইমেইল দিয়ে ইতোমধ্যেই একটি অ্যাকাউন্ট রয়েছে। অনুগ্রহ করে সাইন ইন করুন।',
+      invalidEmail: 'সঠিক ইমেইল ঠিকানা লিখুন।',
+      weakPassword: 'পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।',
+      tooManyRequests: 'অনেকবার চেষ্টা করা হয়েছে। অনুগ্রহ করে কিছুক্ষণ অপেক্ষা করে আবার চেষ্টা করুন।',
+      invalidCredential: 'ইমেইল অথবা পাসওয়ার্ড সঠিক নয়।',
+      signInFailed: 'সাইন ইন করা যায়নি। ইমেইল ও পাসওয়ার্ড যাচাই করুন।',
+      registerFailed: 'অ্যাকাউন্ট তৈরি করা যায়নি। আবার চেষ্টা করুন।',
+      sendVerificationFailed: 'এই মুহূর্তে ভেরিফিকেশন ইমেইল পাঠানো যাচ্ছে না।',
+      checkVerificationFailed: 'ভেরিফিকেশন অবস্থা যাচাই করা যাচ্ছে না।',
+    },
   },
 };
+
+const VALIDATION_BN_MAP: Record<string, string> = {
+  'Enter a valid email address.': 'সঠিক ইমেইল ঠিকানা লিখুন।',
+  'Password must be at least 6 characters.': 'পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।',
+  'Your name is required.': 'আপনার নাম লিখুন।',
+  'Business or workspace name is required.': 'ব্যবসা বা ওয়ার্কস্পেসের নাম লিখুন।',
+  'Passwords do not match.': 'দুটি পাসওয়ার্ড মিলছে না।',
+};
+
+export function translateValidationMessage(
+  message: string | undefined,
+  lang: AppLanguage,
+  fallback: string
+): string {
+  if (!message) return fallback;
+  if (lang === 'bn') {
+    return VALIDATION_BN_MAP[message] || message;
+  }
+  return message;
+}

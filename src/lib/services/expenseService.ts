@@ -79,7 +79,8 @@ export async function saveExpense(
   values: ExpenseFormValues,
   receipts: StagedAssetInput[],
   removedReceiptIds: string[],
-  existing?: Expense
+  existing?: Expense,
+  businessId?: string
 ): Promise<string> {
   const expenseId = existing ? existing.id : generateSafeId('exp');
   const path = `expenses/${expenseId}`;
@@ -87,12 +88,20 @@ export async function saveExpense(
     receipts.find((r) => r.thumbDataUrl)?.thumbDataUrl ||
     (receipts.length > 0 ? existing?.receiptThumb || '' : '');
 
+  const resolvedBusinessId =
+    values.mode === 'business'
+      ? (businessId !== undefined ? businessId : existing?.businessId || '').slice(0, 128)
+      : '';
+
   const payloadBase = {
+    businessId: resolvedBusinessId,
     mode: values.mode,
     title: values.title.trim().slice(0, 200),
     description: values.description.trim().slice(0, 4000),
     category: values.category,
     amount: Math.round(values.amount * 100) / 100,
+    quantity: Math.max(0, Math.min(9999999, Math.round((values.quantity || 0) * 100) / 100)),
+    unitPrice: Math.max(0, Math.min(999999999, Math.round((values.unitPrice || 0) * 100) / 100)),
     currency: values.currency,
     date: values.date,
     paymentMethod: values.paymentMethod,
@@ -161,6 +170,7 @@ export async function saveExpense(
 
   await logActivity(user, {
     mode: values.mode,
+    businessId: resolvedBusinessId,
     action: existing ? 'expense_updated' : 'expense_created',
     summary: `${existing ? 'Updated' : 'Logged'} ${values.mode} expense: ${payloadBase.title}`,
     entityType: 'expense',
@@ -194,6 +204,7 @@ export async function deleteExpense(user: User, expense: Expense): Promise<void>
 
   await logActivity(user, {
     mode: expense.mode || 'business',
+    businessId: expense.businessId || '',
     action: 'expense_deleted',
     summary: `Deleted expense: ${expense.title}`,
     entityType: 'expense',

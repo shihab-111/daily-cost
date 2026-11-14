@@ -126,7 +126,8 @@ export async function saveCustomerReceipt(
   user: User,
   values: CustomerReceiptFormValues,
   existing?: CustomerReceipt,
-  activeMode: AppMode = 'business'
+  activeMode: AppMode = 'business',
+  businessId?: string
 ): Promise<string> {
   const receiptId = existing ? existing.id : generateSafeId('rcp');
   const path = `customerReceipts/${receiptId}`;
@@ -162,7 +163,16 @@ export async function saveCustomerReceipt(
   const hexOr = (val: string, fallback: string) =>
     /^#[0-9a-fA-F]{6}$/.test(val) ? val : fallback;
 
+  const resolvedBusinessId = (
+    activeMode === 'business'
+      ? businessId !== undefined
+        ? businessId
+        : existing?.businessId || ''
+      : ''
+  ).slice(0, 128);
+
   const payloadBase = {
+    businessId: resolvedBusinessId,
     receiptNumber: cleanNumber,
     issueDate: values.issueDate,
     issueTime: (values.issueTime || '').trim().slice(0, 30),
@@ -218,6 +228,7 @@ export async function saveCustomerReceipt(
 
     await logActivity(user, {
       mode: activeMode,
+      businessId: resolvedBusinessId,
       action: 'receipt_created',
       summary: `Generated ${payloadBase.memoTitle} ${payloadBase.receiptNumber} for ${payloadBase.customerName}`,
       entityType: 'receipt',
@@ -253,6 +264,7 @@ export async function deleteCustomerReceipt(
 
   await logActivity(user, {
     mode: activeMode,
+    businessId: receipt.businessId || '',
     action: 'receipt_deleted',
     summary: `Deleted receipt ${receipt.receiptNumber} (${receipt.customerName})`,
     entityType: 'receipt',

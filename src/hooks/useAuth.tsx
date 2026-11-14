@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
+import { useLanguage } from '../context/LanguageContext';
 import { auth } from '../lib/firebase/client';
 import {
   isUserVerified,
@@ -36,14 +37,14 @@ function consumePendingProfile(uid: string): PendingProfileDefaults | undefined 
   }
 }
 
-function formatReadableError(err: unknown, fallback: string): string {
+function formatReadableError(err: unknown, fallback: string, permissionMsg: string): string {
   const msg = err instanceof Error ? err.message : String(err || '');
   if (msg.startsWith('{')) {
     try {
       const parsed = JSON.parse(msg) as { error?: string };
       if (parsed?.error) {
         if (parsed.error.toLowerCase().includes('permission')) {
-          return 'Database permission denied while preparing your workspace. Please sign out and sign in again with a verified account.';
+          return permissionMsg;
         }
         return parsed.error;
       }
@@ -80,6 +81,7 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { t } = useLanguage();
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [verifyingTenant, setVerifyingTenant] = useState(false);
@@ -124,13 +126,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } catch (err) {
         setIsAuthorized(false);
-        setAuthError(formatReadableError(err, 'Unable to initialize your private workspace.'));
+        setAuthError(
+          formatReadableError(err, t.authErrors.initFailed, t.authErrors.permissionDenied)
+        );
       } finally {
         setVerifyingTenant(false);
         setAuthLoading(false);
       }
     },
-    []
+    [t.authErrors.initFailed, t.authErrors.permissionDenied]
   );
 
   useEffect(() => {
@@ -153,32 +157,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => unsub();
   }, [hydrateTenant]);
 
-  const mapAuthError = useCallback((err: unknown, fallback: string): string => {
-    const code = (err as { code?: string })?.code || '';
-    if (code === 'auth/operation-not-allowed') {
-      return 'Email/Password sign-in is not enabled in Firebase Console (Authentication → Sign-in method → Email/Password).';
-    }
-    if (code === 'auth/email-already-in-use') {
-      return 'An account with this email already exists. Please switch to Sign In instead.';
-    }
-    if (code === 'auth/invalid-email') {
-      return 'Please enter a valid email address.';
-    }
-    if (code === 'auth/weak-password') {
-      return 'Choose a stronger password (at least 6 characters).';
-    }
-    if (code === 'auth/too-many-requests') {
-      return 'Too many attempts right now. Please wait a minute and try again.';
-    }
-    if (
-      code === 'auth/invalid-credential' ||
-      code === 'auth/wrong-password' ||
-      code === 'auth/user-not-found'
-    ) {
-      return 'Invalid email or password.';
-    }
-    return formatReadableError(err, fallback);
-  }, []);
+  const mapAuthError = useCallback(
+    (err: unknown, fallback: string): string => {
+      const code = (err as { code?: string })?.code || '';
+      if (code === 'auth/operation-not-allowed') {
+        return t.authErrors.operationNotAllowed;
+      }
+      if (code === 'auth/email-already-in-use') {
+        return t.authErrors.emailInUse;
+      }
+      if (code === 'auth/invalid-email') {
+        return t.authErrors.invalidEmail;
+      }
+      if (code === 'auth/weak-password') {
+        return t.authErrors.weakPassword;
+      }
+      if (code === 'auth/too-many-requests') {
+        return t.authErrors.tooManyRequests;
+      }
+      if (
+        code === 'auth/invalid-credential' ||
+        code === 'auth/wrong-password' ||
+        code === 'auth/user-not-found'
+      ) {
+        return t.authErrors.invalidCredential;
+      }
+      return formatReadableError(err, fallback, t.authErrors.permissionDenied);
+    },
+    [t.authErrors]
+  );
 
   const loginWithEmail = useCallback(
     async (email: string, password: string, rememberMe: boolean) => {
@@ -186,11 +193,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         await signInWithUserEmail(email, password, rememberMe);
       } catch (err) {
-        setAuthError(mapAuthError(err, 'Sign-in failed.'));
+        setAuthError(mapAuthError(err, t.authErrors.signInFailed));
         throw err;
       }
     },
-    [mapAuthError]
+    [mapAuthError, t.authErrors.signInFailed]
   );
 
   const registerWithEmail = useCallback(
@@ -222,11 +229,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         return { verificationSent: sent, verificationError };
       } catch (err) {
-        setAuthError(mapAuthError(err, 'Account registration failed.'));
+        setAuthError(mapAuthError(err, t.authErrors.registerFailed));
         throw err;
       }
     },
-    [hydrateTenant, mapAuthError]
+    [hydrateTenant, mapAuthError, t.authErrors.registerFailed]
   );
 
   const resendVerification = useCallback(async () => {

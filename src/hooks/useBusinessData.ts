@@ -88,10 +88,19 @@ export function useExpenseCategories(
     return map;
   }, [categories]);
 
+  const categoryMap = useMemo(() => {
+    const map: Record<string, ExpenseCategoryItem> = {};
+    for (const c of categories) {
+      map[c.key] = c;
+    }
+    return map;
+  }, [categories]);
+
   return {
     allCategories: categories,
     modeCategories,
     categoryLabels,
+    categoryMap,
     loading,
     error,
   };

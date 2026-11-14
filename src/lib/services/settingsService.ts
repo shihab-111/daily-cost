@@ -10,6 +10,7 @@ import {
 import { db, handleFirestoreError, OperationType } from '../firebase/client';
 import { UserSettings } from '../../types';
 import { SettingsFormValues } from '../validators/schemas';
+import { ensureDefaultBusiness } from './businessService';
 
 export async function bootstrapUserWorkspace(
   user: User,
@@ -50,6 +51,8 @@ export async function bootstrapUserWorkspace(
       handleFirestoreError(error, OperationType.CREATE, path);
     }
   }
+
+  await ensureDefaultBusiness(user, defaults?.businessName);
 }
 
 export function subscribeSettings(

@@ -75,7 +75,8 @@ export async function saveProduct(
   values: ProductFormValues,
   photos: StagedAssetInput[],
   removedPhotoIds: string[],
-  existing?: Product
+  existing?: Product,
+  businessId?: string
 ): Promise<string> {
   const productId = existing ? existing.id : generateSafeId('prd');
   const path = `products/${productId}`;
@@ -84,7 +85,12 @@ export async function saveProduct(
     photos.find((p) => p.thumbDataUrl)?.thumbDataUrl ||
     (photos.length > 0 ? existing?.thumbnailUrl || '' : '');
 
+  const resolvedBusinessId = (
+    businessId !== undefined ? businessId : existing?.businessId || ''
+  ).slice(0, 128);
+
   const payloadBase = {
+    businessId: resolvedBusinessId,
     name: values.name.trim().slice(0, 200),
     sku: values.sku.trim().slice(0, 60),
     category: values.category.trim().slice(0, 80),
@@ -163,6 +169,7 @@ export async function saveProduct(
 
   await logActivity(user, {
     mode: 'business',
+    businessId: resolvedBusinessId,
     action: existing ? 'product_updated' : 'product_created',
     summary: `${existing ? 'Updated' : 'Added'} product ${payloadBase.sku}: ${payloadBase.name} (${payloadBase.stockQty} units)`,
     entityType: 'product',
@@ -192,6 +199,7 @@ export async function adjustProductStock(
 
   await logActivity(user, {
     mode: 'business',
+    businessId: product.businessId || '',
     action: 'product_updated',
     summary: `Adjusted stock for ${product.sku} (${product.name}) to ${cleanQty} units`,
     entityType: 'product',
@@ -223,6 +231,7 @@ export async function deleteProduct(user: User, product: Product): Promise<void>
 
   await logActivity(user, {
     mode: 'business',
+    businessId: product.businessId || '',
     action: 'product_deleted',
     summary: `Removed product ${product.sku}: ${product.name}`,
     entityType: 'product',

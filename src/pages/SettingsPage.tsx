@@ -1,12 +1,22 @@
 import React, { useEffect, useState } from 'react';
-import { Building2, Download, ShieldCheck, Wallet } from 'lucide-react';
+import {
+  Building2,
+  Check,
+  Download,
+  Edit3,
+  Plus,
+  ShieldCheck,
+  Trash2,
+  Wallet,
+} from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useLanguage } from '../context/LanguageContext';
+import { useMode } from '../context/ModeContext';
 import { useExpenseCategories, useExpenses, useProducts, useSettings } from '../hooks/useBusinessData';
 import { dbService } from '../lib/firebase/db';
 import { exportExpensesCsv, exportProductsCsv } from '../lib/utils';
 import { settingsSchema } from '../lib/validators/schemas';
-import { CurrencyCode } from '../types';
+import { BusinessProfile, CurrencyCode } from '../types';
 import { DashboardShell } from '../components/layout/DashboardShell';
 import { Button, Card, Input, Select } from '../components/ui';
 import { LanguageToggle } from '../components/ui/LanguageToggle';
@@ -14,10 +24,26 @@ import { LanguageToggle } from '../components/ui/LanguageToggle';
 export const SettingsPage: React.FC = () => {
   const { user } = useAuth();
   const { t } = useLanguage();
+  const {
+    businesses,
+    activeBusiness,
+    activeBusinessId,
+    setActiveBusinessId,
+    addBusiness,
+    renameBusiness,
+    deleteBusiness,
+  } = useMode();
   const { settings } = useSettings(user, Boolean(user));
   const { expenses } = useExpenses(user, Boolean(user));
   const { categoryLabels } = useExpenseCategories(user, Boolean(user));
   const { products } = useProducts(user, Boolean(user));
+
+  const [newBusinessName, setNewBusinessName] = useState('');
+  const [bizSaving, setBizSaving] = useState(false);
+  const [bizMsg, setBizMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+  const [editingBizId, setEditingBizId] = useState<string | null>(null);
+  const [editingBizName, setEditingBizName] = useState('');
+  const [confirmDeleteBizId, setConfirmDeleteBizId] = useState<string | null>(null);
 
   const [businessName, setBusinessName] = useState(
     settings?.businessName || 'EkTally'
@@ -56,6 +82,60 @@ export const SettingsPage: React.FC = () => {
     setPhone(settings.phone);
   }, [settings]);
 
+  const handleAddBusiness = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBizMsg(null);
+    if (!newBusinessName.trim()) return;
+    setBizSaving(true);
+    try {
+      const created = await addBusiness(newBusinessName);
+      setNewBusinessName('');
+      setBizMsg({ type: 'ok', text: `${created.name} added & selected.` });
+    } catch (err) {
+      setBizMsg({
+        type: 'err',
+        text: err instanceof Error ? err.message : 'Unable to add business.',
+      });
+    } finally {
+      setBizSaving(false);
+    }
+  };
+
+  const handleSaveRename = async (biz: BusinessProfile) => {
+    setBizMsg(null);
+    if (!editingBizName.trim()) return;
+    setBizSaving(true);
+    try {
+      await renameBusiness(biz, editingBizName);
+      setEditingBizId(null);
+      setBizMsg({ type: 'ok', text: 'Business name updated.' });
+    } catch (err) {
+      setBizMsg({
+        type: 'err',
+        text: err instanceof Error ? err.message : 'Unable to rename business.',
+      });
+    } finally {
+      setBizSaving(false);
+    }
+  };
+
+  const handleDeleteBiz = async (biz: BusinessProfile) => {
+    setBizMsg(null);
+    setBizSaving(true);
+    try {
+      await deleteBusiness(biz);
+      setConfirmDeleteBizId(null);
+      setBizMsg({ type: 'ok', text: `${biz.name} removed.` });
+    } catch (err) {
+      setBizMsg({
+        type: 'err',
+        text: err instanceof Error ? err.message : t.business.cannotDeletePrimary,
+      });
+    } finally {
+      setBizSaving(false);
+    }
+  };
+
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -80,6 +160,10 @@ export const SettingsPage: React.FC = () => {
     setSavingSettings(true);
     try {
       await dbService.saveSettings(user, parsed.data, Boolean(settings));
+      const defaultBiz = businesses.find((b) => b.isDefault);
+      if (defaultBiz && defaultBiz.name !== parsed.data.businessName) {
+        await renameBusiness(defaultBiz, parsed.data.businessName);
+      }
       setSettingsMsg({
         type: 'ok',
         text: 'Workspace configuration & personal budget cap saved.',
@@ -95,8 +179,179 @@ export const SettingsPage: React.FC = () => {
   };
 
   return (
-    <DashboardShell businessName={businessName}>
+    <DashboardShell businessName={activeBusiness?.name || businessName}>
       <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+        {/* Multi-Business Manager */}
+        <Card className="p-6 space-y-5">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#27272a] pb-3">
+            <div className="flex items-center gap-2">
+              <Building2 className="w-4 h-4 text-[#4ade80] shrink-0" />
+              <div>
+                <h2 className="text-sm font-semibold text-zinc-100">
+                  {t.business.manageBusinesses}
+                </h2>
+                <p className="text-xs text-zinc-400">{t.business.manageBusinessesDesc}</p>
+              </div>
+            </div>
+            <span className="text-xs font-mono tabular-nums text-zinc-400">
+              {businesses.length}
+            </span>
+          </div>
+
+          {bizMsg && (
+            <div
+              className={`text-xs px-3 py-2 rounded-lg bg-[#09090b] border ${
+                bizMsg.type === 'ok'
+                  ? 'border-[#22c55e]/30 text-[#4ade80]'
+                  : 'border-red-500/30 text-red-400'
+              }`}
+            >
+              {bizMsg.text}
+            </div>
+          )}
+
+          <form onSubmit={handleAddBusiness} className="flex flex-col sm:flex-row gap-2.5">
+            <input
+              type="text"
+              maxLength={140}
+              value={newBusinessName}
+              onChange={(e) => setNewBusinessName(e.target.value)}
+              placeholder={t.business.yourBusinessName + ' (' + t.business.businessPlaceholder + ')'}
+              className="flex-1 px-3 py-2 text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-500 focus:outline-none focus:border-[#22c55e]"
+            />
+            <Button type="submit" disabled={bizSaving || !newBusinessName.trim()}>
+              <Plus className="w-4 h-4" />
+              {t.business.addNewBusiness}
+            </Button>
+          </form>
+
+          <div className="divide-y divide-[#27272a] border border-[#27272a] rounded-lg bg-[#09090b]">
+            {businesses.map((biz) => {
+              const isSelected = biz.id === activeBusinessId;
+              const isEditing = editingBizId === biz.id;
+              return (
+                <div
+                  key={biz.id}
+                  className="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    {isEditing ? (
+                      <div className="flex items-center gap-2 flex-1 max-w-md">
+                        <input
+                          type="text"
+                          maxLength={140}
+                          value={editingBizName}
+                          onChange={(e) => setEditingBizName(e.target.value)}
+                          className="flex-1 px-2.5 py-1.5 text-sm bg-[#121214] text-zinc-100 border border-[#22c55e]/60 rounded-lg focus:outline-none"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          disabled={bizSaving || !editingBizName.trim()}
+                          onClick={() => handleSaveRename(biz)}
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          {t.business.saveName}
+                        </Button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingBizId(null)}
+                          className="text-xs text-zinc-400 hover:text-zinc-200 px-2 py-1 cursor-pointer"
+                        >
+                          {t.expenses.cancelEdit}
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setActiveBusinessId(biz.id)}
+                          className="text-left min-w-0 flex items-center gap-2 cursor-pointer group"
+                        >
+                          <span
+                            className={`w-2 h-2 rounded-full shrink-0 ${
+                              isSelected ? 'bg-[#22c55e]' : 'bg-zinc-600 group-hover:bg-zinc-400'
+                            }`}
+                          />
+                          <span
+                            className={`text-sm font-medium truncate ${
+                              isSelected ? 'text-[#4ade80]' : 'text-zinc-100'
+                            }`}
+                          >
+                            {biz.name}
+                          </span>
+                        </button>
+                        {biz.isDefault && (
+                          <span className="text-[10px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#18181b] border border-[#27272a] text-zinc-400 shrink-0">
+                            {t.business.primaryBusiness}
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </div>
+
+                  {!isEditing && (
+                    <div className="flex items-center gap-2 shrink-0">
+                      {!isSelected && (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setActiveBusinessId(biz.id)}
+                        >
+                          {t.business.switchBusiness}
+                        </Button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingBizId(biz.id);
+                          setEditingBizName(biz.name);
+                          setBizMsg(null);
+                        }}
+                        title={t.business.rename}
+                        aria-label={`${t.business.rename} ${biz.name}`}
+                        className="p-1.5 text-zinc-400 hover:text-[#4ade80] rounded-md cursor-pointer"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+                      {!biz.isDefault &&
+                        (confirmDeleteBizId === biz.id ? (
+                          <div className="inline-flex items-center gap-1.5 bg-red-500/10 border border-red-500/30 rounded px-2 py-0.5">
+                            <button
+                              type="button"
+                              disabled={bizSaving}
+                              onClick={() => handleDeleteBiz(biz)}
+                              className="text-xs font-semibold text-red-400 hover:text-red-300 cursor-pointer"
+                            >
+                              {t.common.delete}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setConfirmDeleteBizId(null)}
+                              className="text-xs text-zinc-400 hover:text-zinc-200 cursor-pointer"
+                            >
+                              {t.common.no}
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDeleteBizId(biz.id)}
+                            aria-label={`${t.common.delete} ${biz.name}`}
+                            className="p-1.5 text-zinc-400 hover:text-red-400 rounded-md cursor-pointer"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+
         <Card className="p-6">
           <form onSubmit={handleSaveSettings} className="space-y-5">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#27272a] pb-3">

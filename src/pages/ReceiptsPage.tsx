@@ -175,15 +175,34 @@ function buildInitialDraft(
 export const ReceiptsPage: React.FC = () => {
   const { user, isAuthorized } = useAuth();
   const { t } = useLanguage();
-  const { mode } = useMode();
+  const { mode, activeBusiness, activeBusinessId, matchesBusiness } = useMode();
   const location = useLocation();
   const { settings } = useSettings(user, isAuthorized);
-  const { products } = useProducts(user, isAuthorized);
-  const { customers } = useCustomers(user, isAuthorized);
+  const { products: allProducts } = useProducts(user, isAuthorized);
+  const { customers: allCustomers } = useCustomers(user, isAuthorized);
   const { template } = useReceiptTemplate(user, isAuthorized);
-  const { receipts, loading: receiptsLoading, error: receiptsError } = useCustomerReceipts(
-    user,
-    isAuthorized
+  const { receipts: allReceipts, loading: receiptsLoading, error: receiptsError } =
+    useCustomerReceipts(user, isAuthorized);
+
+  const products = useMemo(
+    () => (mode === 'business' ? allProducts.filter((p) => matchesBusiness(p.businessId)) : allProducts),
+    [allProducts, mode, matchesBusiness]
+  );
+
+  const customers = useMemo(
+    () =>
+      mode === 'business'
+        ? allCustomers.filter((c) => matchesBusiness(c.businessId))
+        : allCustomers,
+    [allCustomers, mode, matchesBusiness]
+  );
+
+  const receipts = useMemo(
+    () =>
+      mode === 'business'
+        ? allReceipts.filter((r) => matchesBusiness(r.businessId))
+        : allReceipts,
+    [allReceipts, mode, matchesBusiness]
   );
 
   const [activeTab, setActiveTab] = useState<StudioTab>('brand');
@@ -252,15 +271,28 @@ export const ReceiptsPage: React.FC = () => {
     } else if (settings) {
       setDraft((prev) => ({
         ...prev,
-        businessName: settings.businessName || prev.businessName,
+        businessName: activeBusiness?.name || settings.businessName || prev.businessName,
         businessPhone: settings.phone || prev.businessPhone,
         businessAddress: settings.address || prev.businessAddress,
-        logoText: (settings.businessName || 'BD').slice(0, 2).toUpperCase(),
+        logoText: ((activeBusiness?.name || settings.businessName) || 'BD').slice(0, 2).toUpperCase(),
         currency: settings.currencyCode || prev.currency,
       }));
       setTemplateHydrated(true);
     }
-  }, [template, settings, templateHydrated, editingReceipt]);
+  }, [template, settings, templateHydrated, editingReceipt, activeBusiness]);
+
+  // Keep draft businessName synced when user switches active business (for fresh/new receipts)
+  useEffect(() => {
+    if (!activeBusiness?.name || editingReceipt) return;
+    setDraft((prev) => ({
+      ...prev,
+      businessName: activeBusiness.name,
+      logoText:
+        prev.logoType === 'monogram' && (!prev.logoText || prev.logoText === 'BD' || prev.logoText === 'ET')
+          ? activeBusiness.name.slice(0, 2).toUpperCase()
+          : prev.logoText,
+    }));
+  }, [activeBusiness?.id, activeBusiness?.name, editingReceipt]);
 
   const updateDraftWithTotals = (
     updater: (prev: CustomerReceiptFormValues) => CustomerReceiptFormValues
@@ -463,7 +495,13 @@ export const ReceiptsPage: React.FC = () => {
 
     setSavingReceipt(true);
     try {
-      await dbService.saveCustomerReceipt(user, parsed.data, editingReceipt, mode);
+      await dbService.saveCustomerReceipt(
+        user,
+        parsed.data,
+        editingReceipt,
+        mode,
+        editingReceipt ? editingReceipt.businessId : activeBusinessId
+      );
       if (!editingReceipt && selectedCustomerId) {
         const matchedCustomer = customers.find((c) => c.id === selectedCustomerId);
         if (matchedCustomer) {
@@ -672,7 +710,7 @@ export const ReceiptsPage: React.FC = () => {
 
   return (
     <DashboardShell
-      businessName={settings?.businessName || 'EkTally'}
+      businessName={activeBusiness?.name || settings?.businessName || 'EkTally'}
       headerAction={
         <div className="flex items-center gap-2">
           <Button

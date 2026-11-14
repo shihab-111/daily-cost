@@ -72,6 +72,7 @@ export const OverviewCharts: React.FC<OverviewChartsProps> = ({
     ...categories.map((c, idx) => ({
       key: c.key,
       label: c.label,
+      photoUrl: c.photoUrl || '',
       color: getCategoryColor(c.key, idx),
     })),
     ...Object.keys(categoryTotals)
@@ -79,6 +80,7 @@ export const OverviewCharts: React.FC<OverviewChartsProps> = ({
       .map((key, idx) => ({
         key,
         label: resolveCategoryLabel(key, categoryLabels),
+        photoUrl: '',
         color: getCategoryColor(key, categories.length + idx),
       })),
   ];
@@ -211,10 +213,19 @@ export const OverviewCharts: React.FC<OverviewChartsProps> = ({
                 return (
                   <div key={cat.key} className="flex items-center justify-between text-xs gap-2">
                     <span className="text-zinc-300 flex items-center gap-2 truncate">
-                      <span
-                        className="w-2 h-2 rounded-xs shrink-0"
-                        style={{ backgroundColor: cat.color }}
-                      />
+                      {cat.photoUrl ? (
+                        <img
+                          src={cat.photoUrl}
+                          alt={cat.label}
+                          referrerPolicy="no-referrer"
+                          className="w-4 h-4 rounded-sm object-cover border border-[#27272a] shrink-0"
+                        />
+                      ) : (
+                        <span
+                          className="w-2 h-2 rounded-xs shrink-0"
+                          style={{ backgroundColor: cat.color }}
+                        />
+                      )}
                       <span className="truncate">{cat.label}</span>
                     </span>
                     <span className="font-mono tabular-nums text-zinc-400 shrink-0">

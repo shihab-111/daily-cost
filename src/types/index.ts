@@ -28,6 +28,9 @@ export interface ExpenseCategoryItem {
   mode: AppMode;
   key: string;
   label: string;
+  photoUrl?: string;
+  quantity?: number;
+  unitPrice?: number;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
@@ -60,15 +63,27 @@ export interface UserSettings {
   updatedAt?: Timestamp;
 }
 
+export interface BusinessProfile {
+  id: string;
+  userId: string;
+  name: string;
+  isDefault: boolean;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
 export interface Expense {
   id: string;
   userId: string;
   userEmail: string;
+  businessId?: string;
   mode: AppMode;
   title: string;
   description: string;
   category: ExpenseCategory;
   amount: number;
+  quantity?: number;
+  unitPrice?: number;
   currency: CurrencyCode;
   date: string; // YYYY-MM-DD (Asia/Dhaka)
   paymentMethod: PaymentMethod;
@@ -103,6 +118,7 @@ export interface Product {
   id: string;
   userId: string;
   userEmail: string;
+  businessId?: string;
   name: string;
   sku: string;
   category: string;
@@ -136,6 +152,7 @@ export interface ProductPhoto {
 export interface Customer {
   id: string;
   userId: string;
+  businessId?: string;
   name: string;
   phone: string;
   email: string;
@@ -153,6 +170,7 @@ export interface ActivityLog {
   id: string;
   userId: string;
   actorEmail: string;
+  businessId?: string;
   mode: AppMode;
   action:
     | 'expense_created'
@@ -226,6 +244,7 @@ export interface CustomerReceipt {
   id: string;
   userId: string;
   userEmail: string;
+  businessId?: string;
   receiptNumber: string;
   issueDate: string;
   issueTime: string;

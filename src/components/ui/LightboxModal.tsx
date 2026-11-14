@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, Download, X } from 'lucide-react';
+import { useLanguage } from '../../context/LanguageContext';
 
 export interface LightboxImageItem {
   id: string;
@@ -21,6 +22,7 @@ export const LightboxModal: React.FC<LightboxModalProps> = ({
   initialIndex,
   onClose,
 }) => {
+  const { t } = useLanguage();
   const [index, setIndex] = useState(initialIndex);
   const current = items[index];
 
@@ -67,12 +69,12 @@ export const LightboxModal: React.FC<LightboxModalProps> = ({
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#18181b] border border-[#27272a] hover:bg-zinc-800 rounded-lg cursor-pointer"
           >
             <Download className="w-3.5 h-3.5 text-[#4ade80]" />
-            Download
+            {t.common.download}
           </button>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close viewer"
+            aria-label={t.common.close}
             className="p-2 bg-[#18181b] border border-[#27272a] hover:bg-zinc-800 rounded-lg cursor-pointer"
           >
             <X className="w-4 h-4" />
@@ -110,7 +112,7 @@ export const LightboxModal: React.FC<LightboxModalProps> = ({
       </div>
 
       <div className="text-center text-xs text-zinc-300">
-        {current.caption || 'No caption added'}
+        {current.caption || t.common.noCaption}
       </div>
     </div>
   );
