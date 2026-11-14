@@ -1,6 +1,6 @@
 import { jsPDF } from 'jspdf';
 import { CustomerReceiptFormValues } from './validators/schemas';
-import { formatMoney } from './utils';
+import { formatMoney, resolveReceiptLogoUrl } from './utils';
 
 function loadLogoImage(src: string): Promise<HTMLImageElement | null> {
   if (!src) return Promise.resolve(null);
@@ -89,8 +89,9 @@ export async function renderReceiptToCanvas(
   const logoSizePx =
     receipt.logoSize === 'sm' ? 52 : receipt.logoSize === 'lg' ? 88 : 68;
 
+  const resolvedLogoSrc = resolveReceiptLogoUrl(receipt.logoDataUrl, headerIsDark);
   const logoImg =
-    receipt.logoType === 'uploaded' ? await loadLogoImage(receipt.logoDataUrl) : null;
+    receipt.logoType === 'uploaded' ? await loadLogoImage(resolvedLogoSrc) : null;
 
   const measureCanvas = document.createElement('canvas');
   const mCtx = measureCanvas.getContext('2d')!;
@@ -144,13 +145,24 @@ export async function renderReceiptToCanvas(
 
   let y = 34;
 
+  const uploadedLogoWidth =
+    receipt.logoType === 'uploaded' && logoImg
+      ? Math.min(
+          Math.round(logoSizePx * 2.4),
+          Math.max(
+            logoSizePx,
+            Math.round(logoSizePx * (logoImg.naturalWidth / Math.max(1, logoImg.naturalHeight)))
+          )
+        )
+      : logoSizePx;
+
   const drawLogoAt = (lx: number, ly: number) => {
     if (receipt.logoType === 'uploaded' && logoImg) {
       ctx.save();
       ctx.beginPath();
-      ctx.roundRect(lx, ly, logoSizePx, logoSizePx, 12);
+      ctx.roundRect(lx, ly, uploadedLogoWidth, logoSizePx, 10);
       ctx.clip();
-      ctx.drawImage(logoImg, lx, ly, logoSizePx, logoSizePx);
+      ctx.drawImage(logoImg, lx, ly, uploadedLogoWidth, logoSizePx);
       ctx.restore();
     } else if (receipt.logoType === 'monogram') {
       ctx.fillStyle = accent;
@@ -174,7 +186,7 @@ export async function renderReceiptToCanvas(
   if (receipt.logoPosition === 'center' && !isThermal) {
     let cy = y;
     if (receipt.logoType !== 'minimal_text') {
-      drawLogoAt(width / 2 - logoSizePx / 2, cy);
+      drawLogoAt(width / 2 - uploadedLogoWidth / 2, cy);
       cy += logoSizePx + 18;
     }
     ctx.textAlign = 'center';
@@ -208,7 +220,7 @@ export async function renderReceiptToCanvas(
     if (receipt.logoType !== 'minimal_text') {
       drawLogoAt(pad, y);
       if (!isThermal) {
-        textStartX = pad + logoSizePx + 18;
+        textStartX = pad + uploadedLogoWidth + 18;
       }
     }
 

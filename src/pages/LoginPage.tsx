@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Eye, EyeOff, Lock, LogOut, MailCheck, RefreshCw, ShieldCheck, UserPlus } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { EKTALLY_LOGO_URL } from '../lib/utils';
 import { loginSchema, registerSchema } from '../lib/validators/schemas';
 import { Button } from '../components/ui';
 
@@ -40,7 +41,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
   const [verificationSent, setVerificationSent] = useState(false);
   const [checkingVerify, setCheckingVerify] = useState(false);
   const [verifyNotice, setVerifyNotice] = useState<string | null>(null);
-  const [imageError, setImageError] = useState(false);
 
   if (user && isAuthorized) {
     return <Navigate to="/" replace />;
@@ -132,44 +132,88 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
   };
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-zinc-100 flex flex-col lg:flex-row items-stretch">
-      {/* Left Branded Visual Panel */}
-      <div className="relative lg:w-1/2 min-h-[260px] lg:min-h-screen bg-[#121214] border-b lg:border-b-0 lg:border-r border-[#27272a] overflow-hidden flex flex-col justify-end">
-        {!imageError ? (
-          <img
-            src="/src/assets/images/login_archive_studio_1794665533639.jpg"
-            alt="Business operations desk and ledger"
-            referrerPolicy="no-referrer"
-            onError={() => setImageError(true)}
-            className="absolute inset-0 w-full h-full object-cover opacity-55"
-          />
-        ) : null}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#09090b] via-[#09090b]/70 to-[#09090b]/30" />
+    <div className="min-h-screen bg-[#050507] text-zinc-100 flex flex-col lg:flex-row items-stretch">
+      {/* Left Modern Black & Light Green Brand Panel */}
+      <div className="relative lg:w-1/2 lg:min-h-screen bg-gradient-to-br from-[#050507] via-[#07150d] to-[#050507] border-b lg:border-b-0 lg:border-r border-[#4ade80]/15 overflow-hidden flex flex-col justify-between p-8 sm:p-10 lg:p-14">
+        {/* Ambient Light Green Mix & Architectural Grid */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -top-32 -left-24 w-[420px] h-[420px] rounded-full bg-[#4ade80]/15 blur-[110px]"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -bottom-36 -right-20 w-[460px] h-[460px] rounded-full bg-[#22c55e]/15 blur-[120px]"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 opacity-60 [background-image:linear-gradient(to_right,rgba(74,222,128,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(74,222,128,0.06)_1px,transparent_1px)] [background-size:48px_48px] [mask-image:radial-gradient(ellipse_at_center,black_35%,transparent_80%)]"
+        />
 
-        <div className="relative z-10 p-8 lg:p-14 max-w-xl">
-          <p className="text-xs font-mono text-[#4ade80] mb-3">
-            Meridian BD · Dual-Mode Business &amp; Personal Ledger
+        {/* Top Brand Mark */}
+        <div className="relative z-10 flex items-center justify-between gap-4">
+          <img
+            src={EKTALLY_LOGO_URL}
+            alt="EkTally"
+            referrerPolicy="no-referrer"
+            className="h-8 sm:h-9 w-auto object-contain shrink-0"
+          />
+          <span className="text-xs font-mono text-[#4ade80]/80 whitespace-nowrap">
+            Dhaka · BDT ৳
+          </span>
+        </div>
+
+        {/* Center Hero Statement */}
+        <div className="relative z-10 my-10 lg:my-0 max-w-xl">
+          <p className="text-xs font-mono text-[#4ade80] mb-3 tracking-wide">
+            EkTally · Dual-Mode Business &amp; Personal Ledger
           </p>
-          <h1 className="text-2xl lg:text-4xl font-semibold text-white tracking-tight leading-tight text-balance mb-4">
-            Private Bangladesh business &amp; personal expense control.
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-white tracking-tight leading-[1.15] text-balance mb-4">
+            Private Bangladesh{' '}
+            <span className="text-[#4ade80]">business &amp; personal</span>{' '}
+            expense control.
           </h1>
           <p className="text-sm text-zinc-400 leading-relaxed max-w-md">
             Switch seamlessly between Business Operations (Meta ads, inventory, customers, custom receipts) and Personal Daily Expenses (bazaar, bills, monthly budget) with strict per-user data isolation.
           </p>
-          <div className="mt-6 flex items-center gap-2 text-xs text-zinc-300">
-            <ShieldCheck className="w-4 h-4 text-[#4ade80] shrink-0" />
-            <span>Zero cross-account data leakage · Scoped by verified User UID</span>
+        </div>
+
+        {/* Bottom Architectural Highlights */}
+        <div className="relative z-10 border-t border-[#4ade80]/15 pt-6 grid grid-cols-1 sm:grid-cols-3 gap-5 max-w-xl">
+          <div>
+            <p className="text-xs font-medium text-[#86efac]">Dual Workspace</p>
+            <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+              Business ops &amp; personal daily ledger in one toggle
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-medium text-[#86efac]">BD Ready</p>
+            <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+              BDT ৳, bKash, Nagad, Rocket &amp; A4/80mm receipts
+            </p>
+          </div>
+          <div>
+            <div className="flex items-center gap-1.5 text-xs font-medium text-[#86efac]">
+              <ShieldCheck className="w-3.5 h-3.5 text-[#4ade80] shrink-0" />
+              <span>UID Isolated</span>
+            </div>
+            <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+              Scoped strictly to your verified account
+            </p>
           </div>
         </div>
       </div>
 
       {/* Right Tenant Auth Panel */}
-      <div className="flex-1 flex items-center justify-center p-6 sm:p-10 lg:p-16 bg-[#09090b]">
-        <div className="w-full max-w-md bg-[#18181b] border border-[#27272a] rounded-xl p-6 sm:p-8">
+      <div className="relative flex-1 flex items-center justify-center p-6 sm:p-10 lg:p-16 bg-[#07080a] overflow-hidden">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] h-[480px] rounded-full bg-[#22c55e]/[0.06] blur-[120px]"
+        />
+        <div className="relative z-10 w-full max-w-md bg-[#0e1012] border border-[#4ade80]/15 rounded-xl p-6 sm:p-8 shadow-[0_24px_80px_-24px_rgba(34,197,94,0.12)]">
           <div className="mb-5">
             <div className="inline-flex items-center gap-2 text-xs font-medium text-[#4ade80] mb-2">
               {mode === 'login' ? <Lock className="w-3.5 h-3.5" /> : <UserPlus className="w-3.5 h-3.5" />}
-              <span>Isolated Tenant Workspace</span>
+              <span>EkTally Workspace</span>
             </div>
             <h2 className="text-xl font-semibold text-zinc-100 tracking-tight">
               {mode === 'login' ? 'Sign In to Your Ledger' : 'Create Private Workspace'}

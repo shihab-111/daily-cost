@@ -16,7 +16,7 @@ export const SettingsPage: React.FC = () => {
   const { products } = useProducts(user, Boolean(user));
 
   const [businessName, setBusinessName] = useState(
-    settings?.businessName || 'Meridian BD Ops'
+    settings?.businessName || 'EkTally'
   );
   const [ownerName, setOwnerName] = useState(
     settings?.ownerName || user?.displayName || 'Workspace Owner'

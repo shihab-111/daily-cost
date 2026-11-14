@@ -39,7 +39,7 @@ export const DashboardPage: React.FC = () => {
   const [expenseModalOpen, setExpenseModalOpen] = useState(false);
   const [productModalOpen, setProductModalOpen] = useState(false);
 
-  const businessName = settings?.businessName || 'Meridian BD Ops';
+  const businessName = settings?.businessName || 'EkTally';
   const defaultCurrency = settings?.currencyCode || 'BDT';
   const usdToBdtRate = settings?.usdToBdtRate || 120;
   const defaultThreshold = settings?.lowStockThreshold ?? 5;

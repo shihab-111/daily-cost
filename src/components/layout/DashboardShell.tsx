@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useMode } from '../../context/ModeContext';
-import { cn } from '../../lib/utils';
+import { cn, EKTALLY_LOGO_URL } from '../../lib/utils';
 
 interface DashboardShellProps {
   businessName: string;
@@ -74,13 +74,18 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
 
   const sidebarContent = (
     <div className="flex flex-col h-full w-[260px] bg-[#121214] border-r border-[#27272a] shrink-0">
-      <div className="h-14 px-5 flex items-center justify-between border-b border-[#27272a] shrink-0">
+      <div className="h-14 px-4 flex items-center justify-between border-b border-[#27272a] shrink-0">
         <NavLink
           to="/"
           onClick={() => setMobileOpen(false)}
-          className="text-base font-semibold tracking-tight text-zinc-100 truncate"
+          className="flex items-center min-w-0"
+          aria-label="EkTally Home"
         >
-          {businessName}
+          <img
+            src={EKTALLY_LOGO_URL}
+            alt="EkTally"
+            className="h-7 w-auto object-contain shrink-0"
+          />
         </NavLink>
         <button
           type="button"

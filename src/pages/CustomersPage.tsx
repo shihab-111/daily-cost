@@ -21,7 +21,7 @@ export const CustomersPage: React.FC = () => {
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
-  const businessName = settings?.businessName || 'Meridian BD Ops';
+  const businessName = settings?.businessName || 'EkTally';
 
   const filteredCustomers = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();

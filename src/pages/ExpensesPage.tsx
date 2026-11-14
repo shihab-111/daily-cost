@@ -39,7 +39,7 @@ export const ExpensesPage: React.FC = () => {
     setCategoryFilter('all');
   }, [mode]);
 
-  const businessName = settings?.businessName || 'Meridian BD Ops';
+  const businessName = settings?.businessName || 'EkTally';
   const defaultCurrency = settings?.currencyCode || 'BDT';
   const usdToBdtRate = settings?.usdToBdtRate || 120;
   const modeCategories = useMemo(() => getCategoriesForMode(mode), [mode]);

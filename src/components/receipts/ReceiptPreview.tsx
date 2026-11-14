@@ -1,6 +1,6 @@
 import React from 'react';
 import { CustomerReceiptFormValues } from '../../lib/validators/schemas';
-import { cn, formatMoney } from '../../lib/utils';
+import { cn, formatMoney, isEkTallyLogo, resolveReceiptLogoUrl } from '../../lib/utils';
 
 interface ReceiptPreviewProps {
   receipt: CustomerReceiptFormValues;
@@ -62,6 +62,13 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({ receipt }) => {
       ? 'w-18 h-18 text-xl'
       : 'w-14 h-14 text-base';
 
+  const uploadedLogoClass =
+    receipt.logoSize === 'sm'
+      ? 'h-10 max-w-[130px]'
+      : receipt.logoSize === 'lg'
+      ? 'h-16 max-w-[200px]'
+      : 'h-12 max-w-[160px]';
+
   const isCentered = receipt.logoPosition === 'center' && !isThermal;
 
   const monogram = (
@@ -116,12 +123,14 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({ receipt }) => {
           >
             {receipt.logoType === 'uploaded' && receipt.logoDataUrl ? (
               <img
-                src={receipt.logoDataUrl}
+                src={resolveReceiptLogoUrl(receipt.logoDataUrl, headerIsDark)}
                 alt={receipt.businessName || 'Business Logo'}
                 className={cn(
-                  'rounded-lg object-cover shrink-0 border',
-                  logoDimClass,
-                  headerIsDark ? 'border-zinc-700' : 'border-slate-200'
+                  'w-auto object-contain shrink-0',
+                  uploadedLogoClass,
+                  isEkTallyLogo(receipt.logoDataUrl)
+                    ? ''
+                    : cn('rounded-lg border', headerIsDark ? 'border-zinc-700' : 'border-slate-200')
                 )}
               />
             ) : receipt.logoType === 'monogram' ? (

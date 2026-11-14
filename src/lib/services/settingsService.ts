@@ -29,7 +29,7 @@ export async function bootstrapUserWorkspace(
     try {
       await setDoc(settingsRef, {
         userId: user.uid,
-        businessName: (defaults?.businessName || 'My BD Workspace').trim().slice(0, 140),
+        businessName: (defaults?.businessName || 'EkTally').trim().slice(0, 140),
         ownerName: (
           defaults?.ownerName ||
           user.displayName ||

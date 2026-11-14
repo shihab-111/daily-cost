@@ -40,7 +40,7 @@ export const ProductsPage: React.FC = () => {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [lightboxItems, setLightboxItems] = useState<LightboxImageItem[] | null>(null);
 
-  const businessName = settings?.businessName || 'Meridian BD Ops';
+  const businessName = settings?.businessName || 'EkTally';
   const defaultCurrency = settings?.currencyCode || 'BDT';
   const defaultThreshold = settings?.lowStockThreshold ?? 5;
 

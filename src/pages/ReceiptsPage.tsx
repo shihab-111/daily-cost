@@ -36,9 +36,11 @@ import {
   BD_COURIERS,
   BD_DISTRICTS,
   cn,
+  EKTALLY_LOGO_URL,
   formatMoney,
   generateReceiptNumber,
   getNowDhakaDateTime,
+  isEkTallyLogo,
   RECEIPT_PAYMENT_METHODS,
 } from '../lib/utils';
 import {
@@ -134,13 +136,13 @@ function buildInitialDraft(
     memoTitle: 'Money Receipt',
     status: 'cod',
     paymentMethod: 'Cash on Delivery',
-    businessName: businessName || 'Meridian BD Ops',
+    businessName: businessName || 'EkTally',
     businessTagline: 'Dhaka Retail & E-Commerce',
     businessPhone: businessPhone || '',
     businessAddress: businessAddress || 'Dhaka, Bangladesh',
-    logoType: 'monogram',
-    logoText: (businessName || 'BD').slice(0, 2).toUpperCase(),
-    logoDataUrl: '',
+    logoType: 'uploaded',
+    logoText: (businessName || 'ET').slice(0, 2).toUpperCase(),
+    logoDataUrl: EKTALLY_LOGO_URL,
     logoSize: 'md',
     logoPosition: 'left',
     textStyle: 'modern_sans',
@@ -185,7 +187,7 @@ export const ReceiptsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<StudioTab>('brand');
   const [editingReceipt, setEditingReceipt] = useState<CustomerReceipt | undefined>(undefined);
   const [draft, setDraft] = useState<CustomerReceiptFormValues>(() =>
-    buildInitialDraft('Meridian BD Ops', '', 'Dhaka, Bangladesh', 'BDT')
+    buildInitialDraft('EkTally', '', 'Dhaka, Bangladesh', 'BDT')
   );
   const [templateHydrated, setTemplateHydrated] = useState(false);
 
@@ -668,7 +670,7 @@ export const ReceiptsPage: React.FC = () => {
 
   return (
     <DashboardShell
-      businessName={settings?.businessName || 'Meridian BD Ops'}
+      businessName={settings?.businessName || 'EkTally'}
       headerAction={
         <div className="flex items-center gap-2">
           <Button
@@ -879,9 +881,14 @@ export const ReceiptsPage: React.FC = () => {
                     <div className="flex items-center gap-3 p-3 bg-[#09090b] border border-[#27272a] rounded-lg">
                       {draft.logoDataUrl ? (
                         <img
-                          src={draft.logoDataUrl}
+                          src={isEkTallyLogo(draft.logoDataUrl) ? EKTALLY_LOGO_URL : draft.logoDataUrl}
                           alt="Uploaded brand logo"
-                          className="w-11 h-11 rounded-md object-cover border border-[#27272a] shrink-0"
+                          className={cn(
+                            'h-11 rounded-md border border-[#27272a] shrink-0',
+                            isEkTallyLogo(draft.logoDataUrl)
+                              ? 'w-auto max-w-[130px] object-contain bg-[#121214] px-2.5 py-1.5'
+                              : 'w-11 object-cover'
+                          )}
                         />
                       ) : (
                         <div className="w-11 h-11 rounded-md bg-[#18181b] border border-dashed border-[#27272a] flex items-center justify-center text-zinc-500 shrink-0">
@@ -903,6 +910,22 @@ export const ReceiptsPage: React.FC = () => {
                           )}
                           {draft.logoDataUrl ? 'Replace Logo' : 'Upload Logo'}
                         </Button>
+                        {!isEkTallyLogo(draft.logoDataUrl) && (
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            onClick={() =>
+                              setDraft((prev) => ({
+                                ...prev,
+                                logoType: 'uploaded',
+                                logoDataUrl: EKTALLY_LOGO_URL,
+                              }))
+                            }
+                          >
+                            Use EkTally Logo
+                          </Button>
+                        )}
                         {draft.logoDataUrl && (
                           <Button
                             type="button"

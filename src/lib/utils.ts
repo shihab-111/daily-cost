@@ -14,6 +14,23 @@ export function cn(...classes: Array<string | false | null | undefined>): string
   return classes.filter(Boolean).join(' ');
 }
 
+export const EKTALLY_LOGO_URL = '/assets/ektally-logo.png';
+export const EKTALLY_LOGO_LIGHT_URL = '/assets/ektally-logo-light.png';
+const LEGACY_EKTALLY_LOGO_URL =
+  '/assets/aistudio/Gemini_Generated_Image_42zml642zml642zm_05ca8ec6.jpg';
+
+export function isEkTallyLogo(url: string): boolean {
+  return url === EKTALLY_LOGO_URL || url === EKTALLY_LOGO_LIGHT_URL || url === LEGACY_EKTALLY_LOGO_URL;
+}
+
+export function resolveReceiptLogoUrl(url: string, headerIsDark: boolean): string {
+  if (!url) return '';
+  if (isEkTallyLogo(url)) {
+    return headerIsDark ? EKTALLY_LOGO_URL : EKTALLY_LOGO_LIGHT_URL;
+  }
+  return url;
+}
+
 export const BUSINESS_EXPENSE_CATEGORIES: Record<BusinessExpenseCategory, string> = {
   facebook_ads: 'Facebook & Meta Ads',
   marketing_promo: 'Marketing & Influencers',
