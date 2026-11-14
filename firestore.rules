@@ -1,0 +1,368 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Security Primitives ---
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isRootAdmin() {
+      return isVerified() && request.auth.token.email == 'shihabahmmed700@gmail.com';
+    }
+
+    function isRegisteredAdmin() {
+      return isVerified()
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.active == true;
+    }
+
+    function isAdmin() {
+      return isRootAdmin() || isRegisteredAdmin();
+    }
+
+    // --- Validation Blueprints ---
+    function isValidAdminUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'displayName', 'role', 'active', 'addedBy', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'email', 'displayName', 'role', 'active', 'addedBy', 'createdAt', 'updatedAt'])
+        && isValidId(data.uid)
+        && data.email is string && data.email.size() >= 3 && data.email.size() <= 254
+        && data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 120
+        && data.role in ['owner', 'admin']
+        && data.active is bool
+        && isValidId(data.addedBy)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidBusinessSettings(data) {
+      return data.keys().hasAll(['businessName', 'ownerName', 'currencyCode', 'currencySymbol', 'lowStockThreshold', 'usdToBdtRate', 'address', 'phone', 'updatedBy', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['businessName', 'ownerName', 'currencyCode', 'currencySymbol', 'lowStockThreshold', 'usdToBdtRate', 'address', 'phone', 'updatedBy', 'createdAt', 'updatedAt'])
+        && data.businessName is string && data.businessName.size() >= 1 && data.businessName.size() <= 140
+        && data.ownerName is string && data.ownerName.size() >= 1 && data.ownerName.size() <= 120
+        && data.currencyCode in ['BDT', 'USD']
+        && data.currencySymbol is string && data.currencySymbol.size() >= 1 && data.currencySymbol.size() <= 6
+        && data.lowStockThreshold is int && data.lowStockThreshold >= 0 && data.lowStockThreshold <= 10000
+        && (data.usdToBdtRate is int || data.usdToBdtRate is float) && data.usdToBdtRate >= 1 && data.usdToBdtRate <= 10000
+        && data.address is string && data.address.size() <= 240
+        && data.phone is string && data.phone.size() <= 40
+        && isValidId(data.updatedBy)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidExpense(data) {
+      return data.keys().hasAll([
+          'title', 'description', 'category', 'amount', 'currency', 'date', 'paymentMethod',
+          'adAccountId', 'campaignName', 'partnerOrAgency', 'modelName', 'photographerName',
+          'studioName', 'vendorOrCourier', 'receiptThumb', 'receiptCount',
+          'authorUid', 'authorEmail', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'title', 'description', 'category', 'amount', 'currency', 'date', 'paymentMethod',
+          'adAccountId', 'campaignName', 'partnerOrAgency', 'modelName', 'photographerName',
+          'studioName', 'vendorOrCourier', 'receiptThumb', 'receiptCount',
+          'authorUid', 'authorEmail', 'createdAt', 'updatedAt'
+        ])
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 200
+        && data.description is string && data.description.size() <= 4000
+        && data.category in ['facebook_ads', 'marketing_promo', 'photoshoot_model', 'operations_packaging']
+        && (data.amount is int || data.amount is float) && data.amount >= 0 && data.amount <= 999999999
+        && data.currency in ['BDT', 'USD']
+        && data.date is string && data.date.size() == 10 && data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && data.paymentMethod in ['bKash', 'Nagad', 'Rocket', 'Bank Transfer', 'Cash', 'Card']
+        && data.adAccountId is string && data.adAccountId.size() <= 120
+        && data.campaignName is string && data.campaignName.size() <= 160
+        && data.partnerOrAgency is string && data.partnerOrAgency.size() <= 160
+        && data.modelName is string && data.modelName.size() <= 120
+        && data.photographerName is string && data.photographerName.size() <= 120
+        && data.studioName is string && data.studioName.size() <= 120
+        && data.vendorOrCourier is string && data.vendorOrCourier.size() <= 160
+        && data.receiptThumb is string && data.receiptThumb.size() <= 80000
+        && data.receiptCount is int && data.receiptCount >= 0 && data.receiptCount <= 10
+        && isValidId(data.authorUid)
+        && data.authorEmail is string && data.authorEmail.size() >= 3 && data.authorEmail.size() <= 254
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidReceiptAsset(data) {
+      return data.keys().hasAll(['expenseId', 'fileName', 'mimeType', 'width', 'height', 'sizeBytes', 'dataUrl', 'authorUid', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['expenseId', 'fileName', 'mimeType', 'width', 'height', 'sizeBytes', 'dataUrl', 'authorUid', 'createdAt', 'updatedAt'])
+        && isValidId(data.expenseId)
+        && data.fileName is string && data.fileName.size() >= 1 && data.fileName.size() <= 200
+        && data.mimeType in ['image/jpeg', 'image/webp', 'image/png']
+        && data.width is int && data.width >= 1 && data.width <= 8000
+        && data.height is int && data.height >= 1 && data.height <= 8000
+        && data.sizeBytes is int && data.sizeBytes >= 1 && data.sizeBytes <= 700000
+        && data.dataUrl is string && data.dataUrl.size() >= 10 && data.dataUrl.size() <= 700000
+        && isValidId(data.authorUid)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidProduct(data) {
+      return data.keys().hasAll([
+          'name', 'sku', 'category', 'purchaseCost', 'sellingPrice', 'currency',
+          'stockQty', 'lowStockThreshold', 'notes', 'thumbnailUrl', 'photoCount',
+          'authorUid', 'authorEmail', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'name', 'sku', 'category', 'purchaseCost', 'sellingPrice', 'currency',
+          'stockQty', 'lowStockThreshold', 'notes', 'thumbnailUrl', 'photoCount',
+          'authorUid', 'authorEmail', 'createdAt', 'updatedAt'
+        ])
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 200
+        && data.sku is string && data.sku.size() >= 1 && data.sku.size() <= 60 && data.sku.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.category is string && data.category.size() >= 1 && data.category.size() <= 80
+        && (data.purchaseCost is int || data.purchaseCost is float) && data.purchaseCost >= 0 && data.purchaseCost <= 999999999
+        && (data.sellingPrice is int || data.sellingPrice is float) && data.sellingPrice >= 0 && data.sellingPrice <= 999999999
+        && data.currency in ['BDT', 'USD']
+        && data.stockQty is int && data.stockQty >= 0 && data.stockQty <= 9999999
+        && data.lowStockThreshold is int && data.lowStockThreshold >= 0 && data.lowStockThreshold <= 99999
+        && data.notes is string && data.notes.size() <= 4000
+        && data.thumbnailUrl is string && data.thumbnailUrl.size() <= 80000
+        && data.photoCount is int && data.photoCount >= 0 && data.photoCount <= 20
+        && isValidId(data.authorUid)
+        && data.authorEmail is string && data.authorEmail.size() >= 3 && data.authorEmail.size() <= 254
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidProductPhoto(data) {
+      return data.keys().hasAll(['productId', 'fileName', 'mimeType', 'caption', 'width', 'height', 'sizeBytes', 'dataUrl', 'authorUid', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['productId', 'fileName', 'mimeType', 'caption', 'width', 'height', 'sizeBytes', 'dataUrl', 'authorUid', 'createdAt', 'updatedAt'])
+        && isValidId(data.productId)
+        && data.fileName is string && data.fileName.size() >= 1 && data.fileName.size() <= 200
+        && data.mimeType in ['image/jpeg', 'image/webp', 'image/png']
+        && data.caption is string && data.caption.size() <= 300
+        && data.width is int && data.width >= 1 && data.width <= 8000
+        && data.height is int && data.height >= 1 && data.height <= 8000
+        && data.sizeBytes is int && data.sizeBytes >= 1 && data.sizeBytes <= 700000
+        && data.dataUrl is string && data.dataUrl.size() >= 10 && data.dataUrl.size() <= 700000
+        && isValidId(data.authorUid)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidActivityLog(data) {
+      return data.keys().hasAll(['action', 'summary', 'entityType', 'entityId', 'amount', 'currency', 'actorUid', 'actorEmail', 'createdAt'])
+        && data.keys().hasOnly(['action', 'summary', 'entityType', 'entityId', 'amount', 'currency', 'actorUid', 'actorEmail', 'createdAt'])
+        && data.action in ['expense_created', 'expense_updated', 'expense_deleted', 'product_created', 'product_updated', 'product_deleted']
+        && data.summary is string && data.summary.size() >= 1 && data.summary.size() <= 240
+        && data.entityType in ['expense', 'product']
+        && isValidId(data.entityId)
+        && (data.amount is int || data.amount is float) && data.amount >= 0 && data.amount <= 999999999
+        && data.currency in ['BDT', 'USD']
+        && isValidId(data.actorUid)
+        && data.actorEmail is string && data.actorEmail.size() >= 3 && data.actorEmail.size() <= 254
+        && data.createdAt is timestamp;
+    }
+
+    // --- Collection Rules ---
+
+    // 1. Authorized Admins (PII Isolated)
+    match /admins/{adminId} {
+      allow get: if isVerified() && isValidId(adminId) && (isRootAdmin() || request.auth.uid == adminId);
+      allow list: if isRootAdmin() || (isVerified() && resource.data.uid == request.auth.uid);
+      allow create: if isVerified()
+        && isValidId(adminId)
+        && isValidAdminUser(incoming())
+        && incoming().uid == adminId
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && (
+          (isRootAdmin() && incoming().addedBy == request.auth.uid)
+          || (
+            request.auth.uid == adminId
+            && request.auth.token.email == 'shihabahmmed700@gmail.com'
+            && incoming().email == request.auth.token.email
+            && incoming().role == 'owner'
+            && incoming().active == true
+            && incoming().addedBy == request.auth.uid
+          )
+        );
+      allow update: if isVerified()
+        && isValidId(adminId)
+        && isValidAdminUser(incoming())
+        && isRootAdmin()
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().addedBy == existing().addedBy
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'role', 'active', 'updatedAt']);
+      allow delete: if isVerified() && isValidId(adminId) && isRootAdmin() && adminId != request.auth.uid;
+    }
+
+    // 2. Business Settings
+    match /settings/{settingId} {
+      allow get: if isVerified() && isValidId(settingId) && isAdmin();
+      allow list: if isRootAdmin() || (isVerified() && resource.data.updatedBy == request.auth.uid);
+      allow create: if isVerified()
+        && isValidId(settingId)
+        && isValidBusinessSettings(incoming())
+        && incoming().updatedBy == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && isAdmin();
+      allow update: if isVerified()
+        && isValidId(settingId)
+        && isValidBusinessSettings(incoming())
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedBy == request.auth.uid
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'businessName', 'ownerName', 'currencyCode', 'currencySymbol',
+          'lowStockThreshold', 'usdToBdtRate', 'address', 'phone', 'updatedBy', 'updatedAt'
+        ])
+        && isAdmin();
+      allow delete: if false;
+    }
+
+    // 3. Expenses
+    match /expenses/{expenseId} {
+      allow get: if isVerified() && isValidId(expenseId) && isAdmin();
+      allow list: if isRootAdmin() || (isVerified() && resource.data.authorUid == request.auth.uid);
+      allow create: if isVerified()
+        && isValidId(expenseId)
+        && isValidExpense(incoming())
+        && incoming().authorUid == request.auth.uid
+        && incoming().authorEmail == request.auth.token.email
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && isAdmin();
+      allow update: if isVerified()
+        && isValidId(expenseId)
+        && isValidExpense(incoming())
+        && incoming().authorUid == existing().authorUid
+        && incoming().authorEmail == existing().authorEmail
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'title', 'description', 'category', 'amount', 'currency', 'date', 'paymentMethod',
+            'adAccountId', 'campaignName', 'partnerOrAgency', 'modelName', 'photographerName',
+            'studioName', 'vendorOrCourier', 'receiptThumb', 'receiptCount', 'updatedAt'
+          ]) ||
+          incoming().diff(existing()).affectedKeys().hasOnly(['receiptThumb', 'receiptCount', 'updatedAt'])
+        )
+        && isAdmin();
+      allow delete: if isVerified() && isValidId(expenseId) && isAdmin();
+
+      match /receipts/{receiptId} {
+        allow get: if isVerified() && isValidId(expenseId) && isValidId(receiptId)
+          && exists(/databases/$(database)/documents/expenses/$(expenseId)) && isAdmin();
+        allow list: if isRootAdmin() || (isVerified() && resource.data.authorUid == request.auth.uid);
+        allow create: if isVerified()
+          && isValidId(expenseId)
+          && isValidId(receiptId)
+          && isValidReceiptAsset(incoming())
+          && incoming().expenseId == expenseId
+          && incoming().authorUid == request.auth.uid
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && exists(/databases/$(database)/documents/expenses/$(expenseId))
+          && isAdmin();
+        allow delete: if isVerified() && isValidId(expenseId) && isValidId(receiptId)
+          && exists(/databases/$(database)/documents/expenses/$(expenseId)) && isAdmin();
+        allow update: if false;
+      }
+    }
+
+    // 4. Products & Inventory
+    match /products/{productId} {
+      allow get: if isVerified() && isValidId(productId) && isAdmin();
+      allow list: if isRootAdmin() || (isVerified() && resource.data.authorUid == request.auth.uid);
+      allow create: if isVerified()
+        && isValidId(productId)
+        && isValidProduct(incoming())
+        && incoming().authorUid == request.auth.uid
+        && incoming().authorEmail == request.auth.token.email
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && isAdmin();
+      allow update: if isVerified()
+        && isValidId(productId)
+        && isValidProduct(incoming())
+        && incoming().authorUid == existing().authorUid
+        && incoming().authorEmail == existing().authorEmail
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'name', 'sku', 'category', 'purchaseCost', 'sellingPrice', 'currency',
+            'stockQty', 'lowStockThreshold', 'notes', 'thumbnailUrl', 'photoCount', 'updatedAt'
+          ]) ||
+          incoming().diff(existing()).affectedKeys().hasOnly(['stockQty', 'updatedAt']) ||
+          incoming().diff(existing()).affectedKeys().hasOnly(['thumbnailUrl', 'photoCount', 'updatedAt'])
+        )
+        && isAdmin();
+      allow delete: if isVerified() && isValidId(productId) && isAdmin();
+
+      match /photos/{photoId} {
+        allow get: if isVerified() && isValidId(productId) && isValidId(photoId)
+          && exists(/databases/$(database)/documents/products/$(productId)) && isAdmin();
+        allow list: if isRootAdmin() || (isVerified() && resource.data.authorUid == request.auth.uid);
+        allow create: if isVerified()
+          && isValidId(productId)
+          && isValidId(photoId)
+          && isValidProductPhoto(incoming())
+          && incoming().productId == productId
+          && incoming().authorUid == request.auth.uid
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && exists(/databases/$(database)/documents/products/$(productId))
+          && isAdmin();
+        allow update: if isVerified()
+          && isValidId(productId)
+          && isValidId(photoId)
+          && isValidProductPhoto(incoming())
+          && incoming().productId == existing().productId
+          && incoming().authorUid == existing().authorUid
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && exists(/databases/$(database)/documents/products/$(productId))
+          && incoming().diff(existing()).affectedKeys().hasOnly(['caption', 'updatedAt'])
+          && isAdmin();
+        allow delete: if isVerified() && isValidId(productId) && isValidId(photoId)
+          && exists(/databases/$(database)/documents/products/$(productId)) && isAdmin();
+      }
+    }
+
+    // 5. Immutable Activity Logs
+    match /activityLogs/{logId} {
+      allow get: if isVerified() && isValidId(logId) && isAdmin();
+      allow list: if isRootAdmin() || (isVerified() && resource.data.actorUid == request.auth.uid);
+      allow create: if isVerified()
+        && isValidId(logId)
+        && isValidActivityLog(incoming())
+        && incoming().actorUid == request.auth.uid
+        && incoming().actorEmail == request.auth.token.email
+        && incoming().createdAt == request.time
+        && isAdmin();
+      allow update, delete: if false;
+    }
+  }
+}

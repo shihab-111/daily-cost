@@ -1,0 +1,183 @@
+{
+  "entities": {
+    "AdminUser": {
+      "title": "AdminUser",
+      "description": "Authorized business administrator account.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "email": { "type": "string", "format": "email", "minLength": 3, "maxLength": 254 },
+        "displayName": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "role": { "type": "string", "enum": ["owner", "admin"] },
+        "active": { "type": "boolean" },
+        "addedBy": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "displayName", "role", "active", "addedBy", "createdAt", "updatedAt"]
+    },
+    "BusinessSettings": {
+      "title": "BusinessSettings",
+      "description": "Bangladesh business profile and default currency/threshold configuration.",
+      "type": "object",
+      "properties": {
+        "businessName": { "type": "string", "minLength": 1, "maxLength": 140 },
+        "ownerName": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "currencyCode": { "type": "string", "enum": ["BDT", "USD"] },
+        "currencySymbol": { "type": "string", "minLength": 1, "maxLength": 6 },
+        "lowStockThreshold": { "type": "integer" },
+        "usdToBdtRate": { "type": "number" },
+        "address": { "type": "string", "maxLength": 240 },
+        "phone": { "type": "string", "maxLength": 40 },
+        "updatedBy": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["businessName", "ownerName", "currencyCode", "currencySymbol", "lowStockThreshold", "usdToBdtRate", "address", "phone", "updatedBy", "createdAt", "updatedAt"]
+    },
+    "Expense": {
+      "title": "Expense",
+      "description": "Business expenditure record covering social media ads, marketing, photoshoot/model fees, and BD packaging/logistics.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "description": { "type": "string", "maxLength": 4000 },
+        "category": { "type": "string", "enum": ["facebook_ads", "marketing_promo", "photoshoot_model", "operations_packaging"] },
+        "amount": { "type": "number" },
+        "currency": { "type": "string", "enum": ["BDT", "USD"] },
+        "date": { "type": "string", "minLength": 10, "maxLength": 10 },
+        "paymentMethod": { "type": "string", "enum": ["bKash", "Nagad", "Rocket", "Bank Transfer", "Cash", "Card"] },
+        "adAccountId": { "type": "string", "maxLength": 120 },
+        "campaignName": { "type": "string", "maxLength": 160 },
+        "partnerOrAgency": { "type": "string", "maxLength": 160 },
+        "modelName": { "type": "string", "maxLength": 120 },
+        "photographerName": { "type": "string", "maxLength": 120 },
+        "studioName": { "type": "string", "maxLength": 120 },
+        "vendorOrCourier": { "type": "string", "maxLength": 160 },
+        "receiptThumb": { "type": "string", "maxLength": 80000 },
+        "receiptCount": { "type": "integer" },
+        "authorUid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "authorEmail": { "type": "string", "format": "email", "minLength": 3, "maxLength": 254 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "title", "description", "category", "amount", "currency", "date", "paymentMethod",
+        "adAccountId", "campaignName", "partnerOrAgency", "modelName", "photographerName",
+        "studioName", "vendorOrCourier", "receiptThumb", "receiptCount",
+        "authorUid", "authorEmail", "createdAt", "updatedAt"
+      ]
+    },
+    "ReceiptAsset": {
+      "title": "ReceiptAsset",
+      "description": "High-resolution receipt or invoice attachment stored under an expense document.",
+      "type": "object",
+      "properties": {
+        "expenseId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "fileName": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "mimeType": { "type": "string", "enum": ["image/jpeg", "image/webp", "image/png"] },
+        "width": { "type": "integer" },
+        "height": { "type": "integer" },
+        "sizeBytes": { "type": "integer" },
+        "dataUrl": { "type": "string", "minLength": 10, "maxLength": 700000 },
+        "authorUid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["expenseId", "fileName", "mimeType", "width", "height", "sizeBytes", "dataUrl", "authorUid", "createdAt", "updatedAt"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Inventory product SKU with purchase cost, selling price, stock count, and multi-photo gallery.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "sku": { "type": "string", "minLength": 1, "maxLength": 60, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "category": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "purchaseCost": { "type": "number" },
+        "sellingPrice": { "type": "number" },
+        "currency": { "type": "string", "enum": ["BDT", "USD"] },
+        "stockQty": { "type": "integer" },
+        "lowStockThreshold": { "type": "integer" },
+        "notes": { "type": "string", "maxLength": 4000 },
+        "thumbnailUrl": { "type": "string", "maxLength": 80000 },
+        "photoCount": { "type": "integer" },
+        "authorUid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "authorEmail": { "type": "string", "format": "email", "minLength": 3, "maxLength": 254 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "name", "sku", "category", "purchaseCost", "sellingPrice", "currency",
+        "stockQty", "lowStockThreshold", "notes", "thumbnailUrl", "photoCount",
+        "authorUid", "authorEmail", "createdAt", "updatedAt"
+      ]
+    },
+    "ProductPhoto": {
+      "title": "ProductPhoto",
+      "description": "High-resolution product or model asset photo stored under a product document.",
+      "type": "object",
+      "properties": {
+        "productId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "fileName": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "mimeType": { "type": "string", "enum": ["image/jpeg", "image/webp", "image/png"] },
+        "caption": { "type": "string", "maxLength": 300 },
+        "width": { "type": "integer" },
+        "height": { "type": "integer" },
+        "sizeBytes": { "type": "integer" },
+        "dataUrl": { "type": "string", "minLength": 10, "maxLength": 700000 },
+        "authorUid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["productId", "fileName", "mimeType", "caption", "width", "height", "sizeBytes", "dataUrl", "authorUid", "createdAt", "updatedAt"]
+    },
+    "ActivityLog": {
+      "title": "ActivityLog",
+      "description": "Audit log tracking expense and inventory mutations.",
+      "type": "object",
+      "properties": {
+        "action": { "type": "string", "enum": ["expense_created", "expense_updated", "expense_deleted", "product_created", "product_updated", "product_deleted"] },
+        "summary": { "type": "string", "minLength": 1, "maxLength": 240 },
+        "entityType": { "type": "string", "enum": ["expense", "product"] },
+        "entityId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "amount": { "type": "number" },
+        "currency": { "type": "string", "enum": ["BDT", "USD"] },
+        "actorUid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "actorEmail": { "type": "string", "format": "email", "minLength": 3, "maxLength": 254 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["action", "summary", "entityType", "entityId", "amount", "currency", "actorUid", "actorEmail", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/admins/{adminId}": {
+      "schema": { "$ref": "#/entities/AdminUser" },
+      "description": "Authorized business administrators."
+    },
+    "/settings/{settingId}": {
+      "schema": { "$ref": "#/entities/BusinessSettings" },
+      "description": "Business workspace configuration."
+    },
+    "/expenses/{expenseId}": {
+      "schema": { "$ref": "#/entities/Expense" },
+      "description": "Detailed operational, marketing, ads, and photoshoot expenses."
+    },
+    "/expenses/{expenseId}/receipts/{receiptId}": {
+      "schema": { "$ref": "#/entities/ReceiptAsset" },
+      "description": "Uploaded expense receipt/invoice images."
+    },
+    "/products/{productId}": {
+      "schema": { "$ref": "#/entities/Product" },
+      "description": "Product catalog and inventory stock counts."
+    },
+    "/products/{productId}/photos/{photoId}": {
+      "schema": { "$ref": "#/entities/ProductPhoto" },
+      "description": "Product and model asset photographs."
+    },
+    "/activityLogs/{logId}": {
+      "schema": { "$ref": "#/entities/ActivityLog" },
+      "description": "Immutable activity audit stream."
+    }
+  }
+}

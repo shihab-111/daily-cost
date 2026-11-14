@@ -1,0 +1,6 @@
+{
+  "name": "Meridian Ledger",
+  "description": "Admin-secured business operations ledger for recording detailed notes, financial logs, checklists, and photo documentation.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
