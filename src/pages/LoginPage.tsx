@@ -187,7 +187,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
       </div>
 
       {/* 1. Brand Mark & Hero Statement (Mobile: Top | Desktop: Left Top/Center) */}
-      <div className="relative z-10 lg:col-start-1 lg:row-start-1 flex flex-col justify-between p-4 pb-3 sm:p-10 sm:pb-6 lg:p-14 lg:pb-8">
+      <div className="relative z-10 lg:col-start-1 lg:row-start-1 flex flex-col justify-between px-4 pt-3.5 pb-2 sm:p-10 sm:pb-6 lg:p-14 lg:pb-8">
         <div className="flex items-center justify-between gap-3">
           <img
             src={EKTALLY_LOGO_URL}
@@ -198,11 +198,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
           <LanguageToggle />
         </div>
 
-        <div className="mt-5 sm:mt-6 lg:my-auto lg:py-8 max-w-xl">
+        <div className="mt-3 sm:mt-6 lg:my-auto lg:py-8 max-w-xl">
           <p className="hidden lg:block text-xs font-mono text-[#4ade80] mb-2 tracking-wide">
             {t.login.kicker}
           </p>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-white tracking-tight leading-[1.15] text-balance mb-1 lg:mb-3">
+          <h1 className="text-xl sm:text-3xl lg:text-4xl font-semibold text-white tracking-tight leading-[1.15] text-balance mb-0.5 lg:mb-3">
             {t.login.headlinePrefix}{' '}
             <span className="text-[#4ade80]">{t.login.headlineHighlight}</span>{' '}
             {t.login.headlineSuffix}
@@ -214,21 +214,21 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
       </div>
 
       {/* 2. Tenant Auth Panel (Mobile: Middle, before Dual Workspace | Desktop: Right Column) */}
-      <div className="relative z-10 lg:col-start-2 lg:row-start-1 lg:row-span-2 flex items-center justify-center px-4 py-3 sm:px-10 sm:py-6 lg:p-16 lg:bg-[#07080a] overflow-hidden">
+      <div className="relative z-10 lg:col-start-2 lg:row-start-1 lg:row-span-2 flex items-center justify-center px-4 py-2 sm:px-10 sm:py-6 lg:p-16 lg:bg-[#07080a] overflow-hidden">
         <div
           aria-hidden="true"
           className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] h-[480px] rounded-full bg-[#22c55e]/[0.06] blur-[120px]"
         />
-        <div className="relative z-10 w-full max-w-md bg-[#0e1012] border border-[#4ade80]/15 rounded-xl p-5 sm:p-8 shadow-[0_24px_80px_-24px_rgba(34,197,94,0.12)]">
-          <div className="mb-5">
-            <div className="inline-flex items-center gap-2 text-xs font-medium text-[#4ade80] mb-2">
-              {mode === 'login' ? <Lock className="w-3.5 h-3.5" /> : <UserPlus className="w-3.5 h-3.5" />}
+        <div className="relative z-10 w-full max-w-md bg-[#0e1012] border border-[#4ade80]/15 rounded-xl p-4 sm:p-8 shadow-[0_24px_80px_-24px_rgba(34,197,94,0.12)]">
+          <div className="mb-3 sm:mb-5">
+            <div className="inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-medium text-[#4ade80] mb-1 sm:mb-2">
+              {mode === 'login' ? <Lock className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> : <UserPlus className="w-3 h-3 sm:w-3.5 sm:h-3.5" />}
               <span>{t.login.workspaceTag}</span>
             </div>
-            <h2 className="text-xl font-semibold text-zinc-100 tracking-tight">
+            <h2 className="text-lg sm:text-xl font-semibold text-zinc-100 tracking-tight">
               {mode === 'login' ? t.login.signInTitle : t.login.registerTitle}
             </h2>
-            <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+            <p className="hidden sm:block text-xs text-zinc-400 mt-1 leading-relaxed">
               {t.login.authSubtitle}
             </p>
           </div>
@@ -310,13 +310,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
               </p>
             </div>
           ) : (
-            <div className="space-y-5">
+            <div className="space-y-3 sm:space-y-5">
               {/* Sign In / Create Account Switcher */}
               <div className="grid grid-cols-2 gap-1 p-1 bg-[#09090b] border border-[#27272a] rounded-lg">
                 <button
                   type="button"
                   onClick={() => switchAuthTab('login')}
-                  className={`min-h-[40px] sm:min-h-0 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer ${
+                  className={`min-h-[36px] sm:min-h-0 py-1 sm:py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer ${
                     mode === 'login'
                       ? 'bg-[#22c55e] text-zinc-950 font-semibold'
                       : 'text-zinc-400 hover:text-zinc-100'
@@ -327,7 +327,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                 <button
                   type="button"
                   onClick={() => switchAuthTab('register')}
-                  className={`min-h-[40px] sm:min-h-0 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer ${
+                  className={`min-h-[36px] sm:min-h-0 py-1 sm:py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer ${
                     mode === 'register'
                       ? 'bg-[#22c55e] text-zinc-950 font-semibold'
                       : 'text-zinc-400 hover:text-zinc-100'
@@ -338,16 +338,16 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
               </div>
 
               {(formError || authError) && (
-                <div className="border border-red-500/30 bg-red-500/10 rounded-lg p-3 text-xs text-red-300 leading-relaxed">
+                <div className="border border-red-500/30 bg-red-500/10 rounded-lg p-2.5 sm:p-3 text-xs text-red-300 leading-relaxed">
                   {formError || authError}
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-3.5">
+              <form onSubmit={handleSubmit} className="space-y-2.5 sm:space-y-3.5">
                 {mode === 'register' && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                     <div>
-                      <label htmlFor="reg-name" className="block text-xs font-medium text-zinc-300 mb-1.5">
+                      <label htmlFor="reg-name" className="block text-xs font-medium text-zinc-300 mb-1 sm:mb-1.5">
                         {t.login.yourName}
                       </label>
                       <input
@@ -357,11 +357,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                         value={displayName}
                         onChange={(e) => setDisplayName(e.target.value)}
                         placeholder={t.login.namePlaceholder}
-                        className="w-full px-3 py-2 min-h-[42px] sm:min-h-0 text-base sm:text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-600 focus:outline-none focus:border-[#22c55e]"
+                        className="w-full px-3 py-1.5 sm:py-2 min-h-[38px] sm:min-h-0 text-base sm:text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-600 focus:outline-none focus:border-[#22c55e]"
                       />
                     </div>
                     <div>
-                      <label htmlFor="reg-biz" className="block text-xs font-medium text-zinc-300 mb-1.5">
+                      <label htmlFor="reg-biz" className="block text-xs font-medium text-zinc-300 mb-1 sm:mb-1.5">
                         {t.login.businessName}
                       </label>
                       <input
@@ -371,14 +371,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                         value={businessName}
                         onChange={(e) => setBusinessName(e.target.value)}
                         placeholder={t.login.businessPlaceholder}
-                        className="w-full px-3 py-2 min-h-[42px] sm:min-h-0 text-base sm:text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-600 focus:outline-none focus:border-[#22c55e]"
+                        className="w-full px-3 py-1.5 sm:py-2 min-h-[38px] sm:min-h-0 text-base sm:text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-600 focus:outline-none focus:border-[#22c55e]"
                       />
                     </div>
                   </div>
                 )}
 
                 <div>
-                  <label htmlFor="auth-email" className="block text-xs font-medium text-zinc-300 mb-1.5">
+                  <label htmlFor="auth-email" className="block text-xs font-medium text-zinc-300 mb-1 sm:mb-1.5">
                     {t.login.emailAddress}
                   </label>
                   <input
@@ -393,12 +393,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder={t.login.emailPlaceholder}
-                    className="w-full px-3 py-2 min-h-[42px] sm:min-h-0 text-base sm:text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-600 focus:outline-none focus:border-[#22c55e]"
+                    className="w-full px-3 py-1.5 sm:py-2 min-h-[38px] sm:min-h-0 text-base sm:text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-600 focus:outline-none focus:border-[#22c55e]"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="auth-password" className="block text-xs font-medium text-zinc-300 mb-1.5">
+                  <label htmlFor="auth-password" className="block text-xs font-medium text-zinc-300 mb-1 sm:mb-1.5">
                     {t.login.password}
                   </label>
                   <div className="relative">
@@ -414,13 +414,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                           ? t.login.passwordPlaceholderLogin
                           : t.login.passwordPlaceholderRegister
                       }
-                      className="w-full pl-3 pr-11 py-2 min-h-[42px] sm:min-h-0 text-base sm:text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-600 focus:outline-none focus:border-[#22c55e]"
+                      className="w-full pl-3 pr-11 py-1.5 sm:py-2 min-h-[38px] sm:min-h-0 text-base sm:text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-600 focus:outline-none focus:border-[#22c55e]"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword((s) => !s)}
                       aria-label={showPassword ? t.login.hidePassword : t.login.showPassword}
-                      className="absolute right-1 top-1/2 -translate-y-1/2 min-h-[40px] min-w-[40px] inline-flex items-center justify-center text-zinc-500 hover:text-zinc-200 cursor-pointer"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 min-h-[36px] min-w-[36px] sm:min-h-[40px] sm:min-w-[40px] inline-flex items-center justify-center text-zinc-500 hover:text-zinc-200 cursor-pointer"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -429,7 +429,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
 
                 {mode === 'register' && (
                   <div>
-                    <label htmlFor="reg-confirm" className="block text-xs font-medium text-zinc-300 mb-1.5">
+                    <label htmlFor="reg-confirm" className="block text-xs font-medium text-zinc-300 mb-1 sm:mb-1.5">
                       {t.login.confirmPassword}
                     </label>
                     <input
@@ -440,13 +440,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder={t.login.reenterPassword}
-                      className="w-full px-3 py-2 min-h-[42px] sm:min-h-0 text-base sm:text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-600 focus:outline-none focus:border-[#22c55e]"
+                      className="w-full px-3 py-1.5 sm:py-2 min-h-[38px] sm:min-h-0 text-base sm:text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-600 focus:outline-none focus:border-[#22c55e]"
                     />
                   </div>
                 )}
 
                 {mode === 'login' && (
-                  <label className="flex items-center gap-2.5 min-h-[36px] text-xs text-zinc-400 cursor-pointer select-none">
+                  <label className="flex items-center gap-2.5 min-h-[30px] sm:min-h-[36px] text-xs text-zinc-400 cursor-pointer select-none">
                     <input
                       type="checkbox"
                       checked={rememberMe}
@@ -457,7 +457,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                   </label>
                 )}
 
-                <Button type="submit" disabled={submitting} className="w-full min-h-[44px] py-2.5">
+                <Button type="submit" disabled={submitting} className="w-full min-h-[40px] sm:min-h-[44px] py-2 sm:py-2.5">
                   {submitting
                     ? mode === 'login'
                       ? t.login.signingIn
@@ -473,8 +473,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
       </div>
 
       {/* 3. Architectural Highlights (Mobile: Bottom, after Login | Desktop: Left Bottom) */}
-      <div className="relative z-10 lg:col-start-1 lg:row-start-2 px-4 pt-4 pb-8 sm:px-10 sm:pb-12 lg:px-14 lg:pt-0 lg:pb-14">
-        <div className="border-t border-[#4ade80]/15 pt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-xl">
+      <div className="relative z-10 lg:col-start-1 lg:row-start-2 px-4 pt-3 pb-6 sm:px-10 sm:pb-12 lg:px-14 lg:pt-0 lg:pb-14">
+        <div className="border-t border-[#4ade80]/15 pt-4 sm:pt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-5 max-w-xl">
           <div>
             <p className="text-xs font-medium text-[#86efac]">{t.login.highlight1Title}</p>
             <p className="lg:hidden text-xs text-zinc-400 mt-1 leading-relaxed">
