@@ -21,6 +21,7 @@ import { DashboardShell } from '../components/layout/DashboardShell';
 import { ReceiptPreview } from '../components/receipts/ReceiptPreview';
 import { Button, Card, Input, Select } from '../components/ui';
 import { useAuth } from '../hooks/useAuth';
+import { useLanguage } from '../context/LanguageContext';
 import { useMode } from '../context/ModeContext';
 import {
   useCustomerReceipts,
@@ -173,6 +174,7 @@ function buildInitialDraft(
 
 export const ReceiptsPage: React.FC = () => {
   const { user, isAuthorized } = useAuth();
+  const { t } = useLanguage();
   const { mode } = useMode();
   const location = useLocation();
   const { settings } = useSettings(user, isAuthorized);
@@ -680,7 +682,7 @@ export const ReceiptsPage: React.FC = () => {
             disabled={downloadingPng || downloadingPdf}
           >
             <Printer className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">Print</span>
+            <span className="hidden md:inline">{t.receipts.print}</span>
           </Button>
           <Button
             variant="secondary"
@@ -705,7 +707,7 @@ export const ReceiptsPage: React.FC = () => {
             ) : (
               <FileDown className="w-3.5 h-3.5" />
             )}
-            Download PDF
+            {t.receipts.downloadPdf}
           </Button>
         </div>
       }
@@ -724,7 +726,7 @@ export const ReceiptsPage: React.FC = () => {
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="secondary" size="sm" onClick={handleNewReceipt}>
               <FilePlus2 className="w-3.5 h-3.5" />
-              New Receipt
+              {t.receipts.newBlankReceipt}
             </Button>
             <Button size="sm" onClick={handleSaveReceipt} disabled={savingReceipt}>
               {savingReceipt ? (
@@ -765,9 +767,9 @@ export const ReceiptsPage: React.FC = () => {
             <div className="grid grid-cols-3 gap-1.5 p-1 bg-[#09090b] border border-[#27272a] rounded-lg">
               {(
                 [
-                  { id: 'brand', label: 'Brand & Style' },
-                  { id: 'customer', label: 'Customer' },
-                  { id: 'items', label: 'Items & Totals' },
+                  { id: 'brand', label: t.receipts.brandStyleTab },
+                  { id: 'customer', label: t.receipts.customerTab },
+                  { id: 'items', label: t.receipts.itemsTotalsTab },
                 ] as const
               ).map((tab) => (
                 <button
@@ -1201,7 +1203,7 @@ export const ReceiptsPage: React.FC = () => {
                   ) : (
                     <BookmarkCheck className="w-4 h-4 text-[#4ade80]" />
                   )}
-                  Save Brand &amp; Style as Default
+                  {t.receipts.saveBrandStyle}
                 </Button>
               </div>
             )}
@@ -1667,7 +1669,7 @@ export const ReceiptsPage: React.FC = () => {
           <div className="xl:col-span-7 space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-2 px-1 no-print">
               <div className="text-xs text-zinc-400">
-                Live Preview ·{' '}
+                {t.receipts.livePreview} ·{' '}
                 <span className="font-mono text-zinc-200">
                   {draft.paperStyle === 'pos_thermal'
                     ? 'POS 80mm Thermal'
@@ -1679,7 +1681,7 @@ export const ReceiptsPage: React.FC = () => {
               <div className="flex items-center gap-2">
                 <Button variant="secondary" size="sm" onClick={handlePrint}>
                   <Printer className="w-3.5 h-3.5" />
-                  Print
+                  {t.receipts.print}
                 </Button>
                 <Button
                   variant="secondary"
@@ -1692,7 +1694,7 @@ export const ReceiptsPage: React.FC = () => {
                   ) : (
                     <Download className="w-3.5 h-3.5 text-[#4ade80]" />
                   )}
-                  Download PNG
+                  {t.receipts.downloadPng}
                 </Button>
                 <Button
                   size="sm"
@@ -1704,7 +1706,7 @@ export const ReceiptsPage: React.FC = () => {
                   ) : (
                     <FileDown className="w-3.5 h-3.5" />
                   )}
-                  Download PDF
+                  {t.receipts.downloadPdf}
                 </Button>
               </div>
             </div>
@@ -1720,7 +1722,7 @@ export const ReceiptsPage: React.FC = () => {
           <div className="px-5 py-4 border-b border-[#27272a] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <h3 className="text-sm font-semibold text-zinc-100">
-                Saved Receipts &amp; Memos ({receipts.length})
+                {t.receipts.savedReceipts} ({receipts.length})
               </h3>
               <p className="text-xs text-zinc-400 mt-0.5">
                 Private to your account. Reload any receipt to edit, export PDF, or download PNG.

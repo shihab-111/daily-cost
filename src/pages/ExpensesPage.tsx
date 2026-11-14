@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Download, Edit3, Plus, Receipt, Search, Trash2 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { useLanguage } from '../context/LanguageContext';
 import { useMode } from '../context/ModeContext';
 import { useExpenses, useSettings } from '../hooks/useBusinessData';
 import { dbService } from '../lib/firebase/db';
@@ -20,6 +21,7 @@ import { Button, Card } from '../components/ui';
 
 export const ExpensesPage: React.FC = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { mode } = useMode();
   const { expenses, loading } = useExpenses(user, Boolean(user));
   const { settings } = useSettings(user, Boolean(user));
@@ -128,7 +130,7 @@ export const ExpensesPage: React.FC = () => {
             onClick={() => exportExpensesCsv(filteredExpenses)}
           >
             <Download className="w-3.5 h-3.5 text-[#4ade80]" />
-            <span className="hidden sm:inline">Export CSV</span>
+            <span className="hidden sm:inline">{t.common.exportCsv}</span>
           </Button>
           <Button
             size="sm"
@@ -138,7 +140,7 @@ export const ExpensesPage: React.FC = () => {
             }}
           >
             <Plus className="w-3.5 h-3.5" />
-            {mode === 'business' ? 'Log Business Expense' : 'Log Daily Expense'}
+            {mode === 'business' ? t.expenses.logBusinessExpense : t.expenses.logDailyExpense}
           </Button>
         </div>
       }
@@ -155,8 +157,8 @@ export const ExpensesPage: React.FC = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={
                   mode === 'business'
-                    ? 'Search ads, models, couriers, suppliers, or bKash/Nagad...'
-                    : 'Search bazaar, bills, CNG/Uber, shopping, or bKash/Nagad...'
+                    ? t.expenses.searchBusiness
+                    : t.expenses.searchPersonal
                 }
                 className="w-full pl-9 pr-3 py-2 text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-500 focus:outline-none focus:border-[#22c55e]"
               />
@@ -166,11 +168,11 @@ export const ExpensesPage: React.FC = () => {
               <div className="flex items-center gap-1 p-1 bg-[#09090b] border border-[#27272a] rounded-lg overflow-x-auto">
                 {(
                   [
-                    { id: 'all', label: 'All' },
-                    { id: 'today', label: 'Today' },
-                    { id: 'last_7_days', label: '7D' },
-                    { id: 'this_month', label: 'Month' },
-                    { id: 'custom', label: 'Custom' },
+                    { id: 'all', label: t.common.all },
+                    { id: 'today', label: t.common.today },
+                    { id: 'last_7_days', label: t.common.last7DShort },
+                    { id: 'this_month', label: t.common.monthShort },
+                    { id: 'custom', label: t.common.custom },
                   ] as const
                 ).map((p) => (
                   <button
@@ -218,7 +220,7 @@ export const ExpensesPage: React.FC = () => {
                     : 'text-zinc-400 hover:text-zinc-100'
                 }`}
               >
-                All {mode === 'business' ? 'Business' : 'Personal'}
+                {mode === 'business' ? t.expenses.allBusiness : t.expenses.allPersonal}
               </button>
               {modeCategories.map(([catKey, catLabel]) => (
                 <button
@@ -237,7 +239,7 @@ export const ExpensesPage: React.FC = () => {
             </div>
 
             <div className="text-xs font-mono tabular-nums text-zinc-400">
-              {filteredExpenses.length} entries · Total:{' '}
+              {filteredExpenses.length} {t.expenses.entries} · {t.expenses.total}:{' '}
               <span className="text-[#4ade80] font-semibold">
                 {formatMoney(totalFilteredBdt, 'BDT')}
               </span>
@@ -257,12 +259,10 @@ export const ExpensesPage: React.FC = () => {
             <div className="p-12 text-center">
               <Receipt className="w-8 h-8 text-zinc-600 mx-auto mb-3" />
               <p className="text-sm font-semibold text-zinc-200">
-                No {mode === 'business' ? 'Business' : 'Personal'} Expense Entries Found
+                {t.expenses.noExpensesTitle}
               </p>
               <p className="text-xs text-zinc-500 mt-1">
-                {mode === 'business'
-                  ? 'Log Facebook Ads, influencer payouts, photoshoot costs, raw materials, or BD courier bills.'
-                  : 'Log daily groceries/bazaar, utility bills, transportation, family health, or dining out.'}
+                {mode === 'business' ? t.expenses.noBusinessEmpty : t.expenses.noPersonalEmpty}
               </p>
               <Button
                 className="mt-4"
@@ -273,7 +273,7 @@ export const ExpensesPage: React.FC = () => {
                 }}
               >
                 <Plus className="w-3.5 h-3.5" />
-                Log First {mode === 'business' ? 'Business' : 'Personal'} Expense
+                {mode === 'business' ? t.expenses.logBusinessExpense : t.expenses.logDailyExpense}
               </Button>
             </div>
           ) : (
@@ -281,12 +281,12 @@ export const ExpensesPage: React.FC = () => {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-[#27272a] bg-[#121214] text-xs font-medium text-zinc-400">
-                    <th className="py-3 px-4">Date</th>
-                    <th className="py-3 px-4">Title &amp; Category Details</th>
-                    <th className="py-3 px-4 hidden md:table-cell">Payment</th>
-                    <th className="py-3 px-4">Receipt</th>
-                    <th className="py-3 px-4 text-right">Amount</th>
-                    <th className="py-3 px-4 text-right">Actions</th>
+                    <th className="py-3 px-4">{t.expenses.date}</th>
+                    <th className="py-3 px-4">{t.expenses.titleDetails}</th>
+                    <th className="py-3 px-4 hidden md:table-cell">{t.expenses.payment}</th>
+                    <th className="py-3 px-4">{t.expenses.receipt}</th>
+                    <th className="py-3 px-4 text-right">{t.expenses.amount}</th>
+                    <th className="py-3 px-4 text-right">{t.common.actions}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#27272a] text-sm">

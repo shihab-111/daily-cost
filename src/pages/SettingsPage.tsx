@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Building2, Download, ShieldCheck, Wallet } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { useLanguage } from '../context/LanguageContext';
 import { useExpenses, useProducts, useSettings } from '../hooks/useBusinessData';
 import { dbService } from '../lib/firebase/db';
 import { exportExpensesCsv, exportProductsCsv } from '../lib/utils';
@@ -8,9 +9,11 @@ import { settingsSchema } from '../lib/validators/schemas';
 import { CurrencyCode } from '../types';
 import { DashboardShell } from '../components/layout/DashboardShell';
 import { Button, Card, Input, Select } from '../components/ui';
+import { LanguageToggle } from '../components/ui/LanguageToggle';
 
 export const SettingsPage: React.FC = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { settings } = useSettings(user, Boolean(user));
   const { expenses } = useExpenses(user, Boolean(user));
   const { products } = useProducts(user, Boolean(user));
@@ -95,16 +98,19 @@ export const SettingsPage: React.FC = () => {
       <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
         <Card className="p-6">
           <form onSubmit={handleSaveSettings} className="space-y-5">
-            <div className="flex items-center gap-2 border-b border-[#27272a] pb-3">
-              <Building2 className="w-4 h-4 text-[#4ade80]" />
-              <div>
-                <h2 className="text-sm font-semibold text-zinc-100">
-                  Bangladesh Workspace, Currency &amp; Personal Budget Settings
-                </h2>
-                <p className="text-xs text-zinc-400">
-                  Configure your business profile, BDT/USD conversion, low-stock threshold, and monthly personal budget cap.
-                </p>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#27272a] pb-3">
+              <div className="flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-[#4ade80] shrink-0" />
+                <div>
+                  <h2 className="text-sm font-semibold text-zinc-100">
+                    {t.settings.sectionTitle}
+                  </h2>
+                  <p className="text-xs text-zinc-400">
+                    {t.settings.sectionDesc}
+                  </p>
+                </div>
               </div>
+              <LanguageToggle />
             </div>
 
             {settingsMsg && (
@@ -121,19 +127,19 @@ export const SettingsPage: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input
-                label="Business / Brand Name *"
+                label={t.settings.businessNameLabel}
                 required
                 value={businessName}
                 onChange={(e) => setBusinessName(e.target.value)}
               />
               <Input
-                label="Account Owner Name *"
+                label={t.settings.ownerNameLabel}
                 required
                 value={ownerName}
                 onChange={(e) => setOwnerName(e.target.value)}
               />
               <Select
-                label="Default Currency"
+                label={t.settings.defaultCurrencyLabel}
                 value={currencyCode}
                 onChange={(e) => setCurrencyCode(e.target.value as CurrencyCode)}
               >
@@ -141,7 +147,7 @@ export const SettingsPage: React.FC = () => {
                 <option value="USD">USD ($)</option>
               </Select>
               <Input
-                label="USD to BDT Conversion Rate"
+                label={t.settings.usdRateLabel}
                 type="number"
                 step="0.01"
                 min="1"
@@ -150,7 +156,7 @@ export const SettingsPage: React.FC = () => {
                 className="font-mono tabular-nums"
               />
               <Input
-                label="Personal Monthly Budget Cap (৳ BDT)"
+                label={t.settings.monthlyBudgetLabel}
                 type="number"
                 min="0"
                 step="100"
@@ -159,7 +165,7 @@ export const SettingsPage: React.FC = () => {
                 className="font-mono tabular-nums"
               />
               <Input
-                label="Default Low-Stock Alert Threshold"
+                label={t.settings.lowStockLabel}
                 type="number"
                 min="0"
                 value={lowStockThreshold}
@@ -167,14 +173,14 @@ export const SettingsPage: React.FC = () => {
                 className="font-mono tabular-nums"
               />
               <Input
-                label="BD Contact Phone (+8801XXXXXXXXX)"
+                label={t.settings.bdPhoneLabel}
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="+88017XXXXXXXX"
                 className="font-mono"
               />
               <Input
-                label="Office / Home Address"
+                label={t.settings.addressLabel}
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 placeholder="Banani, Dhaka, Bangladesh"
@@ -183,7 +189,7 @@ export const SettingsPage: React.FC = () => {
 
             <div className="flex justify-end">
               <Button type="submit" disabled={savingSettings}>
-                {savingSettings ? 'Saving...' : 'Save Workspace Settings'}
+                {savingSettings ? t.common.saving : t.settings.saveSettings}
               </Button>
             </div>
           </form>
@@ -195,17 +201,19 @@ export const SettingsPage: React.FC = () => {
             <ShieldCheck className="w-4 h-4 text-[#4ade80]" />
             <div>
               <h2 className="text-sm font-semibold text-zinc-100">
-                Multi-Tenant Privacy &amp; Data Export
+                {t.settings.privacyTitle}
               </h2>
               <p className="text-xs text-zinc-400">
-                All expenses, inventory SKUs, customers, receipts, and uploaded photos are strictly isolated to your User UID.
+                {t.settings.privacyDesc}
               </p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="p-4 rounded-lg bg-[#09090b] border border-[#27272a] space-y-1">
-              <p className="text-[11px] font-mono text-zinc-400 uppercase">Verified Account</p>
+              <p className="text-[11px] font-mono text-zinc-400 uppercase">
+                {t.settings.verifiedAccount}
+              </p>
               <p className="text-sm font-medium text-zinc-100 truncate">{user?.email}</p>
               <p className="text-[11px] font-mono text-[#4ade80] truncate">
                 UID: {user?.uid}
@@ -215,7 +223,7 @@ export const SettingsPage: React.FC = () => {
             <div className="p-4 rounded-lg bg-[#09090b] border border-[#27272a] flex flex-col justify-between gap-3">
               <div className="flex items-center gap-2 text-xs text-zinc-300">
                 <Wallet className="w-3.5 h-3.5 text-[#4ade80]" />
-                <span>Download Private Ledger Backups</span>
+                <span>{t.settings.downloadBackups}</span>
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button
@@ -226,7 +234,7 @@ export const SettingsPage: React.FC = () => {
                   onClick={() => exportExpensesCsv(expenses)}
                 >
                   <Download className="w-3.5 h-3.5 text-[#4ade80]" />
-                  All Expenses CSV
+                  {t.settings.allExpensesCsv}
                 </Button>
                 <Button
                   type="button"
@@ -236,7 +244,7 @@ export const SettingsPage: React.FC = () => {
                   onClick={() => exportProductsCsv(products)}
                 >
                   <Download className="w-3.5 h-3.5 text-[#4ade80]" />
-                  Inventory CSV
+                  {t.settings.inventoryCsv}
                 </Button>
               </div>
             </div>

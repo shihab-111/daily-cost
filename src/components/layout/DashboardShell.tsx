@@ -14,8 +14,10 @@ import {
   X,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { useLanguage } from '../../context/LanguageContext';
 import { useMode } from '../../context/ModeContext';
 import { cn, EKTALLY_LOGO_URL } from '../../lib/utils';
+import { LanguageToggle } from '../ui/LanguageToggle';
 
 interface DashboardShellProps {
   businessName: string;
@@ -45,13 +47,29 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
   headerAction,
 }) => {
   const { user, logout } = useAuth();
+  const { t } = useLanguage();
   const { mode, setMode } = useMode();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [avatarFailed, setAvatarFailed] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
-  const navItems = mode === 'business' ? BUSINESS_NAV : PERSONAL_NAV;
+  const navItems =
+    mode === 'business'
+      ? [
+          { to: '/', label: t.nav.overview, icon: LayoutDashboard },
+          { to: '/expenses', label: t.nav.businessExpenses, icon: Receipt },
+          { to: '/products', label: t.nav.productInventory, icon: Package },
+          { to: '/customers', label: t.nav.customersBd, icon: Users },
+          { to: '/receipts', label: t.nav.receiptStudio, icon: FileText },
+          { to: '/settings', label: t.nav.settingsData, icon: Settings },
+        ]
+      : [
+          { to: '/', label: t.nav.personalOverview, icon: LayoutDashboard },
+          { to: '/expenses', label: t.nav.dailyExpenses, icon: Receipt },
+          { to: '/receipts', label: t.nav.receiptStudio, icon: FileText },
+          { to: '/settings', label: t.nav.settingsBudget, icon: Settings },
+        ];
 
   useEffect(() => {
     if (
@@ -70,7 +88,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
   const workspaceLabel =
     mode === 'business'
       ? businessName
-      : `${user?.displayName || businessName} · Personal`;
+      : `${user?.displayName || businessName} · ${t.nav.personal}`;
 
   const sidebarContent = (
     <div className="flex flex-col h-full w-[260px] bg-[#121214] border-r border-[#27272a] shrink-0">
@@ -97,12 +115,16 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
         </button>
       </div>
 
-      <div className="px-3 pt-3 pb-1">
+      <div className="px-3 pt-3 pb-1 space-y-2">
         <div className="px-3 py-2 rounded-lg bg-[#09090b] border border-[#27272a] flex items-center justify-between text-[11px]">
-          <span className="text-zinc-400">Active Mode</span>
+          <span className="text-zinc-400">{t.nav.activeMode}</span>
           <span className="font-mono font-semibold text-[#4ade80] uppercase">
-            {mode === 'business' ? 'Business' : 'Personal'}
+            {mode === 'business' ? t.nav.business : t.nav.personal}
           </span>
+        </div>
+        <div className="flex items-center justify-between px-1 md:hidden">
+          <span className="text-[11px] text-zinc-400">{t.common.languageLabel}</span>
+          <LanguageToggle />
         </div>
       </div>
 
@@ -150,7 +172,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold text-zinc-100 truncate">
-              {user?.displayName || 'Workspace Owner'}
+              {user?.displayName || t.nav.workspaceOwner}
             </p>
             <p className="text-[11px] font-mono text-zinc-400 truncate">
               {user?.email}
@@ -163,7 +185,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
           className="mt-1 w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-zinc-300 hover:text-zinc-100 hover:bg-[#18181b] border border-transparent hover:border-[#27272a] rounded-lg transition-colors cursor-pointer whitespace-nowrap"
         >
           <LogOut className="w-3.5 h-3.5" />
-          Sign Out
+          {t.common.signOut}
         </button>
       </div>
     </div>
@@ -207,6 +229,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
           </div>
 
           <div className="flex items-center gap-2.5 shrink-0">
+            <LanguageToggle className="hidden md:inline-flex" />
             {/* Instant Dual-Mode Switch */}
             <div
               role="group"
@@ -224,7 +247,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
                 )}
               >
                 <Briefcase className="w-3.5 h-3.5" />
-                <span>Business</span>
+                <span>{t.nav.business}</span>
               </button>
               <button
                 type="button"
@@ -237,7 +260,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
                 )}
               >
                 <UserIcon className="w-3.5 h-3.5" />
-                <span>Personal</span>
+                <span>{t.nav.personal}</span>
               </button>
             </div>
 

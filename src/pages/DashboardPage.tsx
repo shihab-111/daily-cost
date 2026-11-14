@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Download, Plus } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { useLanguage } from '../context/LanguageContext';
 import { useMode } from '../context/ModeContext';
 import {
   useActivityLogs,
@@ -27,6 +28,7 @@ import { Button, Card } from '../components/ui';
 
 export const DashboardPage: React.FC = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { mode } = useMode();
   const { expenses, loading: expLoading } = useExpenses(user, Boolean(user));
   const { products, loading: prodLoading } = useProducts(user, Boolean(user));
@@ -141,12 +143,12 @@ export const DashboardPage: React.FC = () => {
               onClick={() => setProductModalOpen(true)}
             >
               <Plus className="w-3.5 h-3.5 text-[#4ade80]" />
-              <span className="hidden sm:inline">Add Product</span>
+              <span className="hidden sm:inline">{t.dashboard.addProduct}</span>
             </Button>
           )}
           <Button size="sm" onClick={() => setExpenseModalOpen(true)}>
             <Plus className="w-3.5 h-3.5" />
-            {mode === 'business' ? 'Log Business Expense' : 'Quick Log Expense'}
+            {mode === 'business' ? t.dashboard.logBusinessExpense : t.dashboard.quickLogExpense}
           </Button>
         </div>
       }
@@ -158,11 +160,11 @@ export const DashboardPage: React.FC = () => {
             <div className="flex items-center gap-1 p-1 bg-[#09090b] border border-[#27272a] rounded-lg overflow-x-auto">
               {(
                 [
-                  { id: 'all', label: 'All Time' },
-                  { id: 'today', label: 'Today' },
-                  { id: 'last_7_days', label: 'Last 7 Days' },
-                  { id: 'this_month', label: 'This Month' },
-                  { id: 'custom', label: 'Custom' },
+                  { id: 'all', label: t.common.allTime },
+                  { id: 'today', label: t.common.today },
+                  { id: 'last_7_days', label: t.common.last7Days },
+                  { id: 'this_month', label: t.common.thisMonth },
+                  { id: 'custom', label: t.common.custom },
                 ] as const
               ).map((preset) => (
                 <button
@@ -188,7 +190,7 @@ export const DashboardPage: React.FC = () => {
                   onChange={(e) => setCustomStart(e.target.value)}
                   className="px-2.5 py-1.5 text-xs font-mono bg-[#09090b] border border-[#27272a] rounded-lg text-zinc-100"
                 />
-                <span className="text-xs text-zinc-500">to</span>
+                <span className="text-xs text-zinc-500">{t.common.to}</span>
                 <input
                   type="date"
                   value={customEnd}
@@ -207,7 +209,7 @@ export const DashboardPage: React.FC = () => {
               onClick={() => exportExpensesCsv(filteredExpenses)}
             >
               <Download className="w-3.5 h-3.5 text-[#4ade80]" />
-              {mode === 'business' ? 'Business CSV' : 'Personal CSV'}
+              {mode === 'business' ? t.dashboard.businessCsv : t.dashboard.personalCsv}
             </Button>
             {mode === 'business' && (
               <Button
@@ -217,7 +219,7 @@ export const DashboardPage: React.FC = () => {
                 onClick={() => exportProductsCsv(products)}
               >
                 <Download className="w-3.5 h-3.5 text-[#4ade80]" />
-                Inventory CSV
+                {t.dashboard.inventoryCsv}
               </Button>
             )}
           </div>
@@ -230,44 +232,45 @@ export const DashboardPage: React.FC = () => {
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
           >
             <Card className="p-5">
-              <p className="text-xs font-medium text-zinc-400">Business Expenses</p>
+              <p className="text-xs font-medium text-zinc-400">{t.dashboard.businessExpenses}</p>
               <p className="text-2xl font-semibold font-mono tabular-nums text-zinc-100 mt-2">
                 {expLoading ? '—' : formatMoney(businessKpis.totalExpensesBdt, 'BDT')}
               </p>
               <p className="text-xs font-mono tabular-nums text-zinc-500 mt-1.5">
-                {filteredExpenses.length} logged transactions
+                {filteredExpenses.length} {t.dashboard.loggedTransactions}
               </p>
             </Card>
 
             <Card className="p-5">
-              <p className="text-xs font-medium text-zinc-400">Marketing &amp; Ads Spend</p>
+              <p className="text-xs font-medium text-zinc-400">{t.dashboard.marketingAdsSpend}</p>
               <p className="text-2xl font-semibold font-mono tabular-nums text-[#4ade80] mt-2">
                 {expLoading ? '—' : formatMoney(businessKpis.marketingSpendBdt, 'BDT')}
               </p>
               <p className="text-xs font-mono tabular-nums text-zinc-500 mt-1.5">
-                {businessKpis.marketingShare}% of period expenditure
+                {businessKpis.marketingShare}
+                {t.dashboard.ofPeriodExpenditure}
               </p>
             </Card>
 
             <Card className="p-5">
-              <p className="text-xs font-medium text-zinc-400">Inventory Cost Value</p>
+              <p className="text-xs font-medium text-zinc-400">{t.dashboard.inventoryCostValue}</p>
               <p className="text-2xl font-semibold font-mono tabular-nums text-zinc-100 mt-2">
                 {prodLoading ? '—' : formatMoney(businessKpis.inventoryCostValueBdt, 'BDT')}
               </p>
               <p className="text-xs font-mono tabular-nums text-zinc-500 mt-1.5">
-                Est. Retail: {formatMoney(businessKpis.inventoryRetailValueBdt, 'BDT')}
+                {t.dashboard.estRetail}: {formatMoney(businessKpis.inventoryRetailValueBdt, 'BDT')}
               </p>
             </Card>
 
             <Card className="p-5">
-              <p className="text-xs font-medium text-zinc-400">Total Units Stocked</p>
+              <p className="text-xs font-medium text-zinc-400">{t.dashboard.totalUnitsStocked}</p>
               <p className="text-2xl font-semibold font-mono tabular-nums text-zinc-100 mt-2">
                 {prodLoading ? '—' : businessKpis.totalUnits.toLocaleString('en-BD')}
               </p>
               <p className="text-xs font-mono tabular-nums text-zinc-500 mt-1.5">
-                {products.length} SKUs ·{' '}
+                {products.length} {t.dashboard.skus} ·{' '}
                 <span className={businessKpis.lowOrOutCount > 0 ? 'text-amber-400' : 'text-[#4ade80]'}>
-                  {businessKpis.lowOrOutCount} low/out alert
+                  {businessKpis.lowOrOutCount} {t.dashboard.lowOutAlert}
                 </span>
               </p>
             </Card>
@@ -278,17 +281,17 @@ export const DashboardPage: React.FC = () => {
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
           >
             <Card className="p-5">
-              <p className="text-xs font-medium text-zinc-400">This Month Spending</p>
+              <p className="text-xs font-medium text-zinc-400">{t.dashboard.thisMonthSpending}</p>
               <p className="text-2xl font-semibold font-mono tabular-nums text-zinc-100 mt-2">
                 {expLoading ? '—' : formatMoney(personalKpis.thisMonthSpendBdt, 'BDT')}
               </p>
               <p className="text-xs font-mono tabular-nums text-zinc-500 mt-1.5">
-                {filteredExpenses.length} entries in selected range
+                {filteredExpenses.length} {t.dashboard.entriesInRange}
               </p>
             </Card>
 
             <Card className="p-5">
-              <p className="text-xs font-medium text-zinc-400">Monthly Budget Cap</p>
+              <p className="text-xs font-medium text-zinc-400">{t.dashboard.monthlyBudgetCap}</p>
               <p
                 className={`text-2xl font-semibold font-mono tabular-nums mt-2 ${
                   personalKpis.budgetRemainingBdt < 0
@@ -301,28 +304,30 @@ export const DashboardPage: React.FC = () => {
                 {expLoading ? '—' : formatMoney(personalKpis.budgetRemainingBdt, 'BDT')}
               </p>
               <p className="text-xs font-mono tabular-nums text-zinc-500 mt-1.5">
-                {personalKpis.budgetRemainingBdt >= 0 ? 'Remaining' : 'Over cap'} · Cap:{' '}
-                {formatMoney(monthlyBudgetBdt, 'BDT')}
+                {personalKpis.budgetRemainingBdt >= 0
+                  ? t.dashboard.remaining
+                  : t.dashboard.overCap}{' '}
+                · {t.dashboard.cap}: {formatMoney(monthlyBudgetBdt, 'BDT')}
               </p>
             </Card>
 
             <Card className="p-5">
-              <p className="text-xs font-medium text-zinc-400">Daily Average Spend</p>
+              <p className="text-xs font-medium text-zinc-400">{t.dashboard.dailyAverageSpend}</p>
               <p className="text-2xl font-semibold font-mono tabular-nums text-zinc-100 mt-2">
                 {expLoading ? '—' : formatMoney(personalKpis.dailyAverageBdt, 'BDT')}
               </p>
               <p className="text-xs font-mono tabular-nums text-zinc-500 mt-1.5">
-                Across {personalKpis.dayOfMonth} days this month
+                {t.dashboard.acrossDaysPrefix} {personalKpis.dayOfMonth} {t.dashboard.acrossDaysSuffix}
               </p>
             </Card>
 
             <Card className="p-5">
-              <p className="text-xs font-medium text-zinc-400">Today&apos;s Spend (Dhaka)</p>
+              <p className="text-xs font-medium text-zinc-400">{t.dashboard.todaysSpendDhaka}</p>
               <p className="text-2xl font-semibold font-mono tabular-nums text-[#4ade80] mt-2">
                 {expLoading ? '—' : formatMoney(personalKpis.todaySpendBdt, 'BDT')}
               </p>
               <p className="text-xs font-mono tabular-nums text-zinc-500 mt-1.5">
-                Period total: {formatMoney(personalKpis.periodSpendBdt, 'BDT')}
+                {t.dashboard.periodTotal}: {formatMoney(personalKpis.periodSpendBdt, 'BDT')}
               </p>
             </Card>
           </section>

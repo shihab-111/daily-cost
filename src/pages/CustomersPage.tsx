@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Edit3, FileText, Plus, Search, Trash2, Users } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { useLanguage } from '../context/LanguageContext';
 import { useCustomers, useSettings } from '../hooks/useBusinessData';
 import { dbService } from '../lib/firebase/db';
 import { formatMoney } from '../lib/utils';
@@ -12,6 +13,7 @@ import { Button, Card } from '../components/ui';
 
 export const CustomersPage: React.FC = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { customers, loading } = useCustomers(user, Boolean(user));
   const { settings } = useSettings(user, Boolean(user));
   const navigate = useNavigate();
@@ -57,7 +59,7 @@ export const CustomersPage: React.FC = () => {
           }}
         >
           <Plus className="w-3.5 h-3.5" />
-          Add Customer
+          {t.customers.addCustomer}
         </Button>
       }
     >
@@ -65,19 +67,19 @@ export const CustomersPage: React.FC = () => {
         {/* Customer Metrics */}
         <section className="grid grid-cols-1 sm:grid-cols-3 gap-4" aria-label="Customer Metrics">
           <Card className="p-5">
-            <p className="text-xs font-medium text-zinc-400">Saved BD Customers</p>
+            <p className="text-xs font-medium text-zinc-400">{t.customers.savedCustomers}</p>
             <p className="text-2xl font-semibold font-mono tabular-nums text-zinc-100 mt-2">
               {metrics.totalCustomers.toLocaleString('en-BD')}
             </p>
           </Card>
           <Card className="p-5">
-            <p className="text-xs font-medium text-zinc-400">Recorded Customer Orders</p>
+            <p className="text-xs font-medium text-zinc-400">{t.customers.recordedOrders}</p>
             <p className="text-2xl font-semibold font-mono tabular-nums text-zinc-100 mt-2">
               {metrics.totalOrders.toLocaleString('en-BD')}
             </p>
           </Card>
           <Card className="p-5">
-            <p className="text-xs font-medium text-zinc-400">Lifetime Customer Value</p>
+            <p className="text-xs font-medium text-zinc-400">{t.customers.lifetimeValue}</p>
             <p className="text-2xl font-semibold font-mono tabular-nums text-[#4ade80] mt-2">
               {formatMoney(metrics.totalSpent, 'BDT')}
             </p>
@@ -92,12 +94,12 @@ export const CustomersPage: React.FC = () => {
               type="search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search customer name, +880 phone, district, or address..."
+              placeholder={t.customers.searchPlaceholder}
               className="w-full pl-9 pr-3 py-2 text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-500 focus:outline-none focus:border-[#22c55e]"
             />
           </div>
           <span className="text-xs font-mono tabular-nums text-zinc-400">
-            Showing {filteredCustomers.length} of {customers.length} customers
+            {t.customers.showingOf} {filteredCustomers.length} / {customers.length} {t.customers.customersWord}
           </span>
         </Card>
 
@@ -112,9 +114,9 @@ export const CustomersPage: React.FC = () => {
           ) : filteredCustomers.length === 0 ? (
             <div className="p-12 text-center">
               <Users className="w-8 h-8 text-zinc-600 mx-auto mb-3" />
-              <p className="text-sm font-semibold text-zinc-200">No Customers Saved Yet</p>
+              <p className="text-sm font-semibold text-zinc-200">{t.customers.noCustomersTitle}</p>
               <p className="text-xs text-zinc-500 mt-1">
-                Save customer delivery details with validated BD phone numbers for one-click receipt generation.
+                {t.customers.noCustomersDesc}
               </p>
               <Button
                 className="mt-4"
@@ -125,7 +127,7 @@ export const CustomersPage: React.FC = () => {
                 }}
               >
                 <Plus className="w-3.5 h-3.5" />
-                Add First Customer
+                {t.customers.addFirstCustomer}
               </Button>
             </div>
           ) : (
@@ -133,12 +135,12 @@ export const CustomersPage: React.FC = () => {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-[#27272a] bg-[#121214] text-xs font-medium text-zinc-400">
-                    <th className="py-3 px-4">Customer</th>
-                    <th className="py-3 px-4">BD Phone</th>
-                    <th className="py-3 px-4 hidden md:table-cell">District &amp; Address</th>
-                    <th className="py-3 px-4 text-right">Orders</th>
-                    <th className="py-3 px-4 text-right">Total Spent</th>
-                    <th className="py-3 px-4 text-right">Actions</th>
+                    <th className="py-3 px-4">{t.customers.customer}</th>
+                    <th className="py-3 px-4">{t.customers.bdPhone}</th>
+                    <th className="py-3 px-4 hidden md:table-cell">{t.customers.districtAddress}</th>
+                    <th className="py-3 px-4 text-right">{t.customers.orders}</th>
+                    <th className="py-3 px-4 text-right">{t.customers.totalSpent}</th>
+                    <th className="py-3 px-4 text-right">{t.common.actions}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#27272a] text-sm">
@@ -171,7 +173,7 @@ export const CustomersPage: React.FC = () => {
                             onClick={() => navigate('/receipts', { state: { customer: c } })}
                           >
                             <FileText className="w-3.5 h-3.5 text-[#4ade80]" />
-                            <span className="hidden sm:inline">Receipt</span>
+                            <span className="hidden sm:inline">{t.customers.receiptBtn}</span>
                           </Button>
                           <button
                             type="button"

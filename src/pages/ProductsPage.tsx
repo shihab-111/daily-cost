@@ -12,6 +12,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { useLanguage } from '../context/LanguageContext';
 import { useProducts, useSettings } from '../hooks/useBusinessData';
 import { dbService } from '../lib/firebase/db';
 import {
@@ -28,6 +29,7 @@ import { Button, Card } from '../components/ui';
 
 export const ProductsPage: React.FC = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { products, loading } = useProducts(user, Boolean(user));
   const { settings } = useSettings(user, Boolean(user));
 
@@ -94,7 +96,7 @@ export const ProductsPage: React.FC = () => {
             onClick={() => exportProductsCsv(filteredProducts)}
           >
             <Download className="w-3.5 h-3.5 text-[#4ade80]" />
-            <span className="hidden sm:inline">Export CSV</span>
+            <span className="hidden sm:inline">{t.common.exportCsv}</span>
           </Button>
           <Button
             size="sm"
@@ -104,7 +106,7 @@ export const ProductsPage: React.FC = () => {
             }}
           >
             <Plus className="w-3.5 h-3.5" />
-            Add Product
+            {t.products.addProduct}
           </Button>
         </div>
       }
@@ -119,7 +121,7 @@ export const ProductsPage: React.FC = () => {
                 type="search"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search SKU, product name, fabric, or notes..."
+                placeholder={t.products.searchPlaceholder}
                 className="w-full pl-9 pr-3 py-2 text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-500 focus:outline-none focus:border-[#22c55e]"
               />
             </div>
@@ -127,10 +129,10 @@ export const ProductsPage: React.FC = () => {
             <div className="flex items-center gap-1 p-1 bg-[#09090b] border border-[#27272a] rounded-lg overflow-x-auto">
               {(
                 [
-                  { id: 'all', label: 'All' },
-                  { id: 'in_stock', label: 'In Stock' },
-                  { id: 'low_stock', label: 'Low Stock' },
-                  { id: 'out_of_stock', label: 'Out of Stock' },
+                  { id: 'all', label: t.common.all },
+                  { id: 'in_stock', label: t.products.inStock },
+                  { id: 'low_stock', label: t.products.lowStock },
+                  { id: 'out_of_stock', label: t.products.outOfStock },
                 ] as const
               ).map((st) => (
                 <button
@@ -155,7 +157,7 @@ export const ProductsPage: React.FC = () => {
             onChange={(e) => setCategoryFilter(e.target.value)}
             className="px-3 py-2 text-xs font-medium bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg focus:outline-none focus:border-[#22c55e]"
           >
-            <option value="all">All Categories</option>
+            <option value="all">{t.products.allCategories}</option>
             {PRODUCT_CATEGORIES.map((c) => (
               <option key={c} value={c}>
                 {c}
@@ -176,10 +178,10 @@ export const ProductsPage: React.FC = () => {
             <div className="p-12 text-center">
               <Package className="w-8 h-8 text-zinc-600 mx-auto mb-3" />
               <p className="text-sm font-semibold text-zinc-200">
-                No Products in Inventory
+                {t.products.noProductsTitle}
               </p>
               <p className="text-xs text-zinc-500 mt-1">
-                Add SKUs with purchase cost, selling price, stock units, and multi-photo galleries.
+                {t.products.noProductsDesc}
               </p>
               <Button
                 className="mt-4"
@@ -190,7 +192,7 @@ export const ProductsPage: React.FC = () => {
                 }}
               >
                 <Plus className="w-3.5 h-3.5" />
-                Add First Product
+                {t.products.addFirstProduct}
               </Button>
             </div>
           ) : (
@@ -198,13 +200,13 @@ export const ProductsPage: React.FC = () => {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-[#27272a] bg-[#121214] text-xs font-medium text-zinc-400">
-                    <th className="py-3 px-4">Photo</th>
-                    <th className="py-3 px-4">Product &amp; SKU</th>
-                    <th className="py-3 px-4 text-right">Cost</th>
-                    <th className="py-3 px-4 text-right">Selling</th>
-                    <th className="py-3 px-4 text-center">Stock Level</th>
-                    <th className="py-3 px-4">Status</th>
-                    <th className="py-3 px-4 text-right">Actions</th>
+                    <th className="py-3 px-4">{t.products.photo}</th>
+                    <th className="py-3 px-4">{t.products.productSku}</th>
+                    <th className="py-3 px-4 text-right">{t.products.cost}</th>
+                    <th className="py-3 px-4 text-right">{t.products.selling}</th>
+                    <th className="py-3 px-4 text-center">{t.products.stockLevel}</th>
+                    <th className="py-3 px-4">{t.common.status}</th>
+                    <th className="py-3 px-4 text-right">{t.common.actions}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#27272a] text-sm">
@@ -280,17 +282,17 @@ export const ProductsPage: React.FC = () => {
                           {status === 'in_stock' ? (
                             <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[#4ade80]">
                               <CheckCircle2 className="w-3.5 h-3.5" />
-                              In Stock
+                              {t.products.inStock}
                             </span>
                           ) : status === 'low_stock' ? (
                             <span className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-400">
                               <AlertTriangle className="w-3.5 h-3.5" />
-                              Low Stock
+                              {t.products.lowStock}
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1.5 text-xs font-medium text-red-400">
                               <XCircle className="w-3.5 h-3.5" />
-                              Out of Stock
+                              {t.products.outOfStock}
                             </span>
                           )}
                         </td>

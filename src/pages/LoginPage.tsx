@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { ExternalLink, Eye, EyeOff, Lock, LogOut, MailCheck, RefreshCw, ShieldCheck, UserPlus } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { useLanguage } from '../context/LanguageContext';
 import { EKTALLY_LOGO_URL } from '../lib/utils';
 import { loginSchema, registerSchema } from '../lib/validators/schemas';
 import { Button } from '../components/ui';
+import { LanguageToggle } from '../components/ui/LanguageToggle';
 
 interface LoginPageProps {
   initialMode?: 'login' | 'register';
@@ -26,6 +28,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
     logout,
     clearError,
   } = useAuth();
+  const { t } = useLanguage();
 
   const [mode, setMode] = useState<'login' | 'register'>(initialMode);
   const [displayName, setDisplayName] = useState('');
@@ -160,22 +163,20 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
             referrerPolicy="no-referrer"
             className="h-8 sm:h-9 w-auto object-contain shrink-0"
           />
-          <span className="text-xs font-mono text-[#4ade80]/80 whitespace-nowrap">
-            Dhaka · BDT ৳
-          </span>
+          <LanguageToggle />
         </div>
 
         <div className="mt-6 lg:my-auto lg:py-8 max-w-xl">
           <p className="text-xs font-mono text-[#4ade80] mb-2.5 tracking-wide">
-            EkTally · Dual-Mode Business &amp; Personal Ledger
+            {t.login.kicker}
           </p>
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-white tracking-tight leading-[1.15] text-balance mb-3">
-            Private Bangladesh{' '}
-            <span className="text-[#4ade80]">business &amp; personal</span>{' '}
-            expense control.
+            {t.login.headlinePrefix}{' '}
+            <span className="text-[#4ade80]">{t.login.headlineHighlight}</span>{' '}
+            {t.login.headlineSuffix}
           </h1>
           <p className="text-sm text-zinc-400 leading-relaxed max-w-md">
-            Switch seamlessly between Business Operations (Meta ads, inventory, customers, custom receipts) and Personal Daily Expenses (bazaar, bills, monthly budget) with strict per-user data isolation.
+            {t.login.subtitle}
           </p>
         </div>
       </div>
@@ -190,13 +191,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
           <div className="mb-5">
             <div className="inline-flex items-center gap-2 text-xs font-medium text-[#4ade80] mb-2">
               {mode === 'login' ? <Lock className="w-3.5 h-3.5" /> : <UserPlus className="w-3.5 h-3.5" />}
-              <span>EkTally Workspace</span>
+              <span>{t.login.workspaceTag}</span>
             </div>
             <h2 className="text-xl font-semibold text-zinc-100 tracking-tight">
-              {mode === 'login' ? 'Sign In to Your Ledger' : 'Create Private Workspace'}
+              {mode === 'login' ? t.login.signInTitle : t.login.registerTitle}
             </h2>
             <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
-              Your receipts, inventory, customers, and personal budgets remain strictly private to your verified account.
+              {t.login.authSubtitle}
             </p>
           </div>
 
@@ -205,9 +206,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
               <div className="w-4 h-4 border-2 border-zinc-700 border-t-[#22c55e] rounded-full animate-spin shrink-0" />
               <div>
                 <p className="text-sm font-medium text-zinc-100">
-                  {verifyingTenant ? 'Preparing your isolated workspace...' : 'Checking session...'}
+                  {verifyingTenant ? t.login.preparingWorkspace : t.login.checkingSession}
                 </p>
-                <p className="text-xs text-zinc-500">Connecting to secured database</p>
+                <p className="text-xs text-zinc-500">{t.login.connectingDb}</p>
               </div>
             </div>
           ) : user && !isAuthorized && denialReason === 'unverified_email' ? (
@@ -216,10 +217,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                 <MailCheck className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
                 <div>
                   <h3 className="text-sm font-semibold text-zinc-100">
-                    Verify Your Email Address
+                    {t.login.verifyEmailTitle}
                   </h3>
                   <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
-                    A verification link was sent to <span className="font-mono text-zinc-200">{user.email}</span>. Email verification is enforced by database security rules before private workspace access opens.
+                    {t.login.verifyEmailDescPrefix}{' '}
+                    <span className="font-mono text-zinc-200">{user.email}</span>.{' '}
+                    {t.login.verifyEmailDescSuffix}
                   </p>
                 </div>
               </div>
@@ -239,7 +242,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                   className="w-full"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${checkingVerify ? 'animate-spin' : ''}`} />
-                  {checkingVerify ? 'Checking status...' : "I've Verified — Open Workspace"}
+                  {checkingVerify ? t.login.checkingStatus : t.login.iveVerified}
                 </Button>
 
                 <Button
@@ -250,12 +253,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                   className="w-full"
                 >
                   <MailCheck className="w-3.5 h-3.5 text-[#4ade80]" />
-                  {verificationSent ? 'Resend Verification Email' : 'Send Verification Email'}
+                  {verificationSent ? t.login.resendVerification : t.login.sendVerification}
                 </Button>
 
                 <Button type="button" variant="danger" size="sm" onClick={logout} className="w-full">
                   <LogOut className="w-3.5 h-3.5" />
-                  Sign Out &amp; Switch Account
+                  {t.login.signOutSwitch}
                 </Button>
               </div>
             </div>
@@ -272,7 +275,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                       : 'text-zinc-400 hover:text-zinc-100'
                   }`}
                 >
-                  Sign In
+                  {t.login.signInTab}
                 </button>
                 <button
                   type="button"
@@ -283,7 +286,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                       : 'text-zinc-400 hover:text-zinc-100'
                   }`}
                 >
-                  Create Account
+                  {t.login.createAccountTab}
                 </button>
               </div>
 
@@ -298,7 +301,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label htmlFor="reg-name" className="block text-xs font-medium text-zinc-300 mb-1.5">
-                        Your Name *
+                        {t.login.yourName}
                       </label>
                       <input
                         id="reg-name"
@@ -312,7 +315,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                     </div>
                     <div>
                       <label htmlFor="reg-biz" className="block text-xs font-medium text-zinc-300 mb-1.5">
-                        Business Name *
+                        {t.login.businessName}
                       </label>
                       <input
                         id="reg-biz"
@@ -329,7 +332,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
 
                 <div>
                   <label htmlFor="auth-email" className="block text-xs font-medium text-zinc-300 mb-1.5">
-                    Email Address *
+                    {t.login.emailAddress}
                   </label>
                   <input
                     id="auth-email"
@@ -345,7 +348,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
 
                 <div>
                   <label htmlFor="auth-password" className="block text-xs font-medium text-zinc-300 mb-1.5">
-                    Password *
+                    {t.login.password}
                   </label>
                   <div className="relative">
                     <input
@@ -355,7 +358,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder={mode === 'login' ? 'Enter password' : 'Minimum 6 characters'}
+                      placeholder={
+                        mode === 'login'
+                          ? t.login.passwordPlaceholderLogin
+                          : t.login.passwordPlaceholderRegister
+                      }
                       className="w-full pl-3 pr-10 py-2 text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-600 focus:outline-none focus:border-[#22c55e]"
                     />
                     <button
@@ -372,7 +379,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                 {mode === 'register' && (
                   <div>
                     <label htmlFor="reg-confirm" className="block text-xs font-medium text-zinc-300 mb-1.5">
-                      Confirm Password *
+                      {t.login.confirmPassword}
                     </label>
                     <input
                       id="reg-confirm"
@@ -381,7 +388,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                       required
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Re-enter password"
+                      placeholder={t.login.reenterPassword}
                       className="w-full px-3 py-2 text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-600 focus:outline-none focus:border-[#22c55e]"
                     />
                   </div>
@@ -395,24 +402,24 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                       onChange={(e) => setRememberMe(e.target.checked)}
                       className="w-4 h-4 rounded border-[#27272a] bg-[#09090b] accent-[#22c55e]"
                     />
-                    <span>Remember my session on this device</span>
+                    <span>{t.login.rememberSession}</span>
                   </label>
                 )}
 
                 <Button type="submit" disabled={submitting} className="w-full py-2.5">
                   {submitting
                     ? mode === 'login'
-                      ? 'Signing in...'
-                      : 'Creating workspace...'
+                      ? t.login.signingIn
+                      : t.login.creatingWorkspace
                     : mode === 'login'
-                    ? 'Sign In with Email'
-                    : 'Create Private Account'}
+                    ? t.login.signInWithEmail
+                    : t.login.createPrivateAccount}
                 </Button>
               </form>
 
               <div className="relative flex items-center py-1">
                 <div className="flex-1 border-t border-[#27272a]" />
-                <span className="px-3 text-[11px] text-zinc-500">or</span>
+                <span className="px-3 text-[11px] text-zinc-500">{t.login.or}</span>
                 <div className="flex-1 border-t border-[#27272a]" />
               </div>
 
@@ -429,7 +436,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                     d="M21.35 11.1h-9.17v2.73h6.51c-.33 3.81-3.5 5.44-6.5 5.44C8.36 19.27 5 16.25 5 12c0-4.1 3.2-7.27 7.2-7.27 3.09 0 4.9 1.97 4.9 1.97L19 4.72S16.56 2 12.1 2C6.42 2 2.03 6.8 2.03 12c0 5.05 4.13 10 10.22 10 5.35 0 9.25-3.67 9.25-9.09 0-1.15-.15-1.81-.15-1.81Z"
                   />
                 </svg>
-                Continue with Google
+                {t.login.continueWithGoogle}
               </Button>
 
               {(isEmbeddedIframe || authError) && (
@@ -441,7 +448,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                     className="inline-flex items-center justify-center gap-1.5 text-xs text-[#4ade80] hover:text-[#86efac] transition-colors py-1"
                   >
                     <ExternalLink className="w-3.5 h-3.5 shrink-0" />
-                    <span>Open in full browser tab for Google Sign-In</span>
+                    <span>{t.login.openInFullTab}</span>
                   </a>
                 </div>
               )}
@@ -454,24 +461,24 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
       <div className="relative z-10 lg:col-start-1 lg:row-start-2 px-6 pt-4 pb-10 sm:px-10 sm:pb-12 lg:px-14 lg:pt-0 lg:pb-14">
         <div className="border-t border-[#4ade80]/15 pt-6 grid grid-cols-1 sm:grid-cols-3 gap-5 max-w-xl">
           <div>
-            <p className="text-xs font-medium text-[#86efac]">Dual Workspace</p>
+            <p className="text-xs font-medium text-[#86efac]">{t.login.highlight1Title}</p>
             <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
-              Business ops &amp; personal daily ledger in one toggle
+              {t.login.highlight1Desc}
             </p>
           </div>
           <div>
-            <p className="text-xs font-medium text-[#86efac]">BD Ready</p>
+            <p className="text-xs font-medium text-[#86efac]">{t.login.highlight2Title}</p>
             <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
-              BDT ৳, bKash, Nagad, Rocket &amp; A4/80mm receipts
+              {t.login.highlight2Desc}
             </p>
           </div>
           <div>
             <div className="flex items-center gap-1.5 text-xs font-medium text-[#86efac]">
               <ShieldCheck className="w-3.5 h-3.5 text-[#4ade80] shrink-0" />
-              <span>UID Isolated</span>
+              <span>{t.login.highlight3Title}</span>
             </div>
             <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
-              Scoped strictly to your verified account
+              {t.login.highlight3Desc}
             </p>
           </div>
         </div>
