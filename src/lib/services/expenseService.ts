@@ -1,0 +1,204 @@
+import { User } from 'firebase/auth';
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  onSnapshot,
+  query,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+  where,
+  writeBatch,
+} from 'firebase/firestore';
+import { db, handleFirestoreError, OperationType } from '../firebase/client';
+import { Expense, ReceiptAsset } from '../../types';
+import { ExpenseFormValues } from '../validators/schemas';
+import { generateSafeId } from '../utils';
+import { logActivity } from './activityService';
+import type { StagedAssetInput } from '../firebase/db';
+
+export function subscribeExpenses(
+  user: User,
+  onData: (items: Expense[]) => void,
+  onError: (err: Error) => void
+): () => void {
+  const path = 'expenses';
+  const q = query(collection(db, path), where('userId', '==', user.uid));
+
+  return onSnapshot(
+    q,
+    (snap) => {
+      const list = snap.docs
+        .map((d) => ({
+          id: d.id,
+          ...(d.data() as Omit<Expense, 'id'>),
+        }))
+        .sort((a, b) => {
+          const cmp = b.date.localeCompare(a.date);
+          if (cmp !== 0) return cmp;
+          return (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0);
+        });
+      onData(list);
+    },
+    (err) => {
+      try {
+        handleFirestoreError(err, OperationType.LIST, path);
+      } catch (e) {
+        onError(e instanceof Error ? e : new Error(String(e)));
+      }
+    }
+  );
+}
+
+export async function fetchExpenseReceipts(
+  expenseId: string,
+  user: User
+): Promise<ReceiptAsset[]> {
+  const path = `expenses/${expenseId}/receipts`;
+  try {
+    const q = query(
+      collection(db, 'expenses', expenseId, 'receipts'),
+      where('userId', '==', user.uid)
+    );
+    const snap = await getDocs(q);
+    return snap.docs
+      .map((d) => ({
+        id: d.id,
+        ...(d.data() as Omit<ReceiptAsset, 'id'>),
+      }))
+      .sort((a, b) => (a.createdAt?.toMillis?.() || 0) - (b.createdAt?.toMillis?.() || 0));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.LIST, path);
+  }
+}
+
+export async function saveExpense(
+  user: User,
+  values: ExpenseFormValues,
+  receipts: StagedAssetInput[],
+  removedReceiptIds: string[],
+  existing?: Expense
+): Promise<string> {
+  const expenseId = existing ? existing.id : generateSafeId('exp');
+  const path = `expenses/${expenseId}`;
+  const thumb =
+    receipts.find((r) => r.thumbDataUrl)?.thumbDataUrl ||
+    (receipts.length > 0 ? existing?.receiptThumb || '' : '');
+
+  const payloadBase = {
+    mode: values.mode,
+    title: values.title.trim().slice(0, 200),
+    description: values.description.trim().slice(0, 4000),
+    category: values.category,
+    amount: Math.round(values.amount * 100) / 100,
+    currency: values.currency,
+    date: values.date,
+    paymentMethod: values.paymentMethod,
+    adAccountId: values.adAccountId.trim().slice(0, 120),
+    campaignName: values.campaignName.trim().slice(0, 160),
+    partnerOrAgency: values.partnerOrAgency.trim().slice(0, 160),
+    modelName: values.modelName.trim().slice(0, 120),
+    photographerName: values.photographerName.trim().slice(0, 120),
+    studioName: values.studioName.trim().slice(0, 120),
+    vendorOrCourier: values.vendorOrCourier.trim().slice(0, 160),
+    receiptThumb: thumb.slice(0, 80000),
+    receiptCount: Math.min(10, receipts.length),
+  };
+
+  if (!existing) {
+    try {
+      await setDoc(doc(db, 'expenses', expenseId), {
+        ...payloadBase,
+        userId: user.uid,
+        userEmail: (user.email || 'user@bd-ledger.local').slice(0, 254),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, path);
+    }
+  } else {
+    try {
+      await updateDoc(doc(db, 'expenses', expenseId), {
+        ...payloadBase,
+        updatedAt: serverTimestamp(),
+      });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, path);
+    }
+  }
+
+  for (const rid of removedReceiptIds) {
+    try {
+      await deleteDoc(doc(db, 'expenses', expenseId, 'receipts', rid));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `${path}/receipts/${rid}`);
+    }
+  }
+
+  for (const asset of receipts.slice(0, 10)) {
+    if (asset.isExisting) continue;
+    const receiptId = generateSafeId('rcp');
+    try {
+      await setDoc(doc(db, 'expenses', expenseId, 'receipts', receiptId), {
+        expenseId,
+        userId: user.uid,
+        fileName: asset.fileName.slice(0, 200) || 'receipt.jpg',
+        mimeType: asset.mimeType,
+        width: Math.max(1, Math.min(8000, Math.round(asset.width))),
+        height: Math.max(1, Math.min(8000, Math.round(asset.height))),
+        sizeBytes: Math.max(1, Math.min(700000, asset.dataUrl.length)),
+        dataUrl: asset.dataUrl.slice(0, 700000),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, `${path}/receipts/${receiptId}`);
+    }
+  }
+
+  await logActivity(user, {
+    mode: values.mode,
+    action: existing ? 'expense_updated' : 'expense_created',
+    summary: `${existing ? 'Updated' : 'Logged'} ${values.mode} expense: ${payloadBase.title}`,
+    entityType: 'expense',
+    entityId: expenseId,
+    amount: payloadBase.amount,
+    currency: payloadBase.currency,
+  });
+
+  return expenseId;
+}
+
+export async function deleteExpense(user: User, expense: Expense): Promise<void> {
+  const receipts = await fetchExpenseReceipts(expense.id, user);
+  if (receipts.length > 0) {
+    const batch = writeBatch(db);
+    for (const r of receipts) {
+      batch.delete(doc(db, 'expenses', expense.id, 'receipts', r.id));
+    }
+    try {
+      await batch.commit();
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `expenses/${expense.id}/receipts`);
+    }
+  }
+
+  try {
+    await deleteDoc(doc(db, 'expenses', expense.id));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, `expenses/${expense.id}`);
+  }
+
+  await logActivity(user, {
+    mode: expense.mode || 'business',
+    action: 'expense_deleted',
+    summary: `Deleted expense: ${expense.title}`,
+    entityType: 'expense',
+    entityId: expense.id,
+    amount: expense.amount,
+    currency: expense.currency,
+  });
+}

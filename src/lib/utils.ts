@@ -1,15 +1,46 @@
-import { CurrencyCode, DateRangePreset, Expense, ExpenseCategory, Product, StockStatus } from '../types';
+import {
+  AppMode,
+  BusinessExpenseCategory,
+  CurrencyCode,
+  DateRangePreset,
+  Expense,
+  ExpenseCategory,
+  PersonalExpenseCategory,
+  Product,
+  StockStatus,
+} from '../types';
 
 export function cn(...classes: Array<string | false | null | undefined>): string {
   return classes.filter(Boolean).join(' ');
 }
 
-export const EXPENSE_CATEGORY_LABELS: Record<ExpenseCategory, string> = {
-  facebook_ads: 'Facebook & Social Ads',
-  marketing_promo: 'Marketing & Promotions',
+export const BUSINESS_EXPENSE_CATEGORIES: Record<BusinessExpenseCategory, string> = {
+  facebook_ads: 'Facebook & Meta Ads',
+  marketing_promo: 'Marketing & Influencers',
   photoshoot_model: 'Photoshoot & Model Costs',
-  operations_packaging: 'Operational & Packaging',
+  operations_packaging: 'Packaging & Courier',
+  raw_materials: 'Raw Materials & Stock',
+  rent_utilities: 'Rent & Office Utilities',
 };
+
+export const PERSONAL_EXPENSE_CATEGORIES: Record<PersonalExpenseCategory, string> = {
+  groceries_bazaar: 'Groceries & Bazaar',
+  bills_utilities: 'Bills & Utilities',
+  transportation: 'Transportation & CNG/Uber',
+  personal_shopping: 'Personal Shopping',
+  family_health: 'Family & Healthcare',
+  dining_out: 'Dining & Tea/Coffee',
+};
+
+export const EXPENSE_CATEGORY_LABELS: Record<ExpenseCategory, string> = {
+  ...BUSINESS_EXPENSE_CATEGORIES,
+  ...PERSONAL_EXPENSE_CATEGORIES,
+};
+
+export function getCategoriesForMode(mode: AppMode): Array<[ExpenseCategory, string]> {
+  const source = mode === 'business' ? BUSINESS_EXPENSE_CATEGORIES : PERSONAL_EXPENSE_CATEGORIES;
+  return Object.entries(source) as Array<[ExpenseCategory, string]>;
+}
 
 export const PAYMENT_METHODS = [
   'bKash',
@@ -30,17 +61,66 @@ export const PRODUCT_CATEGORIES = [
   'General',
 ] as const;
 
-export function formatMoney(amount: number, currency: CurrencyCode = 'BDT'): string {
-  const symbol = currency === 'BDT' ? '৳' : '$';
-  return `${symbol}${amount.toLocaleString('en-BD', {
-    minimumFractionDigits: currency === 'BDT' ? 0 : 2,
-    maximumFractionDigits: 2,
-  })}`;
+export const BD_DISTRICTS = [
+  'Dhaka',
+  'Gazipur',
+  'Narayanganj',
+  'Chattogram',
+  'Sylhet',
+  'Cumilla',
+  'Rajshahi',
+  'Khulna',
+  'Barishal',
+  'Rangpur',
+  'Mymensingh',
+  'Bogura',
+  "Cox's Bazar",
+  'Jessore',
+  'Savar',
+  'Tangail',
+  'Narsingdi',
+] as const;
+
+export const BD_COURIERS = [
+  'Steadfast Courier',
+  'Pathao Courier',
+  'RedX',
+  'Sundarban Courier',
+  'SA Paribahan',
+  'Paperfly',
+  'Store Pickup / Rider',
+] as const;
+
+export const RECEIPT_PAYMENT_METHODS = [
+  'Cash on Delivery',
+  'bKash',
+  'Nagad',
+  'Rocket',
+  'Bank Transfer',
+  'Cash',
+  'Card',
+] as const;
+
+export const BD_CARRIER_PHONE_REGEX = /^(?:\+?88)?01[3-9]\d{8}$/;
+
+export function normalizeBdPhone(raw: string): string {
+  const compact = raw.replace(/[\s\-()]/g, '');
+  if (!compact) return '';
+  if (/^01[3-9]\d{8}$/.test(compact)) {
+    return `+88${compact}`;
+  }
+  if (/^8801[3-9]\d{8}$/.test(compact)) {
+    return `+${compact}`;
+  }
+  if (/^\+8801[3-9]\d{8}$/.test(compact)) {
+    return compact;
+  }
+  return raw.trim();
 }
 
-export function convertToBdt(amount: number, currency: CurrencyCode, usdToBdtRate = 120): number {
-  if (currency === 'BDT') return amount;
-  return amount * usdToBdtRate;
+export function isValidBdPhone(raw: string): boolean {
+  const compact = raw.replace(/[\s\-()]/g, '');
+  return BD_CARRIER_PHONE_REGEX.test(compact);
 }
 
 export function getTodayDhakaDate(): string {
@@ -50,6 +130,44 @@ export function getTodayDhakaDate(): string {
   const m = String(dhakaTime.getMonth() + 1).padStart(2, '0');
   const d = String(dhakaTime.getDate()).padStart(2, '0');
   return `${y}-${m}-${d}`;
+}
+
+export function getNowDhakaDateTime(): { date: string; time: string } {
+  const now = new Date();
+  const date = getTodayDhakaDate();
+  const time = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Dhaka',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  }).format(now);
+  return { date, time: `${time} BST` };
+}
+
+export function getDhakaDayOfMonth(): number {
+  const now = new Date();
+  const dhakaTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Dhaka' }));
+  return Math.max(1, dhakaTime.getDate());
+}
+
+export function generateReceiptNumber(): string {
+  const today = getTodayDhakaDate().replace(/-/g, '');
+  const rand = Math.floor(1000 + Math.random() * 9000);
+  return `INV-BD-${today}-${rand}`;
+}
+
+export function formatMoney(amount: number, currency: CurrencyCode = 'BDT'): string {
+  const symbol = currency === 'BDT' ? '৳' : '$';
+  const locale = currency === 'BDT' ? 'en-BD' : 'en-US';
+  return `${symbol}${amount.toLocaleString(locale, {
+    minimumFractionDigits: currency === 'BDT' ? 0 : 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+export function convertToBdt(amount: number, currency: CurrencyCode, usdToBdtRate = 120): number {
+  if (currency === 'BDT') return amount;
+  return amount * usdToBdtRate;
 }
 
 export function isDateInRange(
@@ -120,6 +238,7 @@ function downloadCsv(filename: string, headers: string[], rows: Array<Array<stri
 
 export function exportExpensesCsv(expenses: Expense[]) {
   const headers = [
+    'Mode',
     'Date',
     'Title',
     'Category',
@@ -136,9 +255,10 @@ export function exportExpensesCsv(expenses: Expense[]) {
     'Description',
   ];
   const rows = expenses.map((e) => [
+    e.mode,
     e.date,
     e.title,
-    EXPENSE_CATEGORY_LABELS[e.category],
+    EXPENSE_CATEGORY_LABELS[e.category] || e.category,
     e.amount.toFixed(2),
     e.currency,
     e.paymentMethod,

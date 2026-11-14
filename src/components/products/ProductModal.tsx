@@ -101,7 +101,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       for (const file of Array.from(files).slice(0, remaining)) {
         const processed = await processImageAsset(file);
         const resolvedUrl = await tryUploadToStorageOrFallback(
-          `products/${user.uid}/${Date.now()}_${processed.fileName}`,
+          `users/${user.uid}/products/${Date.now()}_${processed.fileName}`,
           file,
           processed.dataUrl
         );

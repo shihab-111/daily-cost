@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Download, Edit3, Plus, Receipt, Search, Trash2 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { useMode } from '../context/ModeContext';
 import { useExpenses, useSettings } from '../hooks/useBusinessData';
 import { dbService } from '../lib/firebase/db';
 import {
@@ -8,6 +9,7 @@ import {
   EXPENSE_CATEGORY_LABELS,
   exportExpensesCsv,
   formatMoney,
+  getCategoriesForMode,
   isDateInRange,
 } from '../lib/utils';
 import { DateRangePreset, Expense, ExpenseCategory } from '../types';
@@ -18,6 +20,7 @@ import { Button, Card } from '../components/ui';
 
 export const ExpensesPage: React.FC = () => {
   const { user } = useAuth();
+  const { mode } = useMode();
   const { expenses, loading } = useExpenses(user, Boolean(user));
   const { settings } = useSettings(user, Boolean(user));
 
@@ -32,13 +35,23 @@ export const ExpensesPage: React.FC = () => {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [lightboxItems, setLightboxItems] = useState<LightboxImageItem[] | null>(null);
 
+  useEffect(() => {
+    setCategoryFilter('all');
+  }, [mode]);
+
   const businessName = settings?.businessName || 'Meridian BD Ops';
   const defaultCurrency = settings?.currencyCode || 'BDT';
   const usdToBdtRate = settings?.usdToBdtRate || 120;
+  const modeCategories = useMemo(() => getCategoriesForMode(mode), [mode]);
+
+  const modeExpenses = useMemo(
+    () => expenses.filter((exp) => (exp.mode || 'business') === mode),
+    [expenses, mode]
+  );
 
   const filteredExpenses = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    return expenses.filter((exp) => {
+    return modeExpenses.filter((exp) => {
       if (categoryFilter !== 'all' && exp.category !== categoryFilter) return false;
       if (!isDateInRange(exp.date, datePreset, customStart, customEnd)) return false;
       if (!q) return true;
@@ -58,7 +71,7 @@ export const ExpensesPage: React.FC = () => {
         .toLowerCase();
       return haystack.includes(q);
     });
-  }, [expenses, categoryFilter, datePreset, customStart, customEnd, searchQuery]);
+  }, [modeExpenses, categoryFilter, datePreset, customStart, customEnd, searchQuery]);
 
   const totalFilteredBdt = useMemo(
     () =>
@@ -98,7 +111,9 @@ export const ExpensesPage: React.FC = () => {
         'Studio / Shoot'
       );
     }
-    return exp.vendorOrCourier || 'Packaging & Logistics';
+    if (exp.vendorOrCourier) return exp.vendorOrCourier;
+    if (exp.description) return exp.description.slice(0, 60);
+    return exp.paymentMethod;
   };
 
   return (
@@ -123,7 +138,7 @@ export const ExpensesPage: React.FC = () => {
             }}
           >
             <Plus className="w-3.5 h-3.5" />
-            Log Expense
+            {mode === 'business' ? 'Log Business Expense' : 'Log Daily Expense'}
           </Button>
         </div>
       }
@@ -138,7 +153,11 @@ export const ExpensesPage: React.FC = () => {
                 type="search"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search title, campaign, model, courier, or bKash/Nagad..."
+                placeholder={
+                  mode === 'business'
+                    ? 'Search ads, models, couriers, suppliers, or bKash/Nagad...'
+                    : 'Search bazaar, bills, CNG/Uber, shopping, or bKash/Nagad...'
+                }
                 className="w-full pl-9 pr-3 py-2 text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-500 focus:outline-none focus:border-[#22c55e]"
               />
             </div>
@@ -199,20 +218,20 @@ export const ExpensesPage: React.FC = () => {
                     : 'text-zinc-400 hover:text-zinc-100'
                 }`}
               >
-                All Categories
+                All {mode === 'business' ? 'Business' : 'Personal'}
               </button>
-              {(Object.keys(EXPENSE_CATEGORY_LABELS) as ExpenseCategory[]).map((cat) => (
+              {modeCategories.map(([catKey, catLabel]) => (
                 <button
-                  key={cat}
+                  key={catKey}
                   type="button"
-                  onClick={() => setCategoryFilter(cat)}
+                  onClick={() => setCategoryFilter(catKey)}
                   className={`px-3 py-1.5 text-xs font-medium rounded-md cursor-pointer whitespace-nowrap ${
-                    categoryFilter === cat
+                    categoryFilter === catKey
                       ? 'bg-[#18181b] text-[#4ade80]'
                       : 'text-zinc-400 hover:text-zinc-100'
                   }`}
                 >
-                  {EXPENSE_CATEGORY_LABELS[cat]}
+                  {catLabel}
                 </button>
               ))}
             </div>
@@ -238,10 +257,12 @@ export const ExpensesPage: React.FC = () => {
             <div className="p-12 text-center">
               <Receipt className="w-8 h-8 text-zinc-600 mx-auto mb-3" />
               <p className="text-sm font-semibold text-zinc-200">
-                No Expense Entries Found
+                No {mode === 'business' ? 'Business' : 'Personal'} Expense Entries Found
               </p>
               <p className="text-xs text-zinc-500 mt-1">
-                Log Facebook Ads, influencer marketing, photoshoot costs, or BD packaging invoices.
+                {mode === 'business'
+                  ? 'Log Facebook Ads, influencer payouts, photoshoot costs, raw materials, or BD courier bills.'
+                  : 'Log daily groceries/bazaar, utility bills, transportation, family health, or dining out.'}
               </p>
               <Button
                 className="mt-4"
@@ -252,7 +273,7 @@ export const ExpensesPage: React.FC = () => {
                 }}
               >
                 <Plus className="w-3.5 h-3.5" />
-                Log First Expense
+                Log First {mode === 'business' ? 'Business' : 'Personal'} Expense
               </Button>
             </div>
           ) : (
@@ -280,7 +301,7 @@ export const ExpensesPage: React.FC = () => {
                         </div>
                         <div className="text-xs text-zinc-400 mt-0.5 truncate">
                           <span className="text-[#4ade80]">
-                            {EXPENSE_CATEGORY_LABELS[exp.category]}
+                            {EXPENSE_CATEGORY_LABELS[exp.category] || exp.category}
                           </span>
                           <span className="mx-1.5 text-zinc-600">·</span>
                           <span>{renderCategoryContext(exp)}</span>

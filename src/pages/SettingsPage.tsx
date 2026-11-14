@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Building2, ShieldCheck, Trash2, UserPlus } from 'lucide-react';
+import { Building2, Download, ShieldCheck, Wallet } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { useAdmins, useSettings } from '../hooks/useBusinessData';
-import { ROOT_ADMIN_EMAIL } from '../lib/firebase/client';
+import { useExpenses, useProducts, useSettings } from '../hooks/useBusinessData';
 import { dbService } from '../lib/firebase/db';
-import { adminUserSchema, settingsSchema } from '../lib/validators/schemas';
+import { exportExpensesCsv, exportProductsCsv } from '../lib/utils';
+import { settingsSchema } from '../lib/validators/schemas';
 import { CurrencyCode } from '../types';
 import { DashboardShell } from '../components/layout/DashboardShell';
 import { Button, Card, Input, Select } from '../components/ui';
@@ -12,15 +12,14 @@ import { Button, Card, Input, Select } from '../components/ui';
 export const SettingsPage: React.FC = () => {
   const { user } = useAuth();
   const { settings } = useSettings(user, Boolean(user));
-  const { admins } = useAdmins(user, Boolean(user));
-
-  const isRootOwner = user?.email === ROOT_ADMIN_EMAIL;
+  const { expenses } = useExpenses(user, Boolean(user));
+  const { products } = useProducts(user, Boolean(user));
 
   const [businessName, setBusinessName] = useState(
     settings?.businessName || 'Meridian BD Ops'
   );
   const [ownerName, setOwnerName] = useState(
-    settings?.ownerName || user?.displayName || 'BD Owner'
+    settings?.ownerName || user?.displayName || 'Workspace Owner'
   );
   const [currencyCode, setCurrencyCode] = useState<CurrencyCode>(
     settings?.currencyCode || 'BDT'
@@ -31,16 +30,15 @@ export const SettingsPage: React.FC = () => {
   const [usdToBdtRate, setUsdToBdtRate] = useState(
     String(settings?.usdToBdtRate ?? 120)
   );
+  const [personalMonthlyBudget, setPersonalMonthlyBudget] = useState(
+    String(settings?.personalMonthlyBudget ?? 25000)
+  );
   const [address, setAddress] = useState(settings?.address || 'Dhaka, Bangladesh');
   const [phone, setPhone] = useState(settings?.phone || '');
   const [savingSettings, setSavingSettings] = useState(false);
-  const [settingsMsg, setSettingsMsg] = useState<string | null>(null);
-
-  const [newUid, setNewUid] = useState('');
-  const [newEmail, setNewEmail] = useState('');
-  const [newName, setNewName] = useState('');
-  const [savingAdmin, setSavingAdmin] = useState(false);
-  const [adminMsg, setAdminMsg] = useState<string | null>(null);
+  const [settingsMsg, setSettingsMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(
+    null
+  );
 
   useEffect(() => {
     if (!settings) return;
@@ -49,6 +47,7 @@ export const SettingsPage: React.FC = () => {
     setCurrencyCode(settings.currencyCode);
     setLowStockThreshold(String(settings.lowStockThreshold));
     setUsdToBdtRate(String(settings.usdToBdtRate));
+    setPersonalMonthlyBudget(String(settings.personalMonthlyBudget ?? 25000));
     setAddress(settings.address);
     setPhone(settings.phone);
   }, [settings]);
@@ -63,50 +62,31 @@ export const SettingsPage: React.FC = () => {
       currencyCode,
       lowStockThreshold,
       usdToBdtRate,
+      personalMonthlyBudget,
       address,
       phone,
     });
     if (!parsed.success) {
-      setSettingsMsg(parsed.error.issues[0]?.message || 'Check your settings.');
+      setSettingsMsg({
+        type: 'err',
+        text: parsed.error.issues[0]?.message || 'Check your settings.',
+      });
       return;
     }
     setSavingSettings(true);
     try {
       await dbService.saveSettings(user, parsed.data, Boolean(settings));
-      setSettingsMsg('Business configuration saved.');
+      setSettingsMsg({
+        type: 'ok',
+        text: 'Workspace configuration & personal budget cap saved.',
+      });
     } catch (err) {
-      setSettingsMsg(err instanceof Error ? err.message : 'Unable to save settings.');
+      setSettingsMsg({
+        type: 'err',
+        text: err instanceof Error ? err.message : 'Unable to save settings.',
+      });
     } finally {
       setSavingSettings(false);
-    }
-  };
-
-  const handleAddAdmin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return;
-    setAdminMsg(null);
-    const parsed = adminUserSchema.safeParse({
-      uid: newUid,
-      email: newEmail,
-      displayName: newName || newEmail.split('@')[0],
-      role: 'admin',
-      active: true,
-    });
-    if (!parsed.success) {
-      setAdminMsg(parsed.error.issues[0]?.message || 'Check admin fields.');
-      return;
-    }
-    setSavingAdmin(true);
-    try {
-      await dbService.saveAdmin(user, parsed.data, false);
-      setNewUid('');
-      setNewEmail('');
-      setNewName('');
-      setAdminMsg('Administrator added to roster.');
-    } catch (err) {
-      setAdminMsg(err instanceof Error ? err.message : 'Unable to add admin.');
-    } finally {
-      setSavingAdmin(false);
     }
   };
 
@@ -119,29 +99,35 @@ export const SettingsPage: React.FC = () => {
               <Building2 className="w-4 h-4 text-[#4ade80]" />
               <div>
                 <h2 className="text-sm font-semibold text-zinc-100">
-                  Bangladesh Business Profile &amp; Currency Settings
+                  Bangladesh Workspace, Currency &amp; Personal Budget Settings
                 </h2>
                 <p className="text-xs text-zinc-400">
-                  Configure default BDT/USD currency, exchange rate, and low-stock threshold.
+                  Configure your business profile, BDT/USD conversion, low-stock threshold, and monthly personal budget cap.
                 </p>
               </div>
             </div>
 
             {settingsMsg && (
-              <div className="text-xs px-3 py-2 rounded-lg bg-[#09090b] border border-[#27272a] text-[#4ade80]">
-                {settingsMsg}
+              <div
+                className={`text-xs px-3 py-2 rounded-lg bg-[#09090b] border ${
+                  settingsMsg.type === 'ok'
+                    ? 'border-[#22c55e]/30 text-[#4ade80]'
+                    : 'border-red-500/30 text-red-400'
+                }`}
+              >
+                {settingsMsg.text}
               </div>
             )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input
-                label="Business Name *"
+                label="Business / Brand Name *"
                 required
                 value={businessName}
                 onChange={(e) => setBusinessName(e.target.value)}
               />
               <Input
-                label="Owner Name *"
+                label="Account Owner Name *"
                 required
                 value={ownerName}
                 onChange={(e) => setOwnerName(e.target.value)}
@@ -164,6 +150,15 @@ export const SettingsPage: React.FC = () => {
                 className="font-mono tabular-nums"
               />
               <Input
+                label="Personal Monthly Budget Cap (৳ BDT)"
+                type="number"
+                min="0"
+                step="100"
+                value={personalMonthlyBudget}
+                onChange={(e) => setPersonalMonthlyBudget(e.target.value)}
+                className="font-mono tabular-nums"
+              />
+              <Input
                 label="Default Low-Stock Alert Threshold"
                 type="number"
                 min="0"
@@ -172,143 +167,80 @@ export const SettingsPage: React.FC = () => {
                 className="font-mono tabular-nums"
               />
               <Input
-                label="BD Contact Phone"
+                label="BD Contact Phone (+8801XXXXXXXXX)"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="+880 1XXX-XXXXXX"
+                placeholder="+88017XXXXXXXX"
+                className="font-mono"
               />
-              <div className="sm:col-span-2">
-                <Input
-                  label="Office / Warehouse Address"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  placeholder="Banani, Dhaka, Bangladesh"
-                />
-              </div>
+              <Input
+                label="Office / Home Address"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="Banani, Dhaka, Bangladesh"
+              />
             </div>
 
             <div className="flex justify-end">
               <Button type="submit" disabled={savingSettings}>
-                {savingSettings ? 'Saving...' : 'Save Business Settings'}
+                {savingSettings ? 'Saving...' : 'Save Workspace Settings'}
               </Button>
             </div>
           </form>
         </Card>
 
+        {/* Multi-Tenant Isolation & Export */}
         <Card className="p-6 space-y-5">
           <div className="flex items-center gap-2 border-b border-[#27272a] pb-3">
             <ShieldCheck className="w-4 h-4 text-[#4ade80]" />
             <div>
               <h2 className="text-sm font-semibold text-zinc-100">
-                Administrator Access Control
+                Multi-Tenant Privacy &amp; Data Export
               </h2>
               <p className="text-xs text-zinc-400">
-                Only the owner (<span className="font-mono">{ROOT_ADMIN_EMAIL}</span>) and verified admins listed here can access this dashboard.
+                All expenses, inventory SKUs, customers, receipts, and uploaded photos are strictly isolated to your User UID.
               </p>
             </div>
           </div>
 
-          {adminMsg && (
-            <div className="text-xs px-3 py-2 rounded-lg bg-[#09090b] border border-[#27272a] text-[#4ade80]">
-              {adminMsg}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="p-4 rounded-lg bg-[#09090b] border border-[#27272a] space-y-1">
+              <p className="text-[11px] font-mono text-zinc-400 uppercase">Verified Account</p>
+              <p className="text-sm font-medium text-zinc-100 truncate">{user?.email}</p>
+              <p className="text-[11px] font-mono text-[#4ade80] truncate">
+                UID: {user?.uid}
+              </p>
             </div>
-          )}
 
-          <div className="border border-[#27272a] rounded-lg divide-y divide-[#27272a]">
-            {admins.map((admin) => (
-              <div
-                key={admin.id}
-                className="p-4 flex flex-wrap items-center justify-between gap-3"
-              >
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-zinc-100">{admin.displayName}</p>
-                  <p className="text-xs font-mono text-zinc-400 mt-0.5 truncate">
-                    {admin.email} · {admin.role} · {admin.uid}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span
-                    className={`text-xs font-medium ${
-                      admin.active ? 'text-[#4ade80]' : 'text-zinc-500'
-                    }`}
-                  >
-                    {admin.active ? 'Active' : 'Suspended'}
-                  </span>
-                  {isRootOwner && admin.uid !== user?.uid && (
-                    <>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        onClick={() =>
-                          user &&
-                          dbService.saveAdmin(
-                            user,
-                            {
-                              uid: admin.uid,
-                              email: admin.email,
-                              displayName: admin.displayName,
-                              role: admin.role,
-                              active: !admin.active,
-                            },
-                            true
-                          )
-                        }
-                      >
-                        {admin.active ? 'Suspend' : 'Activate'}
-                      </Button>
-                      <button
-                        type="button"
-                        onClick={() => dbService.deleteAdmin(admin.uid)}
-                        aria-label={`Remove ${admin.email}`}
-                        className="p-1.5 text-zinc-500 hover:text-red-400 cursor-pointer"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </>
-                  )}
-                </div>
+            <div className="p-4 rounded-lg bg-[#09090b] border border-[#27272a] flex flex-col justify-between gap-3">
+              <div className="flex items-center gap-2 text-xs text-zinc-300">
+                <Wallet className="w-3.5 h-3.5 text-[#4ade80]" />
+                <span>Download Private Ledger Backups</span>
               </div>
-            ))}
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={expenses.length === 0}
+                  onClick={() => exportExpensesCsv(expenses)}
+                >
+                  <Download className="w-3.5 h-3.5 text-[#4ade80]" />
+                  All Expenses CSV
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={products.length === 0}
+                  onClick={() => exportProductsCsv(products)}
+                >
+                  <Download className="w-3.5 h-3.5 text-[#4ade80]" />
+                  Inventory CSV
+                </Button>
+              </div>
+            </div>
           </div>
-
-          {isRootOwner && (
-            <form
-              onSubmit={handleAddAdmin}
-              className="pt-4 border-t border-[#27272a] space-y-3"
-            >
-              <h3 className="text-xs font-semibold text-zinc-300 flex items-center gap-1.5">
-                <UserPlus className="w-3.5 h-3.5 text-[#4ade80]" />
-                Authorize Additional Admin Account
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <Input
-                  placeholder="Firebase Auth UID"
-                  value={newUid}
-                  onChange={(e) => setNewUid(e.target.value)}
-                  className="font-mono text-xs"
-                />
-                <Input
-                  type="email"
-                  placeholder="Verified Email"
-                  value={newEmail}
-                  onChange={(e) => setNewEmail(e.target.value)}
-                  className="text-xs"
-                />
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Display Name"
-                    value={newName}
-                    onChange={(e) => setNewName(e.target.value)}
-                    className="text-xs"
-                  />
-                  <Button type="submit" size="sm" disabled={savingAdmin}>
-                    Add
-                  </Button>
-                </div>
-              </div>
-            </form>
-          )}
         </Card>
       </div>
     </DashboardShell>

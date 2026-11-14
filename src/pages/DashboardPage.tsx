@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Download, Plus } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { useMode } from '../context/ModeContext';
 import {
   useActivityLogs,
   useExpenses,
@@ -12,7 +13,9 @@ import {
   exportExpensesCsv,
   exportProductsCsv,
   formatMoney,
+  getDhakaDayOfMonth,
   getStockStatus,
+  getTodayDhakaDate,
   isDateInRange,
 } from '../lib/utils';
 import { DateRangePreset } from '../types';
@@ -24,6 +27,7 @@ import { Button, Card } from '../components/ui';
 
 export const DashboardPage: React.FC = () => {
   const { user } = useAuth();
+  const { mode } = useMode();
   const { expenses, loading: expLoading } = useExpenses(user, Boolean(user));
   const { products, loading: prodLoading } = useProducts(user, Boolean(user));
   const { settings } = useSettings(user, Boolean(user));
@@ -39,16 +43,27 @@ export const DashboardPage: React.FC = () => {
   const defaultCurrency = settings?.currencyCode || 'BDT';
   const usdToBdtRate = settings?.usdToBdtRate || 120;
   const defaultThreshold = settings?.lowStockThreshold ?? 5;
+  const monthlyBudgetBdt = settings?.personalMonthlyBudget ?? 25000;
+
+  const modeExpenses = useMemo(
+    () => expenses.filter((e) => (e.mode || 'business') === mode),
+    [expenses, mode]
+  );
+
+  const modeLogs = useMemo(
+    () => logs.filter((l) => (l.mode || 'business') === mode),
+    [logs, mode]
+  );
 
   const filteredExpenses = useMemo(
     () =>
-      expenses.filter((e) =>
+      modeExpenses.filter((e) =>
         isDateInRange(e.date, datePreset, customStart, customEnd)
       ),
-    [expenses, datePreset, customStart, customEnd]
+    [modeExpenses, datePreset, customStart, customEnd]
   );
 
-  const kpis = useMemo(() => {
+  const businessKpis = useMemo(() => {
     const totalExpensesBdt = filteredExpenses.reduce(
       (sum, e) => sum + convertToBdt(e.amount, e.currency, usdToBdtRate),
       0
@@ -68,17 +83,13 @@ export const DashboardPage: React.FC = () => {
       0
     );
     const totalUnits = products.reduce((sum, p) => sum + p.stockQty, 0);
-    const lowOrOutCount = products.filter(
-      (p) => getStockStatus(p) !== 'in_stock'
-    ).length;
+    const lowOrOutCount = products.filter((p) => getStockStatus(p) !== 'in_stock').length;
 
     return {
       totalExpensesBdt,
       marketingSpendBdt,
       marketingShare:
-        totalExpensesBdt > 0
-          ? Math.round((marketingSpendBdt / totalExpensesBdt) * 100)
-          : 0,
+        totalExpensesBdt > 0 ? Math.round((marketingSpendBdt / totalExpensesBdt) * 100) : 0,
       inventoryCostValueBdt,
       inventoryRetailValueBdt,
       totalUnits,
@@ -86,22 +97,56 @@ export const DashboardPage: React.FC = () => {
     };
   }, [filteredExpenses, products, usdToBdtRate]);
 
+  const personalKpis = useMemo(() => {
+    const todayDhaka = getTodayDhakaDate();
+    const currentMonthPrefix = todayDhaka.slice(0, 7);
+    const dayOfMonth = getDhakaDayOfMonth();
+
+    const periodSpendBdt = filteredExpenses.reduce(
+      (sum, e) => sum + convertToBdt(e.amount, e.currency, usdToBdtRate),
+      0
+    );
+    const thisMonthSpendBdt = modeExpenses
+      .filter((e) => e.date.slice(0, 7) === currentMonthPrefix)
+      .reduce((sum, e) => sum + convertToBdt(e.amount, e.currency, usdToBdtRate), 0);
+    const todaySpendBdt = modeExpenses
+      .filter((e) => e.date === todayDhaka)
+      .reduce((sum, e) => sum + convertToBdt(e.amount, e.currency, usdToBdtRate), 0);
+
+    const dailyAverageBdt = Math.round(thisMonthSpendBdt / dayOfMonth);
+    const budgetRemainingBdt = monthlyBudgetBdt - thisMonthSpendBdt;
+    const budgetPct =
+      monthlyBudgetBdt > 0 ? Math.round((thisMonthSpendBdt / monthlyBudgetBdt) * 100) : 0;
+
+    return {
+      periodSpendBdt,
+      thisMonthSpendBdt,
+      todaySpendBdt,
+      dailyAverageBdt,
+      budgetRemainingBdt,
+      budgetPct,
+      dayOfMonth,
+    };
+  }, [filteredExpenses, modeExpenses, usdToBdtRate, monthlyBudgetBdt]);
+
   return (
     <DashboardShell
       businessName={businessName}
       headerAction={
         <div className="flex items-center gap-2">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setProductModalOpen(true)}
-          >
-            <Plus className="w-3.5 h-3.5 text-[#4ade80]" />
-            <span className="hidden sm:inline">Add Product</span>
-          </Button>
+          {mode === 'business' && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setProductModalOpen(true)}
+            >
+              <Plus className="w-3.5 h-3.5 text-[#4ade80]" />
+              <span className="hidden sm:inline">Add Product</span>
+            </Button>
+          )}
           <Button size="sm" onClick={() => setExpenseModalOpen(true)}>
             <Plus className="w-3.5 h-3.5" />
-            Log Expense
+            {mode === 'business' ? 'Log Business Expense' : 'Quick Log Expense'}
           </Button>
         </div>
       }
@@ -162,75 +207,136 @@ export const DashboardPage: React.FC = () => {
               onClick={() => exportExpensesCsv(filteredExpenses)}
             >
               <Download className="w-3.5 h-3.5 text-[#4ade80]" />
-              Expenses CSV
+              {mode === 'business' ? 'Business CSV' : 'Personal CSV'}
             </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              disabled={products.length === 0}
-              onClick={() => exportProductsCsv(products)}
-            >
-              <Download className="w-3.5 h-3.5 text-[#4ade80]" />
-              Inventory CSV
-            </Button>
+            {mode === 'business' && (
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={products.length === 0}
+                onClick={() => exportProductsCsv(products)}
+              >
+                <Download className="w-3.5 h-3.5 text-[#4ade80]" />
+                Inventory CSV
+              </Button>
+            )}
           </div>
         </Card>
 
-        {/* 4 Real-Time KPI Summary Cards */}
-        <section
-          aria-label="Key Business Metrics"
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
-        >
-          <Card className="p-5">
-            <p className="text-xs font-medium text-zinc-400">Total Expenses</p>
-            <p className="text-2xl font-semibold font-mono tabular-nums text-zinc-100 mt-2">
-              {expLoading ? '—' : formatMoney(kpis.totalExpensesBdt, 'BDT')}
-            </p>
-            <p className="text-xs font-mono tabular-nums text-zinc-500 mt-1.5">
-              {filteredExpenses.length} logged transactions
-            </p>
-          </Card>
+        {/* Dual-Mode KPI Summary Cards */}
+        {mode === 'business' ? (
+          <section
+            aria-label="Key Business Metrics"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+          >
+            <Card className="p-5">
+              <p className="text-xs font-medium text-zinc-400">Business Expenses</p>
+              <p className="text-2xl font-semibold font-mono tabular-nums text-zinc-100 mt-2">
+                {expLoading ? '—' : formatMoney(businessKpis.totalExpensesBdt, 'BDT')}
+              </p>
+              <p className="text-xs font-mono tabular-nums text-zinc-500 mt-1.5">
+                {filteredExpenses.length} logged transactions
+              </p>
+            </Card>
 
-          <Card className="p-5">
-            <p className="text-xs font-medium text-zinc-400">Marketing &amp; Ads Spend</p>
-            <p className="text-2xl font-semibold font-mono tabular-nums text-[#4ade80] mt-2">
-              {expLoading ? '—' : formatMoney(kpis.marketingSpendBdt, 'BDT')}
-            </p>
-            <p className="text-xs font-mono tabular-nums text-zinc-500 mt-1.5">
-              {kpis.marketingShare}% of period expenditure
-            </p>
-          </Card>
+            <Card className="p-5">
+              <p className="text-xs font-medium text-zinc-400">Marketing &amp; Ads Spend</p>
+              <p className="text-2xl font-semibold font-mono tabular-nums text-[#4ade80] mt-2">
+                {expLoading ? '—' : formatMoney(businessKpis.marketingSpendBdt, 'BDT')}
+              </p>
+              <p className="text-xs font-mono tabular-nums text-zinc-500 mt-1.5">
+                {businessKpis.marketingShare}% of period expenditure
+              </p>
+            </Card>
 
-          <Card className="p-5">
-            <p className="text-xs font-medium text-zinc-400">Inventory Cost Value</p>
-            <p className="text-2xl font-semibold font-mono tabular-nums text-zinc-100 mt-2">
-              {prodLoading ? '—' : formatMoney(kpis.inventoryCostValueBdt, 'BDT')}
-            </p>
-            <p className="text-xs font-mono tabular-nums text-zinc-500 mt-1.5">
-              Est. Retail: {formatMoney(kpis.inventoryRetailValueBdt, 'BDT')}
-            </p>
-          </Card>
+            <Card className="p-5">
+              <p className="text-xs font-medium text-zinc-400">Inventory Cost Value</p>
+              <p className="text-2xl font-semibold font-mono tabular-nums text-zinc-100 mt-2">
+                {prodLoading ? '—' : formatMoney(businessKpis.inventoryCostValueBdt, 'BDT')}
+              </p>
+              <p className="text-xs font-mono tabular-nums text-zinc-500 mt-1.5">
+                Est. Retail: {formatMoney(businessKpis.inventoryRetailValueBdt, 'BDT')}
+              </p>
+            </Card>
 
-          <Card className="p-5">
-            <p className="text-xs font-medium text-zinc-400">Total Units Stocked</p>
-            <p className="text-2xl font-semibold font-mono tabular-nums text-zinc-100 mt-2">
-              {prodLoading ? '—' : kpis.totalUnits.toLocaleString('en-BD')}
-            </p>
-            <p className="text-xs font-mono tabular-nums text-zinc-500 mt-1.5">
-              {products.length} SKUs ·{' '}
-              <span className={kpis.lowOrOutCount > 0 ? 'text-amber-400' : 'text-[#4ade80]'}>
-                {kpis.lowOrOutCount} low/out alert
-              </span>
-            </p>
-          </Card>
-        </section>
+            <Card className="p-5">
+              <p className="text-xs font-medium text-zinc-400">Total Units Stocked</p>
+              <p className="text-2xl font-semibold font-mono tabular-nums text-zinc-100 mt-2">
+                {prodLoading ? '—' : businessKpis.totalUnits.toLocaleString('en-BD')}
+              </p>
+              <p className="text-xs font-mono tabular-nums text-zinc-500 mt-1.5">
+                {products.length} SKUs ·{' '}
+                <span className={businessKpis.lowOrOutCount > 0 ? 'text-amber-400' : 'text-[#4ade80]'}>
+                  {businessKpis.lowOrOutCount} low/out alert
+                </span>
+              </p>
+            </Card>
+          </section>
+        ) : (
+          <section
+            aria-label="Personal Finance Metrics"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+          >
+            <Card className="p-5">
+              <p className="text-xs font-medium text-zinc-400">This Month Spending</p>
+              <p className="text-2xl font-semibold font-mono tabular-nums text-zinc-100 mt-2">
+                {expLoading ? '—' : formatMoney(personalKpis.thisMonthSpendBdt, 'BDT')}
+              </p>
+              <p className="text-xs font-mono tabular-nums text-zinc-500 mt-1.5">
+                {filteredExpenses.length} entries in selected range
+              </p>
+            </Card>
+
+            <Card className="p-5">
+              <p className="text-xs font-medium text-zinc-400">Monthly Budget Cap</p>
+              <p
+                className={`text-2xl font-semibold font-mono tabular-nums mt-2 ${
+                  personalKpis.budgetRemainingBdt < 0
+                    ? 'text-red-400'
+                    : personalKpis.budgetPct >= 85
+                    ? 'text-amber-400'
+                    : 'text-[#4ade80]'
+                }`}
+              >
+                {expLoading ? '—' : formatMoney(personalKpis.budgetRemainingBdt, 'BDT')}
+              </p>
+              <p className="text-xs font-mono tabular-nums text-zinc-500 mt-1.5">
+                {personalKpis.budgetRemainingBdt >= 0 ? 'Remaining' : 'Over cap'} · Cap:{' '}
+                {formatMoney(monthlyBudgetBdt, 'BDT')}
+              </p>
+            </Card>
+
+            <Card className="p-5">
+              <p className="text-xs font-medium text-zinc-400">Daily Average Spend</p>
+              <p className="text-2xl font-semibold font-mono tabular-nums text-zinc-100 mt-2">
+                {expLoading ? '—' : formatMoney(personalKpis.dailyAverageBdt, 'BDT')}
+              </p>
+              <p className="text-xs font-mono tabular-nums text-zinc-500 mt-1.5">
+                Across {personalKpis.dayOfMonth} days this month
+              </p>
+            </Card>
+
+            <Card className="p-5">
+              <p className="text-xs font-medium text-zinc-400">Today&apos;s Spend (Dhaka)</p>
+              <p className="text-2xl font-semibold font-mono tabular-nums text-[#4ade80] mt-2">
+                {expLoading ? '—' : formatMoney(personalKpis.todaySpendBdt, 'BDT')}
+              </p>
+              <p className="text-xs font-mono tabular-nums text-zinc-500 mt-1.5">
+                Period total: {formatMoney(personalKpis.periodSpendBdt, 'BDT')}
+              </p>
+            </Card>
+          </section>
+        )}
 
         {/* Breakdown Charts & Activity Feed */}
         <OverviewCharts
+          mode={mode}
           expenses={filteredExpenses}
-          inventoryValueBdt={kpis.inventoryCostValueBdt}
+          inventoryValueBdt={businessKpis.inventoryCostValueBdt}
+          monthlyBudgetBdt={monthlyBudgetBdt}
+          monthSpentBdt={personalKpis.thisMonthSpendBdt}
           usdToBdtRate={usdToBdtRate}
-          logs={logs}
+          logs={modeLogs}
         />
       </div>
 
@@ -243,14 +349,16 @@ export const DashboardPage: React.FC = () => {
             editingExpense={null}
             onClose={() => setExpenseModalOpen(false)}
           />
-          <ProductModal
-            open={productModalOpen}
-            user={user}
-            defaultCurrency={defaultCurrency}
-            defaultThreshold={defaultThreshold}
-            editingProduct={null}
-            onClose={() => setProductModalOpen(false)}
-          />
+          {mode === 'business' && (
+            <ProductModal
+              open={productModalOpen}
+              user={user}
+              defaultCurrency={defaultCurrency}
+              defaultThreshold={defaultThreshold}
+              editingProduct={null}
+              onClose={() => setProductModalOpen(false)}
+            />
+          )}
         </>
       )}
     </DashboardShell>

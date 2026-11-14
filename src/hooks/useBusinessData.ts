@@ -1,7 +1,15 @@
 import { useEffect, useState } from 'react';
 import { User } from 'firebase/auth';
 import { dbService } from '../lib/firebase/db';
-import { ActivityLog, AdminUser, BusinessSettings, Expense, Product } from '../types';
+import {
+  ActivityLog,
+  Customer,
+  CustomerReceipt,
+  Expense,
+  Product,
+  ReceiptTemplate,
+  UserSettings,
+} from '../types';
 
 export function useExpenses(user: User | null, enabled: boolean) {
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -63,8 +71,38 @@ export function useProducts(user: User | null, enabled: boolean) {
   return { products, loading, error };
 }
 
+export function useCustomers(user: User | null, enabled: boolean) {
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user || !enabled) {
+      setCustomers([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    const unsub = dbService.subscribeCustomers(
+      user,
+      (list) => {
+        setCustomers(list);
+        setLoading(false);
+      },
+      (err) => {
+        setError(err.message);
+        setLoading(false);
+      }
+    );
+    return () => unsub();
+  }, [user, enabled]);
+
+  return { customers, loading, error };
+}
+
 export function useSettings(user: User | null, enabled: boolean) {
-  const [settings, setSettings] = useState<BusinessSettings | null>(null);
+  const [settings, setSettings] = useState<UserSettings | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -73,6 +111,7 @@ export function useSettings(user: User | null, enabled: boolean) {
       return;
     }
     const unsub = dbService.subscribeSettings(
+      user,
       (s) => setSettings(s),
       (err) => setError(err.message)
     );
@@ -107,21 +146,52 @@ export function useActivityLogs(user: User | null, enabled: boolean) {
   return { logs, loading };
 }
 
-export function useAdmins(user: User | null, enabled: boolean) {
-  const [admins, setAdmins] = useState<AdminUser[]>([]);
+export function useReceiptTemplate(user: User | null, enabled: boolean) {
+  const [template, setTemplate] = useState<ReceiptTemplate | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user || !enabled) {
-      setAdmins([]);
+      setTemplate(null);
       return;
     }
-    const unsub = dbService.subscribeAdmins(
+    const unsub = dbService.subscribeReceiptTemplate(
       user,
-      (items) => setAdmins(items),
-      () => {}
+      (t) => setTemplate(t),
+      (err) => setError(err.message)
     );
     return () => unsub();
   }, [user, enabled]);
 
-  return { admins };
+  return { template, error };
+}
+
+export function useCustomerReceipts(user: User | null, enabled: boolean) {
+  const [receipts, setReceipts] = useState<CustomerReceipt[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user || !enabled) {
+      setReceipts([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    const unsub = dbService.subscribeCustomerReceipts(
+      user,
+      (items) => {
+        setReceipts(items);
+        setLoading(false);
+      },
+      (err) => {
+        setError(err.message);
+        setLoading(false);
+      }
+    );
+    return () => unsub();
+  }, [user, enabled]);
+
+  return { receipts, loading, error };
 }

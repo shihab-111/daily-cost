@@ -1,12 +1,27 @@
 import { z } from 'zod';
+import { isValidBdPhone, normalizeBdPhone } from '../utils';
 
 export const loginSchema = z.object({
-  email: z.string().trim().email('Enter a valid administrator email address.'),
+  email: z.string().trim().email('Enter a valid email address.'),
   password: z.string().min(6, 'Password must be at least 6 characters.'),
   rememberMe: z.boolean().default(true),
 });
 
+export const registerSchema = z
+  .object({
+    displayName: z.string().trim().min(2, 'Your name is required.').max(120),
+    businessName: z.string().trim().min(2, 'Business or workspace name is required.').max(140),
+    email: z.string().trim().email('Enter a valid email address.').max(254),
+    password: z.string().min(6, 'Password must be at least 6 characters.').max(128),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'Passwords do not match.',
+    path: ['confirmPassword'],
+  });
+
 export const expenseSchema = z.object({
+  mode: z.enum(['business', 'personal']),
   title: z.string().trim().min(1, 'Expense title is required.').max(200),
   description: z.string().trim().max(4000).default(''),
   category: z.enum([
@@ -14,6 +29,14 @@ export const expenseSchema = z.object({
     'marketing_promo',
     'photoshoot_model',
     'operations_packaging',
+    'raw_materials',
+    'rent_utilities',
+    'groceries_bazaar',
+    'bills_utilities',
+    'transportation',
+    'personal_shopping',
+    'family_health',
+    'dining_out',
   ]),
   amount: z.coerce.number().min(0, 'Amount cannot be negative.').max(999999999),
   currency: z.enum(['BDT', 'USD']),
@@ -45,31 +68,125 @@ export const productSchema = z.object({
   notes: z.string().trim().max(4000).default(''),
 });
 
+export const customerSchema = z.object({
+  name: z.string().trim().min(1, 'Customer name is required.').max(140),
+  phone: z
+    .string()
+    .trim()
+    .refine((val) => isValidBdPhone(val), {
+      message: 'Enter a valid Bangladeshi carrier phone number (+8801XXXXXXXXX or 01XXXXXXXXX).',
+    })
+    .transform((val) => normalizeBdPhone(val)),
+  email: z
+    .string()
+    .trim()
+    .max(140)
+    .refine((v) => !v || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), 'Enter a valid email address.')
+    .default(''),
+  address: z.string().trim().max(240).default(''),
+  district: z.string().trim().max(80).default('Dhaka'),
+  notes: z.string().trim().max(1000).default(''),
+});
+
 export const settingsSchema = z.object({
   businessName: z.string().trim().min(1, 'Business name is required.').max(140),
   ownerName: z.string().trim().min(1, 'Owner name is required.').max(120),
   currencyCode: z.enum(['BDT', 'USD']),
   lowStockThreshold: z.coerce.number().int().min(0).max(10000),
   usdToBdtRate: z.coerce.number().min(1).max(10000),
+  personalMonthlyBudget: z.coerce.number().min(0).max(999999999),
   address: z.string().trim().max(240).default(''),
-  phone: z.string().trim().max(40).default(''),
-});
-
-export const adminUserSchema = z.object({
-  uid: z
+  phone: z
     .string()
     .trim()
-    .min(1, 'Firebase UID is required.')
-    .max(128)
-    .regex(/^[a-zA-Z0-9_-]+$/, 'UID contains invalid characters.'),
-  email: z.string().trim().email('Valid email is required.').max(254),
-  displayName: z.string().trim().min(1, 'Display name is required.').max(120),
-  role: z.enum(['owner', 'admin']),
-  active: z.boolean(),
+    .max(40)
+    .refine((v) => !v || isValidBdPhone(v), {
+      message: 'Enter a valid Bangladeshi phone number (+8801XXXXXXXXX) or leave blank.',
+    })
+    .transform((v) => (v ? normalizeBdPhone(v) : ''))
+    .default(''),
+});
+
+export const receiptLineItemSchema = z.object({
+  name: z.string().trim().min(1, 'Item name is required.').max(160),
+  sku: z.string().trim().max(60).default(''),
+  qty: z.coerce.number().min(1, 'Quantity must be at least 1.').max(99999),
+  unitPrice: z.coerce.number().min(0).max(999999999),
+  total: z.coerce.number().min(0).max(999999999),
+});
+
+export const receiptTemplateSchema = z.object({
+  businessName: z.string().trim().min(1, 'Business name is required.').max(140),
+  businessTagline: z.string().trim().max(160).default(''),
+  businessPhone: z.string().trim().max(40).default(''),
+  businessAddress: z.string().trim().max(240).default(''),
+  memoTitle: z.string().trim().min(1, 'Memo / Receipt title is required.').max(60),
+  logoType: z.enum(['monogram', 'uploaded', 'minimal_text']),
+  logoText: z.string().trim().max(8).default('BD'),
+  logoDataUrl: z.string().max(80000).default(''),
+  logoSize: z.enum(['sm', 'md', 'lg']),
+  logoPosition: z.enum(['left', 'center']),
+  textStyle: z.enum(['modern_sans', 'classic_serif', 'mono_thermal']),
+  fontSizeScale: z.enum(['sm', 'md', 'lg']),
+  accentColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Choose a valid 6-digit hex accent color.'),
+  headerBgColor: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/, 'Choose a valid 6-digit hex header background color.'),
+  paperStyle: z.enum(['a4_clean', 'pos_thermal', 'dark_luxury']),
+  footerNote: z.string().trim().max(400).default(''),
+});
+
+export const customerReceiptSchema = receiptTemplateSchema.extend({
+  receiptNumber: z
+    .string()
+    .trim()
+    .min(1, 'Receipt number is required.')
+    .max(50)
+    .regex(/^[a-zA-Z0-9_-]+$/, 'Receipt number can only contain letters, numbers, hyphens, and underscores.'),
+  issueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD date format.'),
+  issueTime: z.string().trim().max(30).default(''),
+  status: z.enum(['paid', 'partial', 'cod', 'unpaid']),
+  paymentMethod: z.enum([
+    'Cash on Delivery',
+    'bKash',
+    'Nagad',
+    'Rocket',
+    'Bank Transfer',
+    'Cash',
+    'Card',
+  ]),
+  customerName: z.string().trim().min(1, 'Customer name is required.').max(140),
+  customerPhone: z
+    .string()
+    .trim()
+    .max(40)
+    .refine((v) => !v || isValidBdPhone(v), {
+      message: 'Use a valid BD carrier phone (+8801XXXXXXXXX) or leave blank.',
+    })
+    .transform((v) => (v ? normalizeBdPhone(v) : ''))
+    .default(''),
+  customerEmail: z.string().trim().max(140).default(''),
+  customerAddress: z.string().trim().max(240).default(''),
+  customerDistrict: z.string().trim().max(80).default('Dhaka'),
+  deliveryZone: z.enum(['inside_dhaka', 'outside_dhaka', 'pickup']),
+  courierName: z.string().trim().max(80).default(''),
+  items: z.array(receiptLineItemSchema).min(1, 'Add at least 1 item to generate a receipt.').max(30),
+  currency: z.enum(['BDT', 'USD']),
+  subtotal: z.coerce.number().min(0).max(999999999),
+  deliveryCharge: z.coerce.number().min(0).max(999999999),
+  discountAmount: z.coerce.number().min(0).max(999999999),
+  vatPercent: z.coerce.number().min(0).max(100),
+  vatAmount: z.coerce.number().min(0).max(999999999),
+  grandTotal: z.coerce.number().min(0).max(999999999),
+  paidAmount: z.coerce.number().min(0).max(999999999),
+  dueAmount: z.coerce.number().min(0).max(999999999),
 });
 
 export type LoginFormValues = z.infer<typeof loginSchema>;
+export type RegisterFormValues = z.infer<typeof registerSchema>;
 export type ExpenseFormValues = z.infer<typeof expenseSchema>;
 export type ProductFormValues = z.infer<typeof productSchema>;
+export type CustomerFormValues = z.infer<typeof customerSchema>;
 export type SettingsFormValues = z.infer<typeof settingsSchema>;
-export type AdminUserFormValues = z.infer<typeof adminUserSchema>;
+export type ReceiptTemplateFormValues = z.infer<typeof receiptTemplateSchema>;
+export type CustomerReceiptFormValues = z.infer<typeof customerReceiptSchema>;

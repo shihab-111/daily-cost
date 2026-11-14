@@ -1,48 +1,46 @@
 {
   "entities": {
-    "AdminUser": {
-      "title": "AdminUser",
-      "description": "Authorized business administrator account.",
+    "UserSettings": {
+      "title": "UserSettings",
+      "description": "Per-tenant Bangladesh business profile, personal monthly budget cap, and currency settings.",
       "type": "object",
       "properties": {
-        "uid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
-        "email": { "type": "string", "format": "email", "minLength": 3, "maxLength": 254 },
-        "displayName": { "type": "string", "minLength": 1, "maxLength": 120 },
-        "role": { "type": "string", "enum": ["owner", "admin"] },
-        "active": { "type": "boolean" },
-        "addedBy": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "updatedAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["uid", "email", "displayName", "role", "active", "addedBy", "createdAt", "updatedAt"]
-    },
-    "BusinessSettings": {
-      "title": "BusinessSettings",
-      "description": "Bangladesh business profile and default currency/threshold configuration.",
-      "type": "object",
-      "properties": {
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
         "businessName": { "type": "string", "minLength": 1, "maxLength": 140 },
         "ownerName": { "type": "string", "minLength": 1, "maxLength": 120 },
         "currencyCode": { "type": "string", "enum": ["BDT", "USD"] },
         "currencySymbol": { "type": "string", "minLength": 1, "maxLength": 6 },
         "lowStockThreshold": { "type": "integer" },
         "usdToBdtRate": { "type": "number" },
+        "personalMonthlyBudget": { "type": "number" },
         "address": { "type": "string", "maxLength": 240 },
         "phone": { "type": "string", "maxLength": 40 },
-        "updatedBy": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["businessName", "ownerName", "currencyCode", "currencySymbol", "lowStockThreshold", "usdToBdtRate", "address", "phone", "updatedBy", "createdAt", "updatedAt"]
+      "required": [
+        "userId", "businessName", "ownerName", "currencyCode", "currencySymbol",
+        "lowStockThreshold", "usdToBdtRate", "personalMonthlyBudget",
+        "address", "phone", "createdAt", "updatedAt"
+      ]
     },
     "Expense": {
       "title": "Expense",
-      "description": "Business expenditure record covering social media ads, marketing, photoshoot/model fees, and BD packaging/logistics.",
+      "description": "Multi-tenant business and personal expenditure record with BD payment channels and receipt attachment metadata.",
       "type": "object",
       "properties": {
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "userEmail": { "type": "string", "format": "email", "minLength": 3, "maxLength": 254 },
+        "mode": { "type": "string", "enum": ["business", "personal"] },
         "title": { "type": "string", "minLength": 1, "maxLength": 200 },
         "description": { "type": "string", "maxLength": 4000 },
-        "category": { "type": "string", "enum": ["facebook_ads", "marketing_promo", "photoshoot_model", "operations_packaging"] },
+        "category": {
+          "type": "string",
+          "enum": [
+            "facebook_ads", "marketing_promo", "photoshoot_model", "operations_packaging", "raw_materials", "rent_utilities",
+            "groceries_bazaar", "bills_utilities", "transportation", "personal_shopping", "family_health", "dining_out"
+          ]
+        },
         "amount": { "type": "number" },
         "currency": { "type": "string", "enum": ["BDT", "USD"] },
         "date": { "type": "string", "minLength": 10, "maxLength": 10 },
@@ -56,41 +54,41 @@
         "vendorOrCourier": { "type": "string", "maxLength": 160 },
         "receiptThumb": { "type": "string", "maxLength": 80000 },
         "receiptCount": { "type": "integer" },
-        "authorUid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
-        "authorEmail": { "type": "string", "format": "email", "minLength": 3, "maxLength": 254 },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": [
-        "title", "description", "category", "amount", "currency", "date", "paymentMethod",
-        "adAccountId", "campaignName", "partnerOrAgency", "modelName", "photographerName",
-        "studioName", "vendorOrCourier", "receiptThumb", "receiptCount",
-        "authorUid", "authorEmail", "createdAt", "updatedAt"
+        "userId", "userEmail", "mode", "title", "description", "category", "amount", "currency",
+        "date", "paymentMethod", "adAccountId", "campaignName", "partnerOrAgency",
+        "modelName", "photographerName", "studioName", "vendorOrCourier",
+        "receiptThumb", "receiptCount", "createdAt", "updatedAt"
       ]
     },
     "ReceiptAsset": {
       "title": "ReceiptAsset",
-      "description": "High-resolution receipt or invoice attachment stored under an expense document.",
+      "description": "High-resolution receipt photo stored under an expense document.",
       "type": "object",
       "properties": {
         "expenseId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
         "fileName": { "type": "string", "minLength": 1, "maxLength": 200 },
         "mimeType": { "type": "string", "enum": ["image/jpeg", "image/webp", "image/png"] },
         "width": { "type": "integer" },
         "height": { "type": "integer" },
         "sizeBytes": { "type": "integer" },
         "dataUrl": { "type": "string", "minLength": 10, "maxLength": 700000 },
-        "authorUid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["expenseId", "fileName", "mimeType", "width", "height", "sizeBytes", "dataUrl", "authorUid", "createdAt", "updatedAt"]
+      "required": ["expenseId", "userId", "fileName", "mimeType", "width", "height", "sizeBytes", "dataUrl", "createdAt", "updatedAt"]
     },
     "Product": {
       "title": "Product",
-      "description": "Inventory product SKU with purchase cost, selling price, stock count, and multi-photo gallery.",
+      "description": "Tenant-isolated business product SKU with cost, price, stock quantity, and gallery metadata.",
       "type": "object",
       "properties": {
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "userEmail": { "type": "string", "format": "email", "minLength": 3, "maxLength": 254 },
         "name": { "type": "string", "minLength": 1, "maxLength": 200 },
         "sku": { "type": "string", "minLength": 1, "maxLength": 60, "pattern": "^[a-zA-Z0-9_\\-]+$" },
         "category": { "type": "string", "minLength": 1, "maxLength": 80 },
@@ -102,23 +100,22 @@
         "notes": { "type": "string", "maxLength": 4000 },
         "thumbnailUrl": { "type": "string", "maxLength": 80000 },
         "photoCount": { "type": "integer" },
-        "authorUid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
-        "authorEmail": { "type": "string", "format": "email", "minLength": 3, "maxLength": 254 },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": [
-        "name", "sku", "category", "purchaseCost", "sellingPrice", "currency",
-        "stockQty", "lowStockThreshold", "notes", "thumbnailUrl", "photoCount",
-        "authorUid", "authorEmail", "createdAt", "updatedAt"
+        "userId", "userEmail", "name", "sku", "category", "purchaseCost", "sellingPrice",
+        "currency", "stockQty", "lowStockThreshold", "notes", "thumbnailUrl",
+        "photoCount", "createdAt", "updatedAt"
       ]
     },
     "ProductPhoto": {
       "title": "ProductPhoto",
-      "description": "High-resolution product or model asset photo stored under a product document.",
+      "description": "Product gallery photograph stored under a product document.",
       "type": "object",
       "properties": {
         "productId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
         "fileName": { "type": "string", "minLength": 1, "maxLength": 200 },
         "mimeType": { "type": "string", "enum": ["image/jpeg", "image/webp", "image/png"] },
         "caption": { "type": "string", "maxLength": 300 },
@@ -126,58 +123,188 @@
         "height": { "type": "integer" },
         "sizeBytes": { "type": "integer" },
         "dataUrl": { "type": "string", "minLength": 10, "maxLength": 700000 },
-        "authorUid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["productId", "fileName", "mimeType", "caption", "width", "height", "sizeBytes", "dataUrl", "authorUid", "createdAt", "updatedAt"]
+      "required": ["productId", "userId", "fileName", "mimeType", "caption", "width", "height", "sizeBytes", "dataUrl", "createdAt", "updatedAt"]
+    },
+    "Customer": {
+      "title": "Customer",
+      "description": "Tenant-isolated Bangladeshi business customer record with +880 phone, address, and order metrics.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 140 },
+        "phone": { "type": "string", "minLength": 11, "maxLength": 20 },
+        "email": { "type": "string", "maxLength": 140 },
+        "address": { "type": "string", "maxLength": 240 },
+        "district": { "type": "string", "maxLength": 80 },
+        "notes": { "type": "string", "maxLength": 1000 },
+        "totalOrders": { "type": "integer" },
+        "totalSpent": { "type": "number" },
+        "lastOrderDate": { "type": "string", "maxLength": 10 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId", "name", "phone", "email", "address", "district", "notes",
+        "totalOrders", "totalSpent", "lastOrderDate", "createdAt", "updatedAt"
+      ]
     },
     "ActivityLog": {
       "title": "ActivityLog",
-      "description": "Audit log tracking expense and inventory mutations.",
+      "description": "Immutable per-tenant audit log across business and personal modes.",
       "type": "object",
       "properties": {
-        "action": { "type": "string", "enum": ["expense_created", "expense_updated", "expense_deleted", "product_created", "product_updated", "product_deleted"] },
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "actorEmail": { "type": "string", "format": "email", "minLength": 3, "maxLength": 254 },
+        "mode": { "type": "string", "enum": ["business", "personal"] },
+        "action": {
+          "type": "string",
+          "enum": [
+            "expense_created", "expense_updated", "expense_deleted",
+            "product_created", "product_updated", "product_deleted",
+            "customer_created", "customer_updated", "customer_deleted",
+            "receipt_created", "receipt_deleted"
+          ]
+        },
         "summary": { "type": "string", "minLength": 1, "maxLength": 240 },
-        "entityType": { "type": "string", "enum": ["expense", "product"] },
+        "entityType": { "type": "string", "enum": ["expense", "product", "customer", "receipt"] },
         "entityId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
         "amount": { "type": "number" },
         "currency": { "type": "string", "enum": ["BDT", "USD"] },
-        "actorUid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
-        "actorEmail": { "type": "string", "format": "email", "minLength": 3, "maxLength": 254 },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["action", "summary", "entityType", "entityId", "amount", "currency", "actorUid", "actorEmail", "createdAt"]
+      "required": ["userId", "actorEmail", "mode", "action", "summary", "entityType", "entityId", "amount", "currency", "createdAt"]
+    },
+    "ReceiptTemplate": {
+      "title": "ReceiptTemplate",
+      "description": "Per-tenant default receipt branding template.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "businessName": { "type": "string", "minLength": 1, "maxLength": 140 },
+        "businessTagline": { "type": "string", "maxLength": 160 },
+        "businessPhone": { "type": "string", "maxLength": 40 },
+        "businessAddress": { "type": "string", "maxLength": 240 },
+        "memoTitle": { "type": "string", "minLength": 1, "maxLength": 60 },
+        "logoType": { "type": "string", "enum": ["monogram", "uploaded", "minimal_text"] },
+        "logoText": { "type": "string", "maxLength": 8 },
+        "logoDataUrl": { "type": "string", "maxLength": 80000 },
+        "logoSize": { "type": "string", "enum": ["sm", "md", "lg"] },
+        "logoPosition": { "type": "string", "enum": ["left", "center"] },
+        "textStyle": { "type": "string", "enum": ["modern_sans", "classic_serif", "mono_thermal"] },
+        "fontSizeScale": { "type": "string", "enum": ["sm", "md", "lg"] },
+        "accentColor": { "type": "string", "minLength": 7, "maxLength": 7, "pattern": "^#[0-9a-fA-F]{6}$" },
+        "headerBgColor": { "type": "string", "minLength": 7, "maxLength": 7, "pattern": "^#[0-9a-fA-F]{6}$" },
+        "paperStyle": { "type": "string", "enum": ["a4_clean", "pos_thermal", "dark_luxury"] },
+        "footerNote": { "type": "string", "maxLength": 400 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId", "businessName", "businessTagline", "businessPhone", "businessAddress", "memoTitle",
+        "logoType", "logoText", "logoDataUrl", "logoSize", "logoPosition",
+        "textStyle", "fontSizeScale", "accentColor", "headerBgColor",
+        "paperStyle", "footerNote", "createdAt", "updatedAt"
+      ]
+    },
+    "CustomerReceipt": {
+      "title": "CustomerReceipt",
+      "description": "Tenant-isolated generated BD receipt/invoice.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "userEmail": { "type": "string", "format": "email", "minLength": 3, "maxLength": 254 },
+        "receiptNumber": { "type": "string", "minLength": 1, "maxLength": 50, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "issueDate": { "type": "string", "minLength": 10, "maxLength": 10 },
+        "issueTime": { "type": "string", "maxLength": 30 },
+        "memoTitle": { "type": "string", "minLength": 1, "maxLength": 60 },
+        "status": { "type": "string", "enum": ["paid", "partial", "cod", "unpaid"] },
+        "paymentMethod": { "type": "string", "enum": ["Cash on Delivery", "bKash", "Nagad", "Rocket", "Bank Transfer", "Cash", "Card"] },
+        "businessName": { "type": "string", "minLength": 1, "maxLength": 140 },
+        "businessTagline": { "type": "string", "maxLength": 160 },
+        "businessPhone": { "type": "string", "maxLength": 40 },
+        "businessAddress": { "type": "string", "maxLength": 240 },
+        "logoType": { "type": "string", "enum": ["monogram", "uploaded", "minimal_text"] },
+        "logoText": { "type": "string", "maxLength": 8 },
+        "logoDataUrl": { "type": "string", "maxLength": 80000 },
+        "logoSize": { "type": "string", "enum": ["sm", "md", "lg"] },
+        "logoPosition": { "type": "string", "enum": ["left", "center"] },
+        "textStyle": { "type": "string", "enum": ["modern_sans", "classic_serif", "mono_thermal"] },
+        "fontSizeScale": { "type": "string", "enum": ["sm", "md", "lg"] },
+        "accentColor": { "type": "string", "minLength": 7, "maxLength": 7, "pattern": "^#[0-9a-fA-F]{6}$" },
+        "headerBgColor": { "type": "string", "minLength": 7, "maxLength": 7, "pattern": "^#[0-9a-fA-F]{6}$" },
+        "paperStyle": { "type": "string", "enum": ["a4_clean", "pos_thermal", "dark_luxury"] },
+        "customerName": { "type": "string", "minLength": 1, "maxLength": 140 },
+        "customerPhone": { "type": "string", "maxLength": 40 },
+        "customerEmail": { "type": "string", "maxLength": 140 },
+        "customerAddress": { "type": "string", "maxLength": 240 },
+        "customerDistrict": { "type": "string", "maxLength": 80 },
+        "deliveryZone": { "type": "string", "enum": ["inside_dhaka", "outside_dhaka", "pickup"] },
+        "courierName": { "type": "string", "maxLength": 80 },
+        "items": { "type": "array", "description": "Bounded list (1..30) of line items." },
+        "currency": { "type": "string", "enum": ["BDT", "USD"] },
+        "subtotal": { "type": "number" },
+        "deliveryCharge": { "type": "number" },
+        "discountAmount": { "type": "number" },
+        "vatPercent": { "type": "number" },
+        "vatAmount": { "type": "number" },
+        "grandTotal": { "type": "number" },
+        "paidAmount": { "type": "number" },
+        "dueAmount": { "type": "number" },
+        "footerNote": { "type": "string", "maxLength": 400 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId", "userEmail", "receiptNumber", "issueDate", "issueTime", "memoTitle", "status", "paymentMethod",
+        "businessName", "businessTagline", "businessPhone", "businessAddress",
+        "logoType", "logoText", "logoDataUrl", "logoSize", "logoPosition",
+        "textStyle", "fontSizeScale", "accentColor", "headerBgColor", "paperStyle",
+        "customerName", "customerPhone", "customerEmail", "customerAddress",
+        "customerDistrict", "deliveryZone", "courierName", "items", "currency",
+        "subtotal", "deliveryCharge", "discountAmount", "vatPercent", "vatAmount",
+        "grandTotal", "paidAmount", "dueAmount", "footerNote", "createdAt", "updatedAt"
+      ]
     }
   },
   "firestore": {
-    "/admins/{adminId}": {
-      "schema": { "$ref": "#/entities/AdminUser" },
-      "description": "Authorized business administrators."
-    },
-    "/settings/{settingId}": {
-      "schema": { "$ref": "#/entities/BusinessSettings" },
-      "description": "Business workspace configuration."
+    "/settings/{userId}": {
+      "schema": { "$ref": "#/entities/UserSettings" },
+      "description": "Per-tenant business and personal budget configuration."
     },
     "/expenses/{expenseId}": {
       "schema": { "$ref": "#/entities/Expense" },
-      "description": "Detailed operational, marketing, ads, and photoshoot expenses."
+      "description": "Tenant-isolated business and personal expenses."
     },
     "/expenses/{expenseId}/receipts/{receiptId}": {
       "schema": { "$ref": "#/entities/ReceiptAsset" },
-      "description": "Uploaded expense receipt/invoice images."
+      "description": "Uploaded expense receipt images."
     },
     "/products/{productId}": {
       "schema": { "$ref": "#/entities/Product" },
-      "description": "Product catalog and inventory stock counts."
+      "description": "Tenant-isolated product inventory."
     },
     "/products/{productId}/photos/{photoId}": {
       "schema": { "$ref": "#/entities/ProductPhoto" },
-      "description": "Product and model asset photographs."
+      "description": "Product photographs."
+    },
+    "/customers/{customerId}": {
+      "schema": { "$ref": "#/entities/Customer" },
+      "description": "Tenant-isolated Bangladeshi customer directory."
     },
     "/activityLogs/{logId}": {
       "schema": { "$ref": "#/entities/ActivityLog" },
-      "description": "Immutable activity audit stream."
+      "description": "Tenant-isolated immutable audit log."
+    },
+    "/receiptTemplates/{templateId}": {
+      "schema": { "$ref": "#/entities/ReceiptTemplate" },
+      "description": "Per-user default receipt design template."
+    },
+    "/customerReceipts/{receiptId}": {
+      "schema": { "$ref": "#/entities/CustomerReceipt" },
+      "description": "Tenant-isolated customer receipts and invoices."
     }
   }
 }
