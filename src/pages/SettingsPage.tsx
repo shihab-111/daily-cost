@@ -21,7 +21,6 @@ import { settingsSchema } from '../lib/validators/schemas';
 import { BusinessProfile, CurrencyCode } from '../types';
 import { DashboardShell } from '../components/layout/DashboardShell';
 import { Button, Card, Input, Select } from '../components/ui';
-import { LanguageToggle } from '../components/ui/LanguageToggle';
 
 export const SettingsPage: React.FC = () => {
   const { user } = useAuth();
@@ -381,7 +380,6 @@ export const SettingsPage: React.FC = () => {
                   </p>
                 </div>
               </div>
-              <LanguageToggle />
             </div>
 
             {settingsMsg && (

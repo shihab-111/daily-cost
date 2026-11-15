@@ -347,11 +347,6 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
             )}
           </div>
         )}
-
-        <div className="flex items-center justify-between px-1 md:hidden">
-          <span className="text-[11px] text-zinc-400">{t.common.languageLabel}</span>
-          <LanguageToggle />
-        </div>
       </div>
 
       <nav className="flex-1 px-3 py-3 space-y-1 overflow-y-auto" aria-label="Primary Navigation">
@@ -472,8 +467,8 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
       )}
 
       <div className="flex-1 min-w-0 flex flex-col">
-        <header className="h-14 bg-[#121214] border-b border-[#27272a] px-2.5 sm:px-6 flex items-center justify-between gap-1.5 sm:gap-3 sticky top-0 z-30 no-print">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+        <header className="h-14 bg-[#121214] border-b border-[#27272a] px-2 sm:px-6 flex items-center justify-between gap-1.5 sm:gap-3 sticky top-0 z-30 no-print">
+          <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1 overflow-hidden">
             <button
               type="button"
               onClick={() => setMobileOpen(true)}
@@ -488,14 +483,14 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
                 {workspaceLabel}
               </span>
               <span className="text-zinc-600 hidden xl:inline">/</span>
-              <h1 className="font-semibold text-zinc-100 truncate text-sm sm:text-base">
+              <h1 className="font-semibold text-zinc-100 truncate text-[13px] sm:text-base">
                 {currentNav.label}
               </h1>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            <LanguageToggle className="hidden md:inline-flex" />
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            <LanguageToggle compactMobile />
 
             {/* Multi-Business Switcher + Quick Add Business Name (Desktop Header) */}
             {mode === 'business' && (
@@ -654,7 +649,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
                     : 'text-zinc-400 hover:text-zinc-100'
                 )}
               >
-                <Briefcase className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
+                <Briefcase className="hidden sm:inline w-3.5 h-3.5 shrink-0" />
                 <span>{t.nav.business}</span>
               </button>
               <button
@@ -667,7 +662,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
                     : 'text-zinc-400 hover:text-zinc-100'
                 )}
               >
-                <UserIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
+                <UserIcon className="hidden sm:inline w-3.5 h-3.5 shrink-0" />
                 <span>{t.nav.personal}</span>
               </button>
             </div>
@@ -773,11 +768,6 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
                     </span>
                     <ChevronRight className="w-3.5 h-3.5 text-zinc-500" />
                   </button>
-
-                  <div className="flex items-center justify-between px-2 py-1.5 rounded-lg bg-[#09090b]/60 border border-[#27272a]/70">
-                    <span className="text-[11px] text-zinc-400">{t.common.languageLabel}</span>
-                    <LanguageToggle />
-                  </div>
 
                   <button
                     type="button"
