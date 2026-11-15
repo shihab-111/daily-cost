@@ -212,7 +212,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
       </div>
 
       {/* 1. Brand Mark & Hero Statement (Mobile: Top-aligned compact hero | Desktop: Left Top/Center) */}
-      <div className="relative z-10 lg:col-start-1 lg:row-start-1 flex-1 flex flex-col justify-start lg:justify-between px-4 pt-[60px] pb-2 sm:p-10 sm:pt-14 sm:pb-6 lg:p-14 lg:pb-8">
+      <div className="relative z-10 lg:col-start-1 lg:row-start-1 flex-1 flex flex-col justify-start lg:justify-between px-4 pt-4 pb-2 sm:p-10 sm:pt-8 sm:pb-6 lg:p-14 lg:pb-8">
         <div className="flex items-center justify-between gap-2">
           <img
             src={EKTALLY_LOGO_URL}
@@ -233,7 +233,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
           </div>
         </div>
 
-        <div className="mt-20 sm:mt-24 lg:my-auto lg:py-8 max-w-xl">
+        <div className="mt-28 sm:mt-32 lg:my-auto lg:py-8 max-w-xl">
           <p className="hidden lg:block text-xs font-mono text-[#4ade80] mb-2 tracking-wide">
             {t.login.kicker}
           </p>
@@ -562,8 +562,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
           <PWAInstallButton />
         </div>
         <footer className="mt-3 sm:mt-5 max-w-xl">
-          <p className="text-[11px] font-mono text-zinc-500 tracking-wide">
-            Developed by Shihab 2026
+          <p className="text-[10px] font-mono text-zinc-500 tracking-wide">
+            Developed by Shihab
           </p>
         </footer>
       </div>
