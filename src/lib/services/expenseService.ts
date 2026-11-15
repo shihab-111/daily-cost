@@ -12,7 +12,7 @@ import {
   where,
   writeBatch,
 } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../firebase/client';
+import { commitOfflineSafe, db, handleFirestoreError, OperationType } from '../firebase/client';
 import { Expense, ReceiptAsset } from '../../types';
 import { ExpenseFormValues } from '../validators/schemas';
 import { generateSafeId } from '../utils';
@@ -117,41 +117,41 @@ export async function saveExpense(
   };
 
   if (!existing) {
-    try {
-      await setDoc(doc(db, 'expenses', expenseId), {
+    await commitOfflineSafe(
+      setDoc(doc(db, 'expenses', expenseId), {
         ...payloadBase,
         userId: user.uid,
         userEmail: (user.email || 'user@bd-ledger.local').slice(0, 254),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-      });
-    } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, path);
-    }
+      }),
+      OperationType.CREATE,
+      path
+    );
   } else {
-    try {
-      await updateDoc(doc(db, 'expenses', expenseId), {
+    await commitOfflineSafe(
+      updateDoc(doc(db, 'expenses', expenseId), {
         ...payloadBase,
         updatedAt: serverTimestamp(),
-      });
-    } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, path);
-    }
+      }),
+      OperationType.UPDATE,
+      path
+    );
   }
 
   for (const rid of removedReceiptIds) {
-    try {
-      await deleteDoc(doc(db, 'expenses', expenseId, 'receipts', rid));
-    } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, `${path}/receipts/${rid}`);
-    }
+    await commitOfflineSafe(
+      deleteDoc(doc(db, 'expenses', expenseId, 'receipts', rid)),
+      OperationType.DELETE,
+      `${path}/receipts/${rid}`
+    );
   }
 
   for (const asset of receipts.slice(0, 10)) {
     if (asset.isExisting) continue;
     const receiptId = generateSafeId('rcp');
-    try {
-      await setDoc(doc(db, 'expenses', expenseId, 'receipts', receiptId), {
+    await commitOfflineSafe(
+      setDoc(doc(db, 'expenses', expenseId, 'receipts', receiptId), {
         expenseId,
         userId: user.uid,
         fileName: asset.fileName.slice(0, 200) || 'receipt.jpg',
@@ -162,10 +162,10 @@ export async function saveExpense(
         dataUrl: asset.dataUrl.slice(0, 700000),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-      });
-    } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, `${path}/receipts/${receiptId}`);
-    }
+      }),
+      OperationType.CREATE,
+      `${path}/receipts/${receiptId}`
+    );
   }
 
   await logActivity(user, {
@@ -189,18 +189,18 @@ export async function deleteExpense(user: User, expense: Expense): Promise<void>
     for (const r of receipts) {
       batch.delete(doc(db, 'expenses', expense.id, 'receipts', r.id));
     }
-    try {
-      await batch.commit();
-    } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, `expenses/${expense.id}/receipts`);
-    }
+    await commitOfflineSafe(
+      batch.commit(),
+      OperationType.DELETE,
+      `expenses/${expense.id}/receipts`
+    );
   }
 
-  try {
-    await deleteDoc(doc(db, 'expenses', expense.id));
-  } catch (error) {
-    handleFirestoreError(error, OperationType.DELETE, `expenses/${expense.id}`);
-  }
+  await commitOfflineSafe(
+    deleteDoc(doc(db, 'expenses', expense.id)),
+    OperationType.DELETE,
+    `expenses/${expense.id}`
+  );
 
   await logActivity(user, {
     mode: expense.mode || 'business',

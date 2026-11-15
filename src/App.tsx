@@ -8,11 +8,13 @@ import { AuthProvider, useAuth } from './hooks/useAuth';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import { ModeProvider } from './context/ModeContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { OfflineIndicator } from './components/ui/PWAControls';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { ExpensesPage } from './pages/ExpensesPage';
 import { ProductsPage } from './pages/ProductsPage';
 import { CustomersPage } from './pages/CustomersPage';
+import { PartnersPage } from './pages/PartnersPage';
 import { ReceiptsPage } from './pages/ReceiptsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { AdminPage } from './pages/AdminPage';
@@ -82,6 +84,14 @@ export default function App() {
                 }
               />
               <Route
+                path="/partners"
+                element={
+                  <ProtectedRoute>
+                    <PartnersPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/receipts"
                 element={
                   <ProtectedRoute>
@@ -110,6 +120,7 @@ export default function App() {
           </BrowserRouter>
         </ModeProvider>
       </AuthProvider>
+      <OfflineIndicator />
       </LanguageProvider>
     </ErrorBoundary>
   );

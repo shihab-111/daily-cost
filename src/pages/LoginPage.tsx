@@ -4,11 +4,13 @@ import {
   Eye,
   EyeOff,
   Lock,
+  LogIn,
   LogOut,
   MailCheck,
   RefreshCw,
   ShieldCheck,
   UserPlus,
+  X,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useLanguage } from '../context/LanguageContext';
@@ -17,6 +19,7 @@ import { EKTALLY_LOGO_URL } from '../lib/utils';
 import { loginSchema, registerSchema } from '../lib/validators/schemas';
 import { Button } from '../components/ui';
 import { LanguageToggle } from '../components/ui/LanguageToggle';
+import { PWAInstallButton } from '../components/ui/PWAControls';
 import { BotanicalBackdropCanvas } from '../components/auth/BotanicalBackdropCanvas';
 
 interface LoginPageProps {
@@ -56,6 +59,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
   const [submitting, setSubmitting] = useState(false);
   const [checkingVerify, setCheckingVerify] = useState(false);
   const [resendingVerify, setResendingVerify] = useState(false);
+  const [mobileAuthOpen, setMobileAuthOpen] = useState(initialMode === 'register');
+
+  const needsVerificationPanel =
+    verifyingTenant || Boolean(user && !isAuthorized && denialReason === 'unverified_email');
+  const showMobilePanel = mobileAuthOpen || needsVerificationPanel;
 
   // Automatically detect when user completes email verification in another tab/app
   useEffect(() => {
@@ -67,6 +75,17 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
     }, 4000);
     return () => window.clearInterval(intervalId);
   }, [user, isAuthorized, denialReason, refreshVerificationStatus]);
+
+  useEffect(() => {
+    if (!mobileAuthOpen || needsVerificationPanel) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setMobileAuthOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [mobileAuthOpen, needsVerificationPanel]);
 
   if (user && isAuthorized) {
     return <Navigate to="/" replace />;
@@ -173,12 +192,18 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
     }
   };
 
+  const handleOpenMobileAuth = () => {
+    setFormError(null);
+    clearError();
+    setMobileAuthOpen(true);
+  };
+
   return (
-    <div className="relative min-h-screen overflow-x-clip bg-[#050507] text-zinc-100 grid grid-cols-1 lg:grid-cols-2 lg:grid-rows-[1fr_auto]">
-      {/* Shared Modern Black & Light Green Backdrop (Full on mobile, Left half on desktop) */}
+    <div className="relative min-h-screen overflow-x-clip bg-[#050507] text-zinc-100 flex flex-col justify-between lg:grid lg:grid-cols-2 lg:grid-rows-[1fr_auto]">
+      {/* Full-Screen Modern Black & Light Green Animated Backdrop (Mobile & PC) */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 lg:w-1/2 bg-gradient-to-br from-[#050507] via-[#07150d] to-[#050507] lg:border-r border-[#4ade80]/15 overflow-hidden"
+        className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[#050507] via-[#07150d] to-[#050507] overflow-hidden"
       >
         <div className="absolute -top-32 -left-24 w-[420px] h-[420px] rounded-full bg-[#4ade80]/15 blur-[110px]" />
         <div className="absolute -bottom-36 -right-20 w-[460px] h-[460px] rounded-full bg-[#22c55e]/15 blur-[120px]" />
@@ -186,23 +211,33 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
         <BotanicalBackdropCanvas />
       </div>
 
-      {/* 1. Brand Mark & Hero Statement (Mobile: Top | Desktop: Left Top/Center) */}
-      <div className="relative z-10 lg:col-start-1 lg:row-start-1 flex flex-col justify-between px-4 pt-3.5 pb-2 sm:p-10 sm:pb-6 lg:p-14 lg:pb-8">
-        <div className="flex items-center justify-between gap-3">
+      {/* 1. Brand Mark & Hero Statement (Mobile: Top + Centered Hero | Desktop: Left Top/Center) */}
+      <div className="relative z-10 lg:col-start-1 lg:row-start-1 flex-1 flex flex-col justify-between px-4 pt-4 pb-4 sm:p-10 sm:pb-6 lg:p-14 lg:pb-8">
+        <div className="flex items-center justify-between gap-2">
           <img
             src={EKTALLY_LOGO_URL}
             alt="EkTally"
             referrerPolicy="no-referrer"
-            className="h-7 sm:h-9 w-auto object-contain shrink-0"
+            className="h-6 sm:h-9 w-auto object-contain shrink-0"
           />
-          <LanguageToggle />
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <LanguageToggle />
+            <button
+              type="button"
+              onClick={handleOpenMobileAuth}
+              className="lg:hidden inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 min-h-[34px] text-xs font-semibold rounded-lg bg-[#22c55e] text-zinc-950 hover:bg-[#4ade80] active:scale-[0.97] transition-all duration-200 shadow-[0_0_20px_-4px_rgba(34,197,94,0.5)] cursor-pointer whitespace-nowrap shrink-0"
+            >
+              <LogIn className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>{language === 'bn' ? 'লগ ইন' : 'Log In'}</span>
+            </button>
+          </div>
         </div>
 
-        <div className="mt-3 sm:mt-6 lg:my-auto lg:py-8 max-w-xl">
+        <div className="my-auto py-8 max-w-xl">
           <p className="hidden lg:block text-xs font-mono text-[#4ade80] mb-2 tracking-wide">
             {t.login.kicker}
           </p>
-          <h1 className="text-xl sm:text-3xl lg:text-4xl font-semibold text-white tracking-tight leading-[1.15] text-balance mb-0.5 lg:mb-3">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-white tracking-tight leading-[1.15] text-balance mb-0.5 lg:mb-3">
             {t.login.headlinePrefix}{' '}
             <span className="text-[#4ade80]">{t.login.headlineHighlight}</span>{' '}
             {t.login.headlineSuffix}
@@ -213,14 +248,41 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
         </div>
       </div>
 
-      {/* 2. Tenant Auth Panel (Mobile: Middle, before Dual Workspace | Desktop: Right Column) */}
-      <div className="relative z-10 lg:col-start-2 lg:row-start-1 lg:row-span-2 flex items-center justify-center px-4 py-2 sm:px-10 sm:py-6 lg:p-16 lg:bg-[#07080a] overflow-hidden">
+      {/* 2. Tenant Auth Panel (Mobile: Animated Overlay Modal | Desktop: Right Column) */}
+      <div
+        onClick={(e) => {
+          if (e.target === e.currentTarget && !needsVerificationPanel) {
+            setMobileAuthOpen(false);
+          }
+        }}
+        className={`max-lg:fixed max-lg:inset-0 max-lg:z-40 max-lg:p-4 max-lg:overflow-y-auto max-lg:flex max-lg:items-center max-lg:justify-center max-lg:transition-[opacity,visibility,backdrop-filter,background-color] max-lg:duration-300 max-lg:ease-[cubic-bezier(0.22,1,0.36,1)] ${
+          showMobilePanel
+            ? 'max-lg:bg-[#030604]/75 max-lg:backdrop-blur-md max-lg:opacity-100 max-lg:visible max-lg:pointer-events-auto'
+            : 'max-lg:bg-[#030604]/0 max-lg:backdrop-blur-none max-lg:opacity-0 max-lg:invisible max-lg:pointer-events-none'
+        } lg:relative lg:z-10 lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:flex lg:items-center lg:justify-center lg:p-16 lg:overflow-hidden`}
+      >
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] h-[480px] rounded-full bg-[#22c55e]/[0.06] blur-[120px]"
+          className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] h-[480px] rounded-full bg-[#22c55e]/[0.08] blur-[120px]"
         />
-        <div className="relative z-10 w-full max-w-md bg-[#0e1012] border border-[#4ade80]/15 rounded-xl p-4 sm:p-8 shadow-[0_24px_80px_-24px_rgba(34,197,94,0.12)]">
-          <div className="mb-3 sm:mb-5">
+        <div
+          className={`relative z-10 w-full max-w-md bg-[#0e1012]/95 backdrop-blur-md border border-[#4ade80]/20 rounded-2xl sm:rounded-xl p-5 sm:p-8 shadow-[0_24px_80px_-16px_rgba(34,197,94,0.22)] max-lg:my-auto max-lg:transition-[transform,opacity,filter] max-lg:duration-[350ms] max-lg:ease-[cubic-bezier(0.22,1,0.36,1)] ${
+            showMobilePanel
+              ? 'max-lg:translate-y-0 max-lg:scale-100 max-lg:opacity-100 max-lg:blur-0'
+              : 'max-lg:translate-y-8 max-lg:scale-[0.92] max-lg:opacity-0 max-lg:blur-[2px]'
+          }`}
+        >
+          {!needsVerificationPanel && (
+            <button
+              type="button"
+              onClick={() => setMobileAuthOpen(false)}
+              aria-label={t.common.close}
+              className="lg:hidden absolute top-3.5 right-3.5 w-8 h-8 rounded-lg border border-zinc-800 bg-[#14171a] text-zinc-400 hover:text-zinc-100 hover:border-[#4ade80]/30 active:scale-95 inline-flex items-center justify-center transition-all cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+          <div className="mb-3 sm:mb-5 pr-9 lg:pr-0">
             <div className="inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-medium text-[#4ade80] mb-1 sm:mb-2">
               {mode === 'login' ? <Lock className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> : <UserPlus className="w-3 h-3 sm:w-3.5 sm:h-3.5" />}
               <span>{t.login.workspaceTag}</span>
@@ -474,7 +536,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
 
       {/* 3. Architectural Highlights (Mobile: Bottom, after Login | Desktop: Left Bottom) */}
       <div className="relative z-10 lg:col-start-1 lg:row-start-2 px-4 pt-3 pb-6 sm:px-10 sm:pb-12 lg:px-14 lg:pt-0 lg:pb-14">
-        <div className="border-t border-[#4ade80]/15 pt-4 sm:pt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-5 max-w-xl">
+        <div className="border-t border-[#4ade80]/15 pt-4 sm:pt-6 grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-5 max-w-xl">
           <div>
             <p className="text-xs font-medium text-[#86efac]">{t.login.highlight1Title}</p>
             <p className="lg:hidden text-xs text-zinc-400 mt-1 leading-relaxed">
@@ -482,12 +544,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
             </p>
             <p className="hidden lg:block text-xs text-zinc-400 mt-1 leading-relaxed">
               {t.login.highlight1Desc}
-            </p>
-          </div>
-          <div className="hidden lg:block">
-            <p className="text-xs font-medium text-[#86efac]">{t.login.highlight2Title}</p>
-            <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
-              {t.login.highlight2Desc}
             </p>
           </div>
           <div>
@@ -499,6 +555,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
               {t.login.highlight3Desc}
             </p>
           </div>
+        </div>
+        <div className="mt-4 max-w-[220px]">
+          <PWAInstallButton />
         </div>
       </div>
     </div>

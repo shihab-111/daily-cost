@@ -1,6 +1,7 @@
 import {
   AppMode,
   BusinessExpenseCategory,
+  BusinessPartner,
   CurrencyCode,
   DateRangePreset,
   Expense,
@@ -136,6 +137,17 @@ export const RECEIPT_PAYMENT_METHODS = [
   'Cash',
   'Card',
 ] as const;
+
+export const CUSTOMER_NUMBER_OPTIONS = [
+  'Call / Phone',
+  'WhatsApp',
+  'bKash',
+  'Nagad',
+  'Rocket',
+  'Alternate',
+] as const;
+
+export const PRODUCT_SIZE_PRESETS = ['S', 'M', 'L', 'XL', 'XXL', 'Free Size'] as const;
 
 export const BD_CARRIER_PHONE_REGEX = /^(?:\+?88)?01[3-9]\d{8}$/;
 
@@ -383,4 +395,31 @@ export function exportAdminUsersCsv(users: AdminUserCsvRow[]) {
   ]);
   downloadCsv(`ektally-users-logins-${getTodayDhakaDate()}.csv`, headers, rows);
 }
+
+export function exportBusinessPartnersCsv(partners: BusinessPartner[], businessName: string) {
+  const headers = [
+    'Business Name',
+    'Partner Name',
+    'Phone',
+    'Share %',
+    'Invested Amount',
+    'Due Amount',
+    'Currency',
+    'Status',
+    'Notes',
+  ];
+  const rows = partners.map((p) => [
+    businessName,
+    p.name,
+    p.phone,
+    p.sharePercent ? p.sharePercent.toFixed(2) : '0',
+    p.investedAmount.toFixed(2),
+    p.dueAmount.toFixed(2),
+    p.currency,
+    p.dueAmount > 0 ? 'Due Pending' : 'Settled',
+    p.notes,
+  ]);
+  downloadCsv(`bd-partners-${getTodayDhakaDate()}.csv`, headers, rows);
+}
+
 

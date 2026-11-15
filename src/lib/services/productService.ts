@@ -12,7 +12,7 @@ import {
   where,
   writeBatch,
 } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../firebase/client';
+import { commitOfflineSafe, db, handleFirestoreError, OperationType } from '../firebase/client';
 import { Product, ProductPhoto } from '../../types';
 import { ProductFormValues } from '../validators/schemas';
 import { generateSafeId } from '../utils';
@@ -105,50 +105,50 @@ export async function saveProduct(
   };
 
   if (!existing) {
-    try {
-      await setDoc(doc(db, 'products', productId), {
+    await commitOfflineSafe(
+      setDoc(doc(db, 'products', productId), {
         ...payloadBase,
         userId: user.uid,
         userEmail: (user.email || 'user@bd-ledger.local').slice(0, 254),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-      });
-    } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, path);
-    }
+      }),
+      OperationType.CREATE,
+      path
+    );
   } else {
-    try {
-      await updateDoc(doc(db, 'products', productId), {
+    await commitOfflineSafe(
+      updateDoc(doc(db, 'products', productId), {
         ...payloadBase,
         updatedAt: serverTimestamp(),
-      });
-    } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, path);
-    }
+      }),
+      OperationType.UPDATE,
+      path
+    );
   }
 
   for (const pid of removedPhotoIds) {
-    try {
-      await deleteDoc(doc(db, 'products', productId, 'photos', pid));
-    } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, `${path}/photos/${pid}`);
-    }
+    await commitOfflineSafe(
+      deleteDoc(doc(db, 'products', productId, 'photos', pid)),
+      OperationType.DELETE,
+      `${path}/photos/${pid}`
+    );
   }
 
   for (const photo of photos.slice(0, 20)) {
     if (photo.isExisting && photo.id) {
-      try {
-        await updateDoc(doc(db, 'products', productId, 'photos', photo.id), {
+      await commitOfflineSafe(
+        updateDoc(doc(db, 'products', productId, 'photos', photo.id), {
           caption: (photo.caption || '').trim().slice(0, 300),
           updatedAt: serverTimestamp(),
-        });
-      } catch (error) {
-        handleFirestoreError(error, OperationType.UPDATE, `${path}/photos/${photo.id}`);
-      }
+        }),
+        OperationType.UPDATE,
+        `${path}/photos/${photo.id}`
+      );
     } else {
       const photoId = generateSafeId('pph');
-      try {
-        await setDoc(doc(db, 'products', productId, 'photos', photoId), {
+      await commitOfflineSafe(
+        setDoc(doc(db, 'products', productId, 'photos', photoId), {
           productId,
           userId: user.uid,
           fileName: photo.fileName.slice(0, 200) || 'product.jpg',
@@ -160,10 +160,10 @@ export async function saveProduct(
           dataUrl: photo.dataUrl.slice(0, 700000),
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
-        });
-      } catch (error) {
-        handleFirestoreError(error, OperationType.CREATE, `${path}/photos/${photoId}`);
-      }
+        }),
+        OperationType.CREATE,
+        `${path}/photos/${photoId}`
+      );
     }
   }
 
@@ -188,14 +188,14 @@ export async function adjustProductStock(
 ): Promise<void> {
   const cleanQty = Math.max(0, Math.min(9999999, Math.round(newStockQty)));
   const path = `products/${product.id}`;
-  try {
-    await updateDoc(doc(db, 'products', product.id), {
+  await commitOfflineSafe(
+    updateDoc(doc(db, 'products', product.id), {
       stockQty: cleanQty,
       updatedAt: serverTimestamp(),
-    });
-  } catch (error) {
-    handleFirestoreError(error, OperationType.UPDATE, path);
-  }
+    }),
+    OperationType.UPDATE,
+    path
+  );
 
   await logActivity(user, {
     mode: 'business',
@@ -216,18 +216,18 @@ export async function deleteProduct(user: User, product: Product): Promise<void>
     for (const p of photos) {
       batch.delete(doc(db, 'products', product.id, 'photos', p.id));
     }
-    try {
-      await batch.commit();
-    } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, `products/${product.id}/photos`);
-    }
+    await commitOfflineSafe(
+      batch.commit(),
+      OperationType.DELETE,
+      `products/${product.id}/photos`
+    );
   }
 
-  try {
-    await deleteDoc(doc(db, 'products', product.id));
-  } catch (error) {
-    handleFirestoreError(error, OperationType.DELETE, `products/${product.id}`);
-  }
+  await commitOfflineSafe(
+    deleteDoc(doc(db, 'products', product.id)),
+    OperationType.DELETE,
+    `products/${product.id}`
+  );
 
   await logActivity(user, {
     mode: 'business',

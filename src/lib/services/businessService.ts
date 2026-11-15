@@ -11,7 +11,7 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../firebase/client';
+import { commitOfflineSafe, db, handleFirestoreError, OperationType } from '../firebase/client';
 import { BusinessProfile } from '../../types';
 import { generateSafeId } from '../utils';
 
@@ -92,7 +92,7 @@ export function subscribeBusinesses(
   return onSnapshot(
     q,
     (snap) => {
-      if (snap.empty) {
+      if (snap.empty && (typeof navigator === 'undefined' || navigator.onLine)) {
         ensureDefaultBusiness(user).catch((err) => {
           onError(err instanceof Error ? err : new Error(String(err)));
         });
@@ -134,17 +134,17 @@ export async function addBusiness(
   const businessId = generateSafeId('biz');
   const path = `businesses/${businessId}`;
 
-  try {
-    await setDoc(doc(db, 'businesses', businessId), {
+  await commitOfflineSafe(
+    setDoc(doc(db, 'businesses', businessId), {
       userId: user.uid,
       name: cleanName,
       isDefault: false,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-    });
-  } catch (error) {
-    handleFirestoreError(error, OperationType.CREATE, path);
-  }
+    }),
+    OperationType.CREATE,
+    path
+  );
 
   return {
     id: businessId,
@@ -164,23 +164,27 @@ export async function renameBusiness(
     throw new Error('Business name is required.');
   }
   const path = `businesses/${business.id}`;
-  try {
-    await updateDoc(doc(db, 'businesses', business.id), {
+  await commitOfflineSafe(
+    updateDoc(doc(db, 'businesses', business.id), {
       name: cleanName,
       updatedAt: serverTimestamp(),
-    });
-  } catch (error) {
-    handleFirestoreError(error, OperationType.UPDATE, path);
-  }
+    }),
+    OperationType.UPDATE,
+    path
+  );
 
   if (business.isDefault) {
     try {
       const settingsSnap = await getDoc(doc(db, 'settings', user.uid));
       if (settingsSnap.exists()) {
-        await updateDoc(doc(db, 'settings', user.uid), {
-          businessName: cleanName,
-          updatedAt: serverTimestamp(),
-        });
+        await commitOfflineSafe(
+          updateDoc(doc(db, 'settings', user.uid), {
+            businessName: cleanName,
+            updatedAt: serverTimestamp(),
+          }),
+          OperationType.UPDATE,
+          `settings/${user.uid}`
+        );
       }
     } catch {
       // best-effort sync with primary settings document
@@ -196,9 +200,9 @@ export async function deleteBusiness(
     throw new Error('Primary business cannot be deleted.');
   }
   const path = `businesses/${business.id}`;
-  try {
-    await deleteDoc(doc(db, 'businesses', business.id));
-  } catch (error) {
-    handleFirestoreError(error, OperationType.DELETE, path);
-  }
+  await commitOfflineSafe(
+    deleteDoc(doc(db, 'businesses', business.id)),
+    OperationType.DELETE,
+    path
+  );
 }

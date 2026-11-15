@@ -39,8 +39,12 @@ export const CustomersPage: React.FC = () => {
       (c) =>
         c.name.toLowerCase().includes(q) ||
         c.phone.toLowerCase().includes(q) ||
+        (c.numberOption || '').toLowerCase().includes(q) ||
         c.district.toLowerCase().includes(q) ||
-        c.address.toLowerCase().includes(q)
+        c.address.toLowerCase().includes(q) ||
+        (c.productName || '').toLowerCase().includes(q) ||
+        (c.productSize || '').toLowerCase().includes(q) ||
+        (c.orderDetails || '').toLowerCase().includes(q)
     );
   }, [businessCustomers, searchQuery]);
 
@@ -144,6 +148,13 @@ export const CustomersPage: React.FC = () => {
               <div className="md:hidden divide-y divide-[#27272a]">
                 {filteredCustomers.map((c) => {
                   const fullAddress = [c.address, c.district].filter(Boolean).join(', ');
+                  const qty = c.quantity ?? 0;
+                  const unitPrice = c.unitPrice ?? 0;
+                  const orderTotal = Math.round(qty * unitPrice * 100) / 100;
+                  const hasOrderMeta = Boolean(
+                    c.productName || c.productSize || unitPrice > 0 || c.orderDetails
+                  );
+
                   return (
                     <div key={c.id} className="p-4 space-y-3">
                       <div className="flex items-start justify-between gap-2">
@@ -153,13 +164,54 @@ export const CustomersPage: React.FC = () => {
                             <p className="text-xs text-zinc-400 truncate mt-0.5">{c.email}</p>
                           )}
                         </div>
-                        <span className="font-mono tabular-nums text-xs text-[#4ade80] shrink-0">
-                          {c.phone}
-                        </span>
+                        <div className="text-right shrink-0">
+                          <span className="block font-mono tabular-nums text-xs text-[#4ade80]">
+                            {c.phone}
+                          </span>
+                          <span className="block text-[11px] text-zinc-400">
+                            {c.numberOption || 'Call / Phone'}
+                          </span>
+                        </div>
                       </div>
 
                       {fullAddress && (
                         <p className="text-xs text-zinc-300 leading-relaxed">{fullAddress}</p>
+                      )}
+
+                      {hasOrderMeta && (
+                        <div className="p-2.5 rounded-lg bg-[#09090b] border border-[#27272a] space-y-1 text-xs">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-medium text-zinc-100 truncate">
+                              {c.productName || 'Order Item'}
+                            </span>
+                            {unitPrice > 0 && (
+                              <span className="font-mono tabular-nums text-[#4ade80] font-semibold shrink-0">
+                                {formatMoney(orderTotal > 0 ? orderTotal : unitPrice, 'BDT')}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-zinc-400">
+                            {c.productSize && (
+                              <span>
+                                {t.customers.sizeWord}: <strong className="text-zinc-200">{c.productSize}</strong>
+                              </span>
+                            )}
+                            {unitPrice > 0 && (
+                              <>
+                                {c.productSize && <span aria-hidden="true">·</span>}
+                                <span className="font-mono tabular-nums">
+                                  {qty > 0 ? `${qty} × ` : ''}
+                                  {formatMoney(unitPrice, 'BDT')} {t.customers.perPcWord}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                          {c.orderDetails && (
+                            <p className="text-[11px] text-zinc-300 leading-relaxed pt-0.5">
+                              {c.orderDetails}
+                            </p>
+                          )}
+                        </div>
                       )}
 
                       <div className="grid grid-cols-2 gap-2 p-2.5 rounded-lg bg-[#09090b] border border-[#27272a] text-xs">
@@ -244,26 +296,64 @@ export const CustomersPage: React.FC = () => {
                   <tr className="border-b border-[#27272a] bg-[#121214] text-xs font-medium text-zinc-400">
                     <th className="py-3 px-4">{t.customers.customer}</th>
                     <th className="py-3 px-4">{t.customers.bdPhone}</th>
-                    <th className="py-3 px-4 hidden md:table-cell">{t.customers.districtAddress}</th>
+                    <th className="py-3 px-4">{t.customers.districtAddress}</th>
+                    <th className="py-3 px-4">{t.customers.orderProductCol}</th>
                     <th className="py-3 px-4 text-right">{t.customers.orders}</th>
                     <th className="py-3 px-4 text-right">{t.customers.totalSpent}</th>
                     <th className="py-3 px-4 text-right">{t.common.actions}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#27272a] text-sm">
-                  {filteredCustomers.map((c) => (
-                    <tr key={c.id} className="hover:bg-zinc-900/60 transition-colors">
+                  {filteredCustomers.map((c) => {
+                    const qty = c.quantity ?? 0;
+                    const unitPrice = c.unitPrice ?? 0;
+                    const orderTotal = Math.round(qty * unitPrice * 100) / 100;
+
+                    return (
+                    <tr key={c.id} className="hover:bg-zinc-900/60 transition-colors align-top">
                       <td className="py-3 px-4">
                         <p className="font-medium text-zinc-100">{c.name}</p>
                         {c.email && (
-                          <p className="text-xs text-zinc-400 truncate max-w-[200px]">{c.email}</p>
+                          <p className="text-xs text-zinc-400 truncate max-w-[180px]">{c.email}</p>
                         )}
                       </td>
-                      <td className="py-3 px-4 font-mono tabular-nums text-xs text-[#4ade80] whitespace-nowrap">
-                        {c.phone}
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <p className="font-mono tabular-nums text-xs text-[#4ade80]">{c.phone}</p>
+                        <p className="text-[11px] text-zinc-400 mt-0.5">
+                          {c.numberOption || 'Call / Phone'}
+                        </p>
                       </td>
-                      <td className="py-3 px-4 hidden md:table-cell text-xs text-zinc-300 max-w-xs truncate">
-                        {[c.address, c.district].filter(Boolean).join(', ')}
+                      <td className="py-3 px-4 text-xs text-zinc-300 max-w-[200px]">
+                        <p className="line-clamp-2">
+                          {[c.address, c.district].filter(Boolean).join(', ')}
+                        </p>
+                      </td>
+                      <td className="py-3 px-4 text-xs max-w-[240px]">
+                        {c.productName || c.productSize || unitPrice > 0 || c.orderDetails ? (
+                          <div className="space-y-0.5">
+                            {c.productName && (
+                              <p className="font-medium text-zinc-100 truncate">{c.productName}</p>
+                            )}
+                            {(c.productSize || unitPrice > 0) && (
+                              <p className="text-[11px] text-zinc-400 font-mono tabular-nums">
+                                {c.productSize ? `${t.customers.sizeWord}: ${c.productSize}` : ''}
+                                {c.productSize && unitPrice > 0 ? ' · ' : ''}
+                                {unitPrice > 0
+                                  ? `${qty > 0 ? `${qty} × ` : ''}${formatMoney(unitPrice, 'BDT')}${
+                                      orderTotal > 0 ? ` = ${formatMoney(orderTotal, 'BDT')}` : ''
+                                    }`
+                                  : ''}
+                              </p>
+                            )}
+                            {c.orderDetails && (
+                              <p className="text-[11px] text-zinc-400 line-clamp-2">
+                                {c.orderDetails}
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-zinc-500">—</span>
+                        )}
                       </td>
                       <td className="py-3 px-4 text-right font-mono tabular-nums text-zinc-200 whitespace-nowrap">
                         {c.totalOrders || 0}
@@ -326,7 +416,8 @@ export const CustomersPage: React.FC = () => {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  );
+                  })}
                 </tbody>
               </table>
               </div>

@@ -10,7 +10,7 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../firebase/client';
+import { commitOfflineSafe, db, handleFirestoreError, OperationType } from '../firebase/client';
 import { AppMode, CustomerReceipt, ReceiptTemplate } from '../../types';
 import { CustomerReceiptFormValues, ReceiptTemplateFormValues } from '../validators/schemas';
 import { generateSafeId } from '../utils';
@@ -72,20 +72,20 @@ export async function saveReceiptTemplate(
   };
 
   if (!hasExisting) {
-    try {
-      await setDoc(doc(db, 'receiptTemplates', user.uid), {
+    await commitOfflineSafe(
+      setDoc(doc(db, 'receiptTemplates', user.uid), {
         ...payload,
         createdAt: serverTimestamp(),
-      });
-    } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, path);
-    }
+      }),
+      OperationType.CREATE,
+      path
+    );
   } else {
-    try {
-      await updateDoc(doc(db, 'receiptTemplates', user.uid), payload);
-    } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, path);
-    }
+    await commitOfflineSafe(
+      updateDoc(doc(db, 'receiptTemplates', user.uid), payload),
+      OperationType.UPDATE,
+      path
+    );
   }
 }
 
@@ -214,17 +214,17 @@ export async function saveCustomerReceipt(
   };
 
   if (!existing) {
-    try {
-      await setDoc(doc(db, 'customerReceipts', receiptId), {
+    await commitOfflineSafe(
+      setDoc(doc(db, 'customerReceipts', receiptId), {
         ...payloadBase,
         userId: user.uid,
         userEmail: (user.email || 'user@bd-ledger.local').slice(0, 254),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-      });
-    } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, path);
-    }
+      }),
+      OperationType.CREATE,
+      path
+    );
 
     await logActivity(user, {
       mode: activeMode,
@@ -237,14 +237,14 @@ export async function saveCustomerReceipt(
       currency: payloadBase.currency,
     });
   } else {
-    try {
-      await updateDoc(doc(db, 'customerReceipts', receiptId), {
+    await commitOfflineSafe(
+      updateDoc(doc(db, 'customerReceipts', receiptId), {
         ...payloadBase,
         updatedAt: serverTimestamp(),
-      });
-    } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, path);
-    }
+      }),
+      OperationType.UPDATE,
+      path
+    );
   }
 
   return receiptId;
@@ -256,11 +256,11 @@ export async function deleteCustomerReceipt(
   activeMode: AppMode = 'business'
 ): Promise<void> {
   const path = `customerReceipts/${receipt.id}`;
-  try {
-    await deleteDoc(doc(db, 'customerReceipts', receipt.id));
-  } catch (error) {
-    handleFirestoreError(error, OperationType.DELETE, path);
-  }
+  await commitOfflineSafe(
+    deleteDoc(doc(db, 'customerReceipts', receipt.id)),
+    OperationType.DELETE,
+    path
+  );
 
   await logActivity(user, {
     mode: activeMode,

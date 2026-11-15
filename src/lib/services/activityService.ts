@@ -8,7 +8,7 @@ import {
   setDoc,
   where,
 } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../firebase/client';
+import { commitOfflineSafe, db, handleFirestoreError, OperationType } from '../firebase/client';
 import { ActivityLog, AppMode, CurrencyCode } from '../../types';
 import { generateSafeId } from '../utils';
 
@@ -27,8 +27,8 @@ export async function logActivity(
 ): Promise<void> {
   const logId = generateSafeId('log');
   const path = `activityLogs/${logId}`;
-  try {
-    await setDoc(doc(db, 'activityLogs', logId), {
+  await commitOfflineSafe(
+    setDoc(doc(db, 'activityLogs', logId), {
       userId: user.uid,
       actorEmail: (user.email || 'user@bd-ledger.local').slice(0, 254),
       businessId: (entry.mode === 'business' ? entry.businessId || '' : '').slice(0, 128),
@@ -40,10 +40,10 @@ export async function logActivity(
       amount: Math.max(0, Math.min(999999999, Number(entry.amount) || 0)),
       currency: entry.currency,
       createdAt: serverTimestamp(),
-    });
-  } catch (error) {
-    handleFirestoreError(error, OperationType.CREATE, path);
-  }
+    }),
+    OperationType.CREATE,
+    path
+  );
 }
 
 export function subscribeActivityLogs(

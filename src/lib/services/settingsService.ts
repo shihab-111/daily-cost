@@ -7,7 +7,7 @@ import {
   setDoc,
   updateDoc,
 } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../firebase/client';
+import { commitOfflineSafe, db, handleFirestoreError, OperationType } from '../firebase/client';
 import { UserSettings } from '../../types';
 import { SettingsFormValues } from '../validators/schemas';
 import { ensureDefaultBusiness } from './businessService';
@@ -101,19 +101,19 @@ export async function saveSettings(
   };
 
   if (!hasExisting) {
-    try {
-      await setDoc(doc(db, 'settings', user.uid), {
+    await commitOfflineSafe(
+      setDoc(doc(db, 'settings', user.uid), {
         ...payload,
         createdAt: serverTimestamp(),
-      });
-    } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, path);
-    }
+      }),
+      OperationType.CREATE,
+      path
+    );
   } else {
-    try {
-      await updateDoc(doc(db, 'settings', user.uid), payload);
-    } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, path);
-    }
+    await commitOfflineSafe(
+      updateDoc(doc(db, 'settings', user.uid), payload),
+      OperationType.UPDATE,
+      path
+    );
   }
 }

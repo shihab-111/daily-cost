@@ -133,16 +133,22 @@
     },
     "Customer": {
       "title": "Customer",
-      "description": "Tenant-isolated Bangladeshi business customer record with +880 phone, address, and order metrics.",
+      "description": "Tenant-isolated Bangladeshi business customer record with +880 phone, number option, location, product order details, size, and price per product.",
       "type": "object",
       "properties": {
         "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
         "businessId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]*$" },
         "name": { "type": "string", "minLength": 1, "maxLength": 140 },
         "phone": { "type": "string", "minLength": 11, "maxLength": 20 },
+        "numberOption": { "type": "string", "enum": ["Call / Phone", "WhatsApp", "bKash", "Nagad", "Rocket", "Alternate"] },
         "email": { "type": "string", "maxLength": 140 },
         "address": { "type": "string", "maxLength": 240 },
         "district": { "type": "string", "maxLength": 80 },
+        "productName": { "type": "string", "maxLength": 160 },
+        "productSize": { "type": "string", "maxLength": 40 },
+        "quantity": { "type": "number" },
+        "unitPrice": { "type": "number" },
+        "orderDetails": { "type": "string", "maxLength": 500 },
         "notes": { "type": "string", "maxLength": 1000 },
         "totalOrders": { "type": "integer" },
         "totalSpent": { "type": "number" },
@@ -170,11 +176,12 @@
             "expense_created", "expense_updated", "expense_deleted",
             "product_created", "product_updated", "product_deleted",
             "customer_created", "customer_updated", "customer_deleted",
+            "partner_created", "partner_updated", "partner_deleted",
             "receipt_created", "receipt_deleted"
           ]
         },
         "summary": { "type": "string", "minLength": 1, "maxLength": 240 },
-        "entityType": { "type": "string", "enum": ["expense", "product", "customer", "receipt"] },
+        "entityType": { "type": "string", "enum": ["expense", "product", "customer", "partner", "receipt"] },
         "entityId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
         "amount": { "type": "number" },
         "currency": { "type": "string", "enum": ["BDT", "USD"] },
@@ -347,6 +354,28 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["userId", "email", "role", "addedBy", "createdAt"]
+    },
+    "BusinessPartner": {
+      "title": "BusinessPartner",
+      "description": "Tenant-isolated business partner tracking partner name, investment, due amount, and optional equity share.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "businessId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]*$" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 140 },
+        "phone": { "type": "string", "maxLength": 40 },
+        "sharePercent": { "type": "number" },
+        "investedAmount": { "type": "number" },
+        "dueAmount": { "type": "number" },
+        "currency": { "type": "string", "enum": ["BDT", "USD"] },
+        "notes": { "type": "string", "maxLength": 1000 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId", "name", "phone", "sharePercent", "investedAmount", "dueAmount",
+        "currency", "notes", "createdAt", "updatedAt"
+      ]
     }
   },
   "firestore": {
@@ -405,6 +434,10 @@
     "/customerReceipts/{receiptId}": {
       "schema": { "$ref": "#/entities/CustomerReceipt" },
       "description": "Tenant-isolated customer receipts and invoices."
+    },
+    "/businessPartners/{partnerId}": {
+      "schema": { "$ref": "#/entities/BusinessPartner" },
+      "description": "Tenant-isolated business partners with investment and due tracking."
     }
   }
 }

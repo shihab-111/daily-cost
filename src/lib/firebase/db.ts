@@ -2,6 +2,7 @@ import { User } from 'firebase/auth';
 import {
   ActivityLog,
   AppMode,
+  BusinessPartner,
   BusinessProfile,
   Customer,
   CustomerReceipt,
@@ -15,6 +16,7 @@ import {
   UserSettings,
 } from '../../types';
 import {
+  BusinessPartnerFormValues,
   CustomerFormValues,
   CustomerReceiptFormValues,
   ExpenseFormValues,
@@ -28,6 +30,7 @@ import * as businessService from '../services/businessService';
 import * as categoryService from '../services/categoryService';
 import * as customerService from '../services/customerService';
 import * as expenseService from '../services/expenseService';
+import * as partnerService from '../services/partnerService';
 import * as productService from '../services/productService';
 import * as receiptService from '../services/receiptService';
 import * as settingsService from '../services/settingsService';
@@ -140,7 +143,8 @@ export interface BusinessDataAdapter {
     user: User,
     values: CustomerFormValues,
     existing?: Customer,
-    businessId?: string
+    businessId?: string,
+    recordOrder?: boolean
   ): Promise<string>;
   incrementCustomerOrderMetrics(
     customer: Customer,
@@ -148,6 +152,23 @@ export interface BusinessDataAdapter {
     orderDate: string
   ): Promise<void>;
   deleteCustomer(user: User, customer: Customer): Promise<void>;
+  subscribeBusinessPartners(
+    user: User,
+    onData: (partners: BusinessPartner[]) => void,
+    onError: (err: Error) => void
+  ): () => void;
+  saveBusinessPartner(
+    user: User,
+    values: BusinessPartnerFormValues,
+    existing?: BusinessPartner,
+    businessId?: string
+  ): Promise<string>;
+  saveMultipleBusinessPartners(
+    user: User,
+    entries: BusinessPartnerFormValues[],
+    businessId?: string
+  ): Promise<string[]>;
+  deleteBusinessPartner(user: User, partner: BusinessPartner): Promise<void>;
   saveSettings(user: User, values: SettingsFormValues, hasExisting: boolean): Promise<void>;
   subscribeReceiptTemplate(
     user: User,
@@ -223,6 +244,10 @@ class FirestoreBusinessAdapter implements BusinessDataAdapter {
   saveCustomer = customerService.saveCustomer;
   incrementCustomerOrderMetrics = customerService.incrementCustomerOrderMetrics;
   deleteCustomer = customerService.deleteCustomer;
+  subscribeBusinessPartners = partnerService.subscribeBusinessPartners;
+  saveBusinessPartner = partnerService.saveBusinessPartner;
+  saveMultipleBusinessPartners = partnerService.saveMultipleBusinessPartners;
+  deleteBusinessPartner = partnerService.deleteBusinessPartner;
   saveSettings = settingsService.saveSettings;
   subscribeReceiptTemplate = receiptService.subscribeReceiptTemplate;
   saveReceiptTemplate = receiptService.saveReceiptTemplate;

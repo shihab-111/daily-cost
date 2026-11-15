@@ -1,6 +1,13 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { doc, getDocFromServer, getFirestore } from 'firebase/firestore';
+import {
+  doc,
+  getDocFromServer,
+  getFirestore,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+} from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import firebaseConfigJson from '../../../firebase-applet-config.json';
 
@@ -18,7 +25,24 @@ const databaseId =
   import.meta.env.VITE_FIREBASE_FIRESTORE_DB_ID || firebaseConfigJson.firestoreDatabaseId;
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app, databaseId);
+
+function createFirestoreClient() {
+  try {
+    return initializeFirestore(
+      app,
+      {
+        localCache: persistentLocalCache({
+          tabManager: persistentMultipleTabManager(),
+        }),
+      },
+      databaseId
+    );
+  } catch {
+    return getFirestore(app, databaseId);
+  }
+}
+
+export const db = createFirestoreClient();
 export const auth = getAuth(app);
 export const storage = getStorage(app);
 
@@ -74,12 +98,45 @@ export function handleFirestoreError(
   throw new Error(JSON.stringify(errInfo));
 }
 
+/**
+ * Awaits Firestore write confirmation when online so permission/validation errors surface immediately.
+ * When offline, Firestore records mutations into persistent IndexedDB cache right away and keeps
+ * the server-ack promise pending until reconnection; racing a short flush prevents UI saves from hanging.
+ */
+export async function commitOfflineSafe(
+  writePromise: Promise<unknown>,
+  operationType: OperationType,
+  path: string | null
+): Promise<void> {
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    writePromise.catch((err) => {
+      console.error('Deferred offline Firestore write failed on sync:', err);
+    });
+    await Promise.race([
+      writePromise,
+      new Promise<void>((resolve) => setTimeout(resolve, 60)),
+    ]).catch((error) => {
+      handleFirestoreError(error, operationType, path);
+    });
+    return;
+  }
+
+  try {
+    await writePromise;
+  } catch (error) {
+    handleFirestoreError(error, operationType, path);
+  }
+}
+
 async function testConnection() {
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    return;
+  }
   try {
     await getDocFromServer(doc(db, 'test', 'connection'));
   } catch (error) {
     if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.error('Please check your Firebase configuration.');
+      console.warn('Firestore operating in offline cache mode until connection returns.');
     }
   }
 }

@@ -10,10 +10,10 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../firebase/client';
+import { commitOfflineSafe, db, handleFirestoreError, OperationType } from '../firebase/client';
 import { Customer } from '../../types';
 import { CustomerFormValues } from '../validators/schemas';
-import { generateSafeId } from '../utils';
+import { generateSafeId, getTodayDhakaDate } from '../utils';
 import { logActivity } from './activityService';
 
 export function subscribeCustomers(
@@ -49,7 +49,8 @@ export async function saveCustomer(
   user: User,
   values: CustomerFormValues,
   existing?: Customer,
-  businessId?: string
+  businessId?: string,
+  recordOrder?: boolean
 ): Promise<string> {
   const customerId = existing ? existing.id : generateSafeId('cst');
   const path = `customers/${customerId}`;
@@ -58,49 +59,75 @@ export async function saveCustomer(
     businessId !== undefined ? businessId : existing?.businessId || ''
   ).slice(0, 128);
 
+  const quantity = Math.max(0, Math.min(99999, Number(values.quantity) || 0));
+  const unitPrice = Math.max(0, Math.min(999999999, Number(values.unitPrice) || 0));
+  const orderAmount = Math.round(quantity * unitPrice * 100) / 100;
+  const hasOrderInfo = Boolean(values.productName.trim() || orderAmount > 0);
+  const shouldIncrementOrder = existing ? Boolean(recordOrder && hasOrderInfo) : hasOrderInfo;
+
+  const baseOrders = existing ? existing.totalOrders || 0 : 0;
+  const baseSpent = existing ? existing.totalSpent || 0 : 0;
+  const nextOrders = shouldIncrementOrder ? Math.min(999999, baseOrders + 1) : baseOrders;
+  const nextSpent = shouldIncrementOrder
+    ? Math.min(999999999, Math.round((baseSpent + orderAmount) * 100) / 100)
+    : baseSpent;
+  const nextLastOrderDate = shouldIncrementOrder
+    ? getTodayDhakaDate()
+    : existing
+    ? existing.lastOrderDate
+    : '';
+
   const payloadBase = {
     businessId: resolvedBusinessId,
     name: values.name.trim().slice(0, 140),
     phone: values.phone.trim().slice(0, 20),
+    numberOption: values.numberOption,
     email: values.email.trim().slice(0, 140),
     address: values.address.trim().slice(0, 240),
     district: values.district.trim().slice(0, 80) || 'Dhaka',
+    productName: values.productName.trim().slice(0, 160),
+    productSize: values.productSize.trim().slice(0, 40),
+    quantity,
+    unitPrice,
+    orderDetails: values.orderDetails.trim().slice(0, 500),
     notes: values.notes.trim().slice(0, 1000),
-    totalOrders: existing ? existing.totalOrders : 0,
-    totalSpent: existing ? existing.totalSpent : 0,
-    lastOrderDate: existing ? existing.lastOrderDate : '',
+    totalOrders: nextOrders,
+    totalSpent: nextSpent,
+    lastOrderDate: nextLastOrderDate,
   };
 
   if (!existing) {
-    try {
-      await setDoc(doc(db, 'customers', customerId), {
+    await commitOfflineSafe(
+      setDoc(doc(db, 'customers', customerId), {
         ...payloadBase,
         userId: user.uid,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-      });
-    } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, path);
-    }
+      }),
+      OperationType.CREATE,
+      path
+    );
   } else {
-    try {
-      await updateDoc(doc(db, 'customers', customerId), {
+    await commitOfflineSafe(
+      updateDoc(doc(db, 'customers', customerId), {
         ...payloadBase,
         updatedAt: serverTimestamp(),
-      });
-    } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, path);
-    }
+      }),
+      OperationType.UPDATE,
+      path
+    );
   }
 
   await logActivity(user, {
     mode: 'business',
     businessId: resolvedBusinessId,
     action: existing ? 'customer_updated' : 'customer_created',
-    summary: `${existing ? 'Updated' : 'Added'} customer: ${payloadBase.name} (${payloadBase.phone})`,
+    summary: `${existing ? 'Updated' : 'Added'} customer: ${payloadBase.name} (${payloadBase.phone})${
+      payloadBase.productName ? ` · ${payloadBase.productName}` : ''
+    }`,
     entityType: 'customer',
     entityId: customerId,
-    amount: 0,
+    amount: shouldIncrementOrder ? orderAmount : 0,
     currency: 'BDT',
   });
 
@@ -113,8 +140,8 @@ export async function incrementCustomerOrderMetrics(
   orderDate: string
 ): Promise<void> {
   const path = `customers/${customer.id}`;
-  try {
-    await updateDoc(doc(db, 'customers', customer.id), {
+  await commitOfflineSafe(
+    updateDoc(doc(db, 'customers', customer.id), {
       totalOrders: Math.min(999999, (customer.totalOrders || 0) + 1),
       totalSpent: Math.min(
         999999999,
@@ -122,19 +149,19 @@ export async function incrementCustomerOrderMetrics(
       ),
       lastOrderDate: orderDate.slice(0, 10),
       updatedAt: serverTimestamp(),
-    });
-  } catch (error) {
-    handleFirestoreError(error, OperationType.UPDATE, path);
-  }
+    }),
+    OperationType.UPDATE,
+    path
+  );
 }
 
 export async function deleteCustomer(user: User, customer: Customer): Promise<void> {
   const path = `customers/${customer.id}`;
-  try {
-    await deleteDoc(doc(db, 'customers', customer.id));
-  } catch (error) {
-    handleFirestoreError(error, OperationType.DELETE, path);
-  }
+  await commitOfflineSafe(
+    deleteDoc(doc(db, 'customers', customer.id)),
+    OperationType.DELETE,
+    path
+  );
 
   await logActivity(user, {
     mode: 'business',

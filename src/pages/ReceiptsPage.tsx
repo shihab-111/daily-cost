@@ -228,19 +228,60 @@ export const ReceiptsPage: React.FC = () => {
 
   const logoInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Pre-fill customer if navigated from CustomersPage
+  // Pre-fill customer & order details if navigated from CustomersPage
   useEffect(() => {
     const incoming = (location.state as { customer?: Customer } | null)?.customer;
     if (!incoming) return;
     setSelectedCustomerId(incoming.id);
-    setDraft((prev) => ({
-      ...prev,
-      customerName: incoming.name,
-      customerPhone: incoming.phone,
-      customerEmail: incoming.email,
-      customerDistrict: incoming.district || 'Dhaka',
-      customerAddress: incoming.address,
-    }));
+    setDraft((prev) => {
+      const hasOrderItem = Boolean(
+        incoming.productName?.trim() || (incoming.unitPrice && incoming.unitPrice > 0)
+      );
+      const itemLabel = incoming.productSize?.trim()
+        ? `${incoming.productName?.trim() || 'Product'} (${incoming.productSize.trim()})`
+        : incoming.productName?.trim() || 'Product';
+      const qty = Math.max(1, incoming.quantity || 1);
+      const unitPrice = Math.max(0, incoming.unitPrice || 0);
+      const nextItems: ReceiptLineItem[] = hasOrderItem
+        ? [
+            {
+              name: itemLabel.slice(0, 160),
+              sku: '',
+              qty,
+              unitPrice,
+              total: Math.round(qty * unitPrice * 100) / 100,
+            },
+          ]
+        : prev.items;
+      const totals = computeTotals(
+        nextItems,
+        prev.deliveryCharge,
+        prev.discountAmount,
+        prev.vatPercent,
+        prev.paidAmount
+      );
+      const mappedPayment: ReceiptPaymentMethod =
+        incoming.numberOption === 'bKash' ||
+        incoming.numberOption === 'Nagad' ||
+        incoming.numberOption === 'Rocket'
+          ? incoming.numberOption
+          : prev.paymentMethod;
+
+      return {
+        ...prev,
+        customerName: incoming.name,
+        customerPhone: incoming.phone,
+        customerEmail: incoming.email,
+        customerDistrict: incoming.district || 'Dhaka',
+        customerAddress: incoming.address,
+        paymentMethod: mappedPayment,
+        items: nextItems,
+        subtotal: totals.subtotal,
+        vatAmount: totals.vatAmount,
+        grandTotal: totals.grandTotal,
+        dueAmount: totals.dueAmount,
+      };
+    });
     setActiveTab('customer');
   }, [location.state]);
 

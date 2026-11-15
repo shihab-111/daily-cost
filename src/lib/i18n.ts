@@ -38,6 +38,7 @@ export interface TranslationStrings {
     dailyExpenses: string;
     productInventory: string;
     customersBd: string;
+    partners: string;
     receiptStudio: string;
     settingsData: string;
     settingsBudget: string;
@@ -197,6 +198,65 @@ export interface TranslationStrings {
     orders: string;
     totalSpent: string;
     receiptBtn: string;
+    orderProductCol: string;
+    numberOptionLabel: string;
+    locationDistrictLabel: string;
+    locationAddressLabel: string;
+    orderSectionTitle: string;
+    quickPickProduct: string;
+    selectFromInventory: string;
+    productNameLabel: string;
+    productSizeLabel: string;
+    quantityLabel: string;
+    tkPerProductLabel: string;
+    orderTotalLabel: string;
+    orderDetailsLabel: string;
+    recordNewOrderLabel: string;
+    sizeWord: string;
+    perPcWord: string;
+  };
+  partners: {
+    pageTitle: string;
+    addPartners: string;
+    addFirstPartner: string;
+    exportCsv: string;
+    totalPartners: string;
+    totalInvested: string;
+    totalDue: string;
+    totalEquity: string;
+    searchPlaceholder: string;
+    filterAll: string;
+    filterDue: string;
+    filterSettled: string;
+    showingOf: string;
+    partnersWord: string;
+    noPartnersTitle: string;
+    noPartnersDesc: string;
+    partnerCol: string;
+    shareCol: string;
+    investCol: string;
+    dueCol: string;
+    statusCol: string;
+    partnerNameLabel: string;
+    partnerPhoneLabel: string;
+    investAmountLabel: string;
+    dueAmountLabel: string;
+    sharePercentLabel: string;
+    currencyLabel: string;
+    notesLabel: string;
+    addAnotherRow: string;
+    removeRow: string;
+    clearDue: string;
+    settledBadge: string;
+    duePendingBadge: string;
+    modalAddTitle: string;
+    modalEditTitle: string;
+    modalSubtitle: string;
+    partnerRowPrefix: string;
+    savePartner: string;
+    saveAllPartners: string;
+    updatePartner: string;
+    batchTotalLabel: string;
   };
   receipts: {
     newBlankReceipt: string;
@@ -337,6 +397,7 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       dailyExpenses: 'Daily Expenses',
       productInventory: 'Product Inventory',
       customersBd: 'Customers (BD)',
+      partners: 'Partners & Invest',
       receiptStudio: 'Receipt Studio',
       settingsData: 'Settings & Data',
       settingsBudget: 'Settings & Budget',
@@ -489,18 +550,79 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       savedCustomers: 'Saved BD Customers',
       recordedOrders: 'Recorded Customer Orders',
       lifetimeValue: 'Lifetime Customer Value',
-      searchPlaceholder: 'Search customer name, +880 phone, district, or address...',
+      searchPlaceholder: 'Search customer, +880 phone, location, product, or order details...',
       showingOf: 'Showing',
       customersWord: 'customers',
       noCustomersTitle: 'No Customers Saved Yet',
       noCustomersDesc:
-        'Save customer delivery details with validated BD phone numbers for one-click receipt generation.',
+        'Save customer contact, location, number option, product, size & price details for quick tracking and receipts.',
       customer: 'Customer',
-      bdPhone: 'BD Phone',
-      districtAddress: 'District & Address',
+      bdPhone: 'Phone & Option',
+      districtAddress: 'Location',
       orders: 'Orders',
       totalSpent: 'Total Spent',
       receiptBtn: 'Receipt',
+      orderProductCol: 'Order & Product Details',
+      numberOptionLabel: 'Which Number Option',
+      locationDistrictLabel: 'Location (District)',
+      locationAddressLabel: 'Full Delivery Location / Address',
+      orderSectionTitle: 'Order & Product Details',
+      quickPickProduct: 'Pick from Inventory (Optional)',
+      selectFromInventory: 'Select a saved product to auto-fill...',
+      productNameLabel: 'Product Name',
+      productSizeLabel: 'Size of Product',
+      quantityLabel: 'Qty (Pcs)',
+      tkPerProductLabel: 'Tk per Product (৳)',
+      orderTotalLabel: 'Order Total',
+      orderDetailsLabel: 'Order Details / Instructions',
+      recordNewOrderLabel: 'Add as a new order (+1 order & add total to customer spent)',
+      sizeWord: 'Size',
+      perPcWord: 'per product',
+    },
+    partners: {
+      pageTitle: 'Business Partners & Investment',
+      addPartners: 'Add Partner(s)',
+      addFirstPartner: 'Add First Partner',
+      exportCsv: 'Partners CSV',
+      totalPartners: 'Business Partners',
+      totalInvested: 'Total Invested',
+      totalDue: 'Total Due Balance',
+      totalEquity: 'Allocated Share %',
+      searchPlaceholder: 'Search partner name, phone, or notes...',
+      filterAll: 'All Partners',
+      filterDue: 'Due Pending',
+      filterSettled: 'Settled',
+      showingOf: 'Showing',
+      partnersWord: 'partners',
+      noPartnersTitle: 'No Business Partners Added Yet',
+      noPartnersDesc:
+        'Add one or multiple business partners with their invested capital, pending due amount, and optional share %.',
+      partnerCol: 'Partner',
+      shareCol: 'Share %',
+      investCol: 'Invested',
+      dueCol: 'Due',
+      statusCol: 'Status',
+      partnerNameLabel: 'Partner Name *',
+      partnerPhoneLabel: 'Phone (Optional)',
+      investAmountLabel: 'Invested Amount',
+      dueAmountLabel: 'Due Amount',
+      sharePercentLabel: 'Share % (Optional)',
+      currencyLabel: 'Currency',
+      notesLabel: 'Notes / Terms',
+      addAnotherRow: 'Add Another Partner',
+      removeRow: 'Remove',
+      clearDue: 'Clear Due',
+      settledBadge: 'Settled',
+      duePendingBadge: 'Due Pending',
+      modalAddTitle: 'Add Business Partners',
+      modalEditTitle: 'Edit Business Partner',
+      modalSubtitle:
+        'Add one or multiple partners with their investment, due amount, and optional share %.',
+      partnerRowPrefix: 'Partner',
+      savePartner: 'Save Partner',
+      saveAllPartners: 'Save Partners',
+      updatePartner: 'Update Partner',
+      batchTotalLabel: 'Batch Total',
     },
     receipts: {
       newBlankReceipt: 'New Blank Receipt',
@@ -642,6 +764,7 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       dailyExpenses: 'দৈনন্দিন খরচ',
       productInventory: 'পণ্য ও স্টক',
       customersBd: 'কাস্টমার (BD)',
+      partners: 'পার্টনার ও বিনিয়োগ',
       receiptStudio: 'রসিদ / মেমো স্টুডিও',
       settingsData: 'সেটিংস ও ডেটা',
       settingsBudget: 'সেটিংস ও বাজেট',
@@ -793,18 +916,79 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       savedCustomers: 'সংরক্ষিত কাস্টমার',
       recordedOrders: 'মোট অর্ডার',
       lifetimeValue: 'মোট কাস্টমার লেনদেন',
-      searchPlaceholder: 'কাস্টমারের নাম, +880 মোবাইল, জেলা বা ঠিকানা খুঁজুন...',
+      searchPlaceholder: 'কাস্টমারের নাম, মোবাইল, লোকেশন, পণ্য বা অর্ডার তথ্য খুঁজুন...',
       showingOf: 'দেখানো হচ্ছে',
       customersWord: 'জন কাস্টমার',
       noCustomersTitle: 'এখনো কোনো কাস্টমার সংরক্ষণ করা হয়নি',
       noCustomersDesc:
-        'এক ক্লিকে রসিদ তৈরি করতে ভেরিফায়েড বাংলাদেশি ফোন নম্বরসহ কাস্টমারের ঠিকানা সংরক্ষণ করুন।',
+        'ফোন, লোকেশন, কোন নাম্বার অপশন, পণ্যের নাম, সাইজ ও প্রতি পিস দামসহ কাস্টমার ও অর্ডার তথ্য সংরক্ষণ করুন।',
       customer: 'কাস্টমার',
-      bdPhone: 'মোবাইল নম্বর',
-      districtAddress: 'জেলা ও ঠিকানা',
+      bdPhone: 'মোবাইল ও অপশন',
+      districtAddress: 'লোকেশন / ঠিকানা',
       orders: 'অর্ডার',
       totalSpent: 'মোট খরচ',
       receiptBtn: 'রসিদ',
+      orderProductCol: 'অর্ডার ও পণ্যের বিবরণ',
+      numberOptionLabel: 'কোন নাম্বার অপশন',
+      locationDistrictLabel: 'লোকেশন (জেলা)',
+      locationAddressLabel: 'সম্পূর্ণ ডেলিভারি লোকেশন / ঠিকানা',
+      orderSectionTitle: 'অর্ডার ও পণ্যের বিবরণ',
+      quickPickProduct: 'স্টক থেকে পণ্য বাছাই করুন (ঐচ্ছিক)',
+      selectFromInventory: 'অটো-ফিল করতে পণ্য নির্বাচন করুন...',
+      productNameLabel: 'পণ্যের নাম',
+      productSizeLabel: 'পণ্যের সাইজ',
+      quantityLabel: 'পরিমাণ (পিস)',
+      tkPerProductLabel: 'প্রতি পণ্যের দাম (৳ টাকা)',
+      orderTotalLabel: 'অর্ডার মোট',
+      orderDetailsLabel: 'অর্ডারের বিবরণ / নোট',
+      recordNewOrderLabel: 'নতুন অর্ডার হিসেবে যোগ করুন (+১ অর্ডার ও মোট খরচে যোগ হবে)',
+      sizeWord: 'সাইজ',
+      perPcWord: 'প্রতি পিস',
+    },
+    partners: {
+      pageTitle: 'বিজনেস পার্টনার ও বিনিয়োগ',
+      addPartners: 'পার্টনার যোগ করুন',
+      addFirstPartner: 'প্রথম পার্টনার যোগ করুন',
+      exportCsv: 'পার্টনার CSV',
+      totalPartners: 'মোট পার্টনার',
+      totalInvested: 'মোট বিনিয়োগ (Invest)',
+      totalDue: 'মোট বকেয়া (Due)',
+      totalEquity: 'মোট শেয়ার %',
+      searchPlaceholder: 'পার্টনারের নাম, ফোন বা নোট খুঁজুন...',
+      filterAll: 'সব পার্টনার',
+      filterDue: 'বকেয়া আছে',
+      filterSettled: 'পরিশোধিত',
+      showingOf: 'দেখানো হচ্ছে',
+      partnersWord: 'জন পার্টনার',
+      noPartnersTitle: 'এখনো কোনো বিজনেস পার্টনার যোগ করা হয়নি',
+      noPartnersDesc:
+        'এক বা একাধিক পার্টনারের নাম, বিনিয়োগের পরিমাণ (Invest), বকেয়া (Due) এবং শেয়ার % হিসাব সংরক্ষণ করুন।',
+      partnerCol: 'পার্টনার',
+      shareCol: 'শেয়ার %',
+      investCol: 'বিনিয়োগ (Invest)',
+      dueCol: 'বকেয়া (Due)',
+      statusCol: 'অবস্থা',
+      partnerNameLabel: 'পার্টনারের নাম *',
+      partnerPhoneLabel: 'মোবাইল নম্বর (ঐচ্ছিক)',
+      investAmountLabel: 'বিনিয়োগ (Invest)',
+      dueAmountLabel: 'বকেয়া (Due)',
+      sharePercentLabel: 'শেয়ার % (ঐচ্ছিক)',
+      currencyLabel: 'মুদ্রা',
+      notesLabel: 'নোট / চুক্তির বিবরণ',
+      addAnotherRow: 'আরও পার্টনার যোগ করুন',
+      removeRow: 'বাদ দিন',
+      clearDue: 'বকেয়া শোধ',
+      settledBadge: 'পরিশোধিত',
+      duePendingBadge: 'বকেয়া আছে',
+      modalAddTitle: 'বিজনেস পার্টনার যোগ করুন',
+      modalEditTitle: 'পার্টনার তথ্য সম্পাদনা',
+      modalSubtitle:
+        'একসাথে এক বা একাধিক পার্টনারের নাম, বিনিয়োগ (Invest) ও বকেয়া (Due) হিসাব যোগ করুন।',
+      partnerRowPrefix: 'পার্টনার',
+      savePartner: 'পার্টনার সংরক্ষণ',
+      saveAllPartners: 'সব পার্টনার সংরক্ষণ',
+      updatePartner: 'পার্টনার আপডেট',
+      batchTotalLabel: 'মোট হিসাব',
     },
     receipts: {
       newBlankReceipt: 'নতুন রসিদ',

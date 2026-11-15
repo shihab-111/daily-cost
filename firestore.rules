@@ -181,16 +181,23 @@ service cloud.firestore {
           'totalOrders', 'totalSpent', 'lastOrderDate', 'createdAt', 'updatedAt'
         ])
         && data.keys().hasOnly([
-          'userId', 'businessId', 'name', 'phone', 'email', 'address', 'district', 'notes',
+          'userId', 'businessId', 'name', 'phone', 'numberOption', 'email', 'address', 'district',
+          'productName', 'productSize', 'quantity', 'unitPrice', 'orderDetails', 'notes',
           'totalOrders', 'totalSpent', 'lastOrderDate', 'createdAt', 'updatedAt'
         ])
         && isValidOptionalBusinessId(data)
         && isValidId(data.userId)
         && data.name is string && data.name.size() >= 1 && data.name.size() <= 140
         && data.phone is string && data.phone.size() >= 11 && data.phone.size() <= 20
+        && (!('numberOption' in data) || data.numberOption in ['Call / Phone', 'WhatsApp', 'bKash', 'Nagad', 'Rocket', 'Alternate'])
         && data.email is string && data.email.size() <= 140
         && data.address is string && data.address.size() <= 240
         && data.district is string && data.district.size() <= 80
+        && (!('productName' in data) || (data.productName is string && data.productName.size() <= 160))
+        && (!('productSize' in data) || (data.productSize is string && data.productSize.size() <= 40))
+        && (!('quantity' in data) || ((data.quantity is int || data.quantity is float) && data.quantity >= 0 && data.quantity <= 99999))
+        && (!('unitPrice' in data) || ((data.unitPrice is int || data.unitPrice is float) && data.unitPrice >= 0 && data.unitPrice <= 999999999))
+        && (!('orderDetails' in data) || (data.orderDetails is string && data.orderDetails.size() <= 500))
         && data.notes is string && data.notes.size() <= 1000
         && data.totalOrders is int && data.totalOrders >= 0 && data.totalOrders <= 999999
         && (data.totalSpent is int || data.totalSpent is float) && data.totalSpent >= 0 && data.totalSpent <= 999999999
@@ -210,14 +217,37 @@ service cloud.firestore {
           'expense_created', 'expense_updated', 'expense_deleted',
           'product_created', 'product_updated', 'product_deleted',
           'customer_created', 'customer_updated', 'customer_deleted',
+          'partner_created', 'partner_updated', 'partner_deleted',
           'receipt_created', 'receipt_deleted'
         ]
         && data.summary is string && data.summary.size() >= 1 && data.summary.size() <= 240
-        && data.entityType in ['expense', 'product', 'customer', 'receipt']
+        && data.entityType in ['expense', 'product', 'customer', 'partner', 'receipt']
         && isValidId(data.entityId)
         && (data.amount is int || data.amount is float) && data.amount >= 0 && data.amount <= 999999999
         && data.currency in ['BDT', 'USD']
         && data.createdAt is timestamp;
+    }
+
+    function isValidBusinessPartner(data) {
+      return data.keys().hasAll([
+          'userId', 'name', 'phone', 'sharePercent', 'investedAmount', 'dueAmount',
+          'currency', 'notes', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'userId', 'businessId', 'name', 'phone', 'sharePercent', 'investedAmount', 'dueAmount',
+          'currency', 'notes', 'createdAt', 'updatedAt'
+        ])
+        && isValidOptionalBusinessId(data)
+        && isValidId(data.userId)
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 140
+        && data.phone is string && data.phone.size() <= 40
+        && (data.sharePercent is int || data.sharePercent is float) && data.sharePercent >= 0 && data.sharePercent <= 100
+        && (data.investedAmount is int || data.investedAmount is float) && data.investedAmount >= 0 && data.investedAmount <= 999999999
+        && (data.dueAmount is int || data.dueAmount is float) && data.dueAmount >= 0 && data.dueAmount <= 999999999
+        && data.currency in ['BDT', 'USD']
+        && data.notes is string && data.notes.size() <= 1000
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
     }
 
     function isValidReceiptBranding(data) {
@@ -600,7 +630,8 @@ service cloud.firestore {
         && incoming().updatedAt == request.time
         && (
           incoming().diff(existing()).affectedKeys().hasOnly([
-            'businessId', 'name', 'phone', 'email', 'address', 'district', 'notes',
+            'businessId', 'name', 'phone', 'numberOption', 'email', 'address', 'district',
+            'productName', 'productSize', 'quantity', 'unitPrice', 'orderDetails', 'notes',
             'totalOrders', 'totalSpent', 'lastOrderDate', 'updatedAt'
           ]) ||
           incoming().diff(existing()).affectedKeys().hasOnly(['totalOrders', 'totalSpent', 'lastOrderDate', 'updatedAt'])
@@ -740,6 +771,30 @@ service cloud.firestore {
         && isValidId(businessId)
         && existing().userId == request.auth.uid
         && existing().isDefault == false;
+    }
+
+    // 11. Business Partners (Investment & Due tracking, strictly owned by userId)
+    match /businessPartners/{partnerId} {
+      allow get: if isVerified() && isValidId(partnerId) && existing().userId == request.auth.uid;
+      allow list: if isVerified() && resource.data.userId == request.auth.uid;
+      allow create: if isVerified()
+        && isValidId(partnerId)
+        && isValidBusinessPartner(incoming())
+        && incoming().userId == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isVerified()
+        && isValidId(partnerId)
+        && isValidBusinessPartner(incoming())
+        && existing().userId == request.auth.uid
+        && incoming().userId == existing().userId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'businessId', 'name', 'phone', 'sharePercent', 'investedAmount', 'dueAmount',
+          'currency', 'notes', 'updatedAt'
+        ]);
+      allow delete: if isVerified() && isValidId(partnerId) && existing().userId == request.auth.uid;
     }
   }
 }

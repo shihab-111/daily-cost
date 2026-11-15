@@ -13,7 +13,7 @@ import {
   where,
   writeBatch,
 } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../firebase/client';
+import { commitOfflineSafe, db, handleFirestoreError, OperationType } from '../firebase/client';
 import { AppMode, ExpenseCategoryItem } from '../../types';
 import {
   BUSINESS_EXPENSE_CATEGORIES,
@@ -47,6 +47,7 @@ function sortCategories(items: ExpenseCategoryItem[]): ExpenseCategoryItem[] {
 }
 
 export async function ensureDefaultExpenseCategories(user: User): Promise<void> {
+  if (typeof navigator !== 'undefined' && !navigator.onLine) return;
   const existingPromise = inFlightSeeds.get(user.uid);
   if (existingPromise) return existingPromise;
 
@@ -182,8 +183,8 @@ export async function addExpenseCategory(
     Math.min(999999999, Math.round((options?.unitPrice ?? 0) * 100) / 100)
   );
 
-  try {
-    await setDoc(doc(db, 'expenseCategories', catId), {
+  await commitOfflineSafe(
+    setDoc(doc(db, 'expenseCategories', catId), {
       userId: user.uid,
       mode,
       key,
@@ -193,10 +194,10 @@ export async function addExpenseCategory(
       unitPrice,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-    });
-  } catch (error) {
-    handleFirestoreError(error, OperationType.CREATE, path);
-  }
+    }),
+    OperationType.CREATE,
+    path
+  );
 
   return {
     id: catId,
@@ -243,11 +244,11 @@ export async function updateExpenseCategory(
     );
   }
 
-  try {
-    await updateDoc(doc(db, 'expenseCategories', categoryDocId), payload);
-  } catch (error) {
-    handleFirestoreError(error, OperationType.UPDATE, path);
-  }
+  await commitOfflineSafe(
+    updateDoc(doc(db, 'expenseCategories', categoryDocId), payload),
+    OperationType.UPDATE,
+    path
+  );
 }
 
 export async function deleteExpenseCategory(
@@ -255,11 +256,11 @@ export async function deleteExpenseCategory(
   categoryDocId: string
 ): Promise<void> {
   const path = `expenseCategories/${categoryDocId}`;
-  try {
-    await deleteDoc(doc(db, 'expenseCategories', categoryDocId));
-  } catch (error) {
-    handleFirestoreError(error, OperationType.DELETE, path);
-  }
+  await commitOfflineSafe(
+    deleteDoc(doc(db, 'expenseCategories', categoryDocId)),
+    OperationType.DELETE,
+    path
+  );
 }
 
 export async function restoreDefaultExpenseCategories(
@@ -288,9 +289,5 @@ export async function restoreDefaultExpenseCategories(
     });
   }
 
-  try {
-    await batch.commit();
-  } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, 'expenseCategories');
-  }
+  await commitOfflineSafe(batch.commit(), OperationType.WRITE, 'expenseCategories');
 }

@@ -149,19 +149,48 @@ export interface ProductPhoto {
   updatedAt?: Timestamp;
 }
 
+export type CustomerNumberOption =
+  | 'Call / Phone'
+  | 'WhatsApp'
+  | 'bKash'
+  | 'Nagad'
+  | 'Rocket'
+  | 'Alternate';
+
 export interface Customer {
   id: string;
   userId: string;
   businessId?: string;
   name: string;
   phone: string;
+  numberOption?: CustomerNumberOption;
   email: string;
   address: string;
   district: string;
+  productName?: string;
+  productSize?: string;
+  quantity?: number;
+  unitPrice?: number;
+  orderDetails?: string;
   notes: string;
   totalOrders: number;
   totalSpent: number;
   lastOrderDate: string;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+export interface BusinessPartner {
+  id: string;
+  userId: string;
+  businessId?: string;
+  name: string;
+  phone: string;
+  sharePercent: number;
+  investedAmount: number;
+  dueAmount: number;
+  currency: CurrencyCode;
+  notes: string;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
@@ -182,10 +211,13 @@ export interface ActivityLog {
     | 'customer_created'
     | 'customer_updated'
     | 'customer_deleted'
+    | 'partner_created'
+    | 'partner_updated'
+    | 'partner_deleted'
     | 'receipt_created'
     | 'receipt_deleted';
   summary: string;
-  entityType: 'expense' | 'product' | 'customer' | 'receipt';
+  entityType: 'expense' | 'product' | 'customer' | 'partner' | 'receipt';
   entityId: string;
   amount: number;
   currency: CurrencyCode;

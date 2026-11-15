@@ -83,6 +83,9 @@ export const customerSchema = z.object({
       message: 'Enter a valid Bangladeshi carrier phone number (+8801XXXXXXXXX or 01XXXXXXXXX).',
     })
     .transform((val) => normalizeBdPhone(val)),
+  numberOption: z
+    .enum(['Call / Phone', 'WhatsApp', 'bKash', 'Nagad', 'Rocket', 'Alternate'])
+    .default('Call / Phone'),
   email: z
     .string()
     .trim()
@@ -91,6 +94,11 @@ export const customerSchema = z.object({
     .default(''),
   address: z.string().trim().max(240).default(''),
   district: z.string().trim().max(80).default('Dhaka'),
+  productName: z.string().trim().max(160).default(''),
+  productSize: z.string().trim().max(40).default(''),
+  quantity: z.coerce.number().min(0, 'Quantity cannot be negative.').max(99999).default(1),
+  unitPrice: z.coerce.number().min(0, 'Tk per product cannot be negative.').max(999999999).default(0),
+  orderDetails: z.string().trim().max(500).default(''),
   notes: z.string().trim().max(1000).default(''),
 });
 
@@ -119,6 +127,28 @@ export const businessProfileSchema = z.object({
     .trim()
     .min(1, 'Business name is required.')
     .max(140, 'Business name must be 140 characters or fewer.'),
+});
+
+export const businessPartnerSchema = z.object({
+  name: z.string().trim().min(1, 'Partner name is required.').max(140),
+  phone: z.string().trim().max(40).default(''),
+  sharePercent: z.coerce
+    .number()
+    .min(0, 'Share % cannot be negative.')
+    .max(100, 'Share % cannot exceed 100.')
+    .default(0),
+  investedAmount: z.coerce
+    .number()
+    .min(0, 'Invested amount cannot be negative.')
+    .max(999999999)
+    .default(0),
+  dueAmount: z.coerce
+    .number()
+    .min(0, 'Due amount cannot be negative.')
+    .max(999999999)
+    .default(0),
+  currency: z.enum(['BDT', 'USD']).default('BDT'),
+  notes: z.string().trim().max(1000).default(''),
 });
 
 export const receiptLineItemSchema = z.object({
@@ -201,6 +231,7 @@ export type RegisterFormValues = z.infer<typeof registerSchema>;
 export type ExpenseFormValues = z.infer<typeof expenseSchema>;
 export type ProductFormValues = z.infer<typeof productSchema>;
 export type CustomerFormValues = z.infer<typeof customerSchema>;
+export type BusinessPartnerFormValues = z.infer<typeof businessPartnerSchema>;
 export type SettingsFormValues = z.infer<typeof settingsSchema>;
 export type ReceiptTemplateFormValues = z.infer<typeof receiptTemplateSchema>;
 export type CustomerReceiptFormValues = z.infer<typeof customerReceiptSchema>;

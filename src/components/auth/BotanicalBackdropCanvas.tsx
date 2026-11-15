@@ -203,9 +203,9 @@ export const BotanicalBackdropCanvas: React.FC = () => {
       canvas.height = Math.round(height * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      // Proportional particle count so both mobile and desktop feel airy, never cluttered
+      // Proportional particle count so both mobile and full-screen desktop feel airy, never cluttered
       const area = width * height;
-      const targetCount = Math.max(24, Math.min(58, Math.round(area / 16000)));
+      const targetCount = Math.max(26, Math.min(85, Math.round(area / 18000)));
       if (particles.length === 0) {
         particles = Array.from({ length: targetCount }, () =>
           createParticle(width, height, true)

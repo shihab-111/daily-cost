@@ -5,6 +5,7 @@ import { EXPENSE_CATEGORY_LABELS } from '../lib/utils';
 import {
   ActivityLog,
   AppMode,
+  BusinessPartner,
   Customer,
   CustomerReceipt,
   Expense,
@@ -164,6 +165,36 @@ export function useCustomers(user: User | null, enabled: boolean) {
   }, [user, enabled]);
 
   return { customers, loading, error };
+}
+
+export function useBusinessPartners(user: User | null, enabled: boolean) {
+  const [partners, setPartners] = useState<BusinessPartner[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user || !enabled) {
+      setPartners([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    const unsub = dbService.subscribeBusinessPartners(
+      user,
+      (list) => {
+        setPartners(list);
+        setLoading(false);
+      },
+      (err) => {
+        setError(err.message);
+        setLoading(false);
+      }
+    );
+    return () => unsub();
+  }, [user, enabled]);
+
+  return { partners, loading, error };
 }
 
 export function useSettings(user: User | null, enabled: boolean) {

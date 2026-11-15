@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { useLanguage } from '../context/LanguageContext';
 import { auth } from '../lib/firebase/client';
@@ -55,6 +55,22 @@ function formatReadableError(err: unknown, fallback: string, permissionMsg: stri
   return msg || fallback;
 }
 
+function isNetworkOrOfflineError(err: unknown): boolean {
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    return true;
+  }
+  const code = ((err as { code?: string })?.code || '').toLowerCase();
+  const msg = (err instanceof Error ? err.message : String(err || '')).toLowerCase();
+  return (
+    code.includes('unavailable') ||
+    code.includes('network') ||
+    msg.includes('offline') ||
+    msg.includes('unavailable') ||
+    msg.includes('network') ||
+    msg.includes('failed to get document')
+  );
+}
+
 interface AuthContextValue {
   user: User | null;
   authLoading: boolean;
@@ -82,7 +98,7 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [verifyingTenant, setVerifyingTenant] = useState(false);
@@ -92,13 +108,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [authError, setAuthError] = useState<string | null>(null);
   const [verificationSent, setVerificationSent] = useState(false);
   const [verificationNotice, setVerificationNotice] = useState<string | null>(null);
+  const pendingOnlineSyncRef = useRef<{
+    user: User;
+    defaults?: PendingProfileDefaults;
+  } | null>(null);
 
   const hydrateTenant = useCallback(
     async (nextUser: User, defaults?: PendingProfileDefaults) => {
       setVerifyingTenant(true);
       try {
         const wasVerified = isUserVerified(nextUser);
-        if (!wasVerified) {
+        const isOnline = typeof navigator === 'undefined' || navigator.onLine;
+        if (!wasVerified && isOnline) {
           try {
             await nextUser.reload();
           } catch {
@@ -109,37 +130,61 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsAuthorized(verified);
         setDenialReason(verified ? null : 'unverified_email');
         if (verified) {
+          const resolvedDefaults = defaults || consumePendingProfile(nextUser.uid);
+
+          if (!isOnline) {
+            pendingOnlineSyncRef.current = { user: nextUser, defaults: resolvedDefaults };
+            const adminStatus = await dbService.checkIsAdmin(nextUser).catch(() => false);
+            setIsAdmin(adminStatus);
+            setAuthError(null);
+            return;
+          }
+
           if (!wasVerified) {
             await nextUser.getIdToken(true);
           }
-          const resolvedDefaults = defaults || consumePendingProfile(nextUser.uid);
+
           try {
             await dbService.bootstrapWorkspace(nextUser, resolvedDefaults);
+            pendingOnlineSyncRef.current = null;
           } catch (err) {
             const msg = err instanceof Error ? err.message : '';
             if (msg.toLowerCase().includes('permission')) {
               await nextUser.getIdToken(true);
               await dbService.bootstrapWorkspace(nextUser, resolvedDefaults);
+              pendingOnlineSyncRef.current = null;
+            } else if (isNetworkOrOfflineError(err)) {
+              pendingOnlineSyncRef.current = { user: nextUser, defaults: resolvedDefaults };
             } else {
               throw err;
             }
           }
 
-          const [adminStatus] = await Promise.all([
-            dbService.checkIsAdmin(nextUser).catch(() => false),
-            dbService.recordUserLogin(nextUser, resolvedDefaults).catch(() => undefined),
-          ]);
+          const adminStatus = await dbService.checkIsAdmin(nextUser).catch(() => false);
+          if (!pendingOnlineSyncRef.current) {
+            void dbService.recordUserLogin(nextUser, resolvedDefaults).catch(() => undefined);
+          }
           setIsAdmin(adminStatus);
           setAuthError(null);
         } else {
+          pendingOnlineSyncRef.current = null;
           setIsAdmin(false);
         }
       } catch (err) {
-        setIsAuthorized(false);
-        setIsAdmin(false);
-        setAuthError(
-          formatReadableError(err, t.authErrors.initFailed, t.authErrors.permissionDenied)
-        );
+        if (isNetworkOrOfflineError(err) && isUserVerified(nextUser)) {
+          pendingOnlineSyncRef.current = { user: nextUser, defaults };
+          const adminStatus = await dbService.checkIsAdmin(nextUser).catch(() => false);
+          setIsAuthorized(true);
+          setIsAdmin(adminStatus);
+          setDenialReason(null);
+          setAuthError(null);
+        } else {
+          setIsAuthorized(false);
+          setIsAdmin(false);
+          setAuthError(
+            formatReadableError(err, t.authErrors.initFailed, t.authErrors.permissionDenied)
+          );
+        }
       } finally {
         setVerifyingTenant(false);
         setAuthLoading(false);
@@ -149,11 +194,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 
   useEffect(() => {
+    const handleOnline = () => {
+      const pending = pendingOnlineSyncRef.current;
+      if (!pending || auth.currentUser?.uid !== pending.user.uid) return;
+
+      void (async () => {
+        try {
+          await dbService.bootstrapWorkspace(pending.user, pending.defaults);
+          pendingOnlineSyncRef.current = null;
+          const adminStatus = await dbService.checkIsAdmin(pending.user).catch(() => false);
+          setIsAdmin(adminStatus);
+          void dbService.recordUserLogin(pending.user, pending.defaults).catch(() => undefined);
+        } catch {
+          // Keep pending for next online retry
+        }
+      })();
+    };
+
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  }, []);
+
+  useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (nextUser) => {
       setUser(nextUser);
       setDenialReason(null);
 
       if (!nextUser) {
+        pendingOnlineSyncRef.current = null;
         setIsAuthorized(false);
         setIsAdmin(false);
         setAuthLoading(false);
@@ -194,9 +262,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       ) {
         return t.authErrors.invalidCredential;
       }
+      if (
+        code === 'auth/network-request-failed' ||
+        (typeof navigator !== 'undefined' && !navigator.onLine)
+      ) {
+        return language === 'bn'
+          ? 'প্রথমবার লগইন বা অ্যাকাউন্ট তৈরি করতে ইন্টারনেট সংযোগ প্রয়োজন। একবার লগইন করার পর অফলাইনেও অ্যাপ ব্যবহার করা যাবে।'
+          : 'An internet connection is required for initial sign-in or registration. Once signed in, EkTally works offline.';
+      }
       return formatReadableError(err, fallback, t.authErrors.permissionDenied);
     },
-    [t.authErrors]
+    [language, t.authErrors]
   );
 
   const loginWithEmail = useCallback(

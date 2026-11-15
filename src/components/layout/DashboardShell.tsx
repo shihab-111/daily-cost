@@ -6,6 +6,7 @@ import {
   Check,
   ChevronDown,
   FileText,
+  Handshake,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -23,6 +24,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import { useMode } from '../../context/ModeContext';
 import { cn, EKTALLY_LOGO_URL } from '../../lib/utils';
 import { LanguageToggle } from '../ui/LanguageToggle';
+import { PWAInstallButton } from '../ui/PWAControls';
 
 interface DashboardShellProps {
   businessName: string;
@@ -68,6 +70,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
           { to: '/expenses', label: t.nav.businessExpenses, icon: Receipt },
           { to: '/products', label: t.nav.productInventory, icon: Package },
           { to: '/customers', label: t.nav.customersBd, icon: Users },
+          { to: '/partners', label: t.nav.partners, icon: Handshake },
           { to: '/receipts', label: t.nav.receiptStudio, icon: FileText },
           { to: '/settings', label: t.nav.settingsData, icon: Settings },
         ]
@@ -81,7 +84,9 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
   useEffect(() => {
     if (
       mode === 'personal' &&
-      (location.pathname.startsWith('/products') || location.pathname.startsWith('/customers'))
+      (location.pathname.startsWith('/products') ||
+        location.pathname.startsWith('/customers') ||
+        location.pathname.startsWith('/partners'))
     ) {
       navigate('/', { replace: true });
     }
@@ -319,6 +324,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
             </p>
           </div>
         </div>
+        <PWAInstallButton className="mt-1 mb-1.5" />
         <button
           type="button"
           onClick={logout}
