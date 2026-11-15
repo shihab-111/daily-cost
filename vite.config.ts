@@ -26,8 +26,8 @@ export default defineConfig(() => {
           short_name: 'EkTally',
           description:
             'Private multi-tenant Bangladesh business operations, personal expense tracker, inventory, and custom receipt generator.',
-          theme_color: '#09090b',
-          background_color: '#09090b',
+          theme_color: '#050507',
+          background_color: '#050507',
           display: 'standalone',
           start_url: '/',
           scope: '/',

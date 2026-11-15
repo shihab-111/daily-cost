@@ -45,14 +45,12 @@ export async function saveUserProfile(
   const displayName = values.displayName.trim().slice(0, 120);
   const photoUrl = (values.photoUrl || '').slice(0, 80000);
 
-  let exists = hasExisting;
-  if (exists === undefined) {
-    try {
-      const snap = await getDoc(profileRef);
-      exists = snap.exists();
-    } catch {
-      exists = false;
-    }
+  let exists = Boolean(hasExisting);
+  try {
+    const snap = await getDoc(profileRef);
+    exists = snap.exists();
+  } catch {
+    // Keep hasExisting fallback when offline without cached doc
   }
 
   if (!exists) {

@@ -14,7 +14,7 @@ import {
   updateUserAuthProfile,
 } from '../lib/firebase/auth';
 import { dbService } from '../lib/firebase/db';
-import { processAvatarImage, tryUploadToStorageOrFallback } from '../lib/firebase/storage';
+import { processAvatarImage } from '../lib/firebase/storage';
 
 const PENDING_PROFILE_PREFIX = 'ektally_pending_profile_';
 
@@ -392,12 +392,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         input.photoUrl !== undefined ? input.photoUrl : userProfile?.photoUrl ?? currentUser.photoURL ?? '';
 
       if (input.photoFile) {
-        const compressedDataUrl = await processAvatarImage(input.photoFile);
-        resolvedPhotoUrl = await tryUploadToStorageOrFallback(
-          `users/${currentUser.uid}/profile/avatar_${Date.now()}.jpg`,
-          input.photoFile,
-          compressedDataUrl
-        );
+        resolvedPhotoUrl = await processAvatarImage(input.photoFile);
       }
 
       resolvedPhotoUrl = (resolvedPhotoUrl || '').slice(0, 80000);
@@ -407,6 +402,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         { displayName: cleanName, photoUrl: resolvedPhotoUrl },
         Boolean(userProfile)
       );
+
+      setUserProfile((prev) => ({
+        id: currentUser.uid,
+        userId: currentUser.uid,
+        displayName: cleanName,
+        photoUrl: resolvedPhotoUrl,
+        createdAt: prev?.createdAt,
+        updatedAt: prev?.updatedAt,
+      }));
 
       try {
         await updateUserAuthProfile(currentUser, {

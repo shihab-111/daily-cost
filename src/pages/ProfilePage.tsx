@@ -12,6 +12,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useLanguage } from '../context/LanguageContext';
 import { useMode } from '../context/ModeContext';
 import { useSettings } from '../hooks/useBusinessData';
+import { processAvatarImage } from '../lib/firebase/storage';
 import { translateValidationMessage } from '../lib/i18n';
 import { changePasswordSchema, userProfileSchema } from '../lib/validators/schemas';
 import { DashboardShell } from '../components/layout/DashboardShell';
@@ -32,8 +33,10 @@ export const ProfilePage: React.FC = () => {
   const { settings } = useSettings(user, Boolean(user));
 
   const [displayName, setDisplayName] = useState(profileDisplayName);
+  const [nameDirty, setNameDirty] = useState(false);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState(profilePhotoUrl);
-  const [stagedPhotoFile, setStagedPhotoFile] = useState<File | null>(null);
+  const [photoEdited, setPhotoEdited] = useState(false);
+  const [processingPhoto, setProcessingPhoto] = useState(false);
   const [avatarLoadError, setAvatarLoadError] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileMsg, setProfileMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
@@ -48,55 +51,47 @@ export const ProfilePage: React.FC = () => {
   const [passwordMsg, setPasswordMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const objectPreviewRef = useRef<string | null>(null);
 
   useEffect(() => {
-    setDisplayName(profileDisplayName);
-  }, [profileDisplayName]);
+    if (!nameDirty) {
+      setDisplayName(profileDisplayName);
+    }
+  }, [profileDisplayName, nameDirty]);
 
   useEffect(() => {
-    if (!stagedPhotoFile) {
+    if (!photoEdited) {
       setPhotoPreviewUrl(profilePhotoUrl);
       setAvatarLoadError(false);
     }
-  }, [profilePhotoUrl, stagedPhotoFile]);
+  }, [profilePhotoUrl, photoEdited]);
 
-  useEffect(() => {
-    return () => {
-      if (objectPreviewRef.current) {
-        URL.revokeObjectURL(objectPreviewRef.current);
-      }
-    };
-  }, []);
-
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
+    if (file.type && !file.type.startsWith('image/')) {
       setProfileMsg({ type: 'err', text: t.profile.invalidImageFile });
       return;
     }
 
-    if (objectPreviewRef.current) {
-      URL.revokeObjectURL(objectPreviewRef.current);
-    }
-    const localUrl = URL.createObjectURL(file);
-    objectPreviewRef.current = localUrl;
-    setStagedPhotoFile(file);
-    setPhotoPreviewUrl(localUrl);
-    setAvatarLoadError(false);
     setProfileMsg(null);
+    setProcessingPhoto(true);
+    try {
+      const processedDataUrl = await processAvatarImage(file);
+      setPhotoPreviewUrl(processedDataUrl);
+      setPhotoEdited(true);
+      setAvatarLoadError(false);
+    } catch {
+      setProfileMsg({ type: 'err', text: t.profile.invalidImageFile });
+    } finally {
+      setProcessingPhoto(false);
+    }
   };
 
   const handleRemovePhoto = () => {
-    if (objectPreviewRef.current) {
-      URL.revokeObjectURL(objectPreviewRef.current);
-      objectPreviewRef.current = null;
-    }
-    setStagedPhotoFile(null);
     setPhotoPreviewUrl('');
+    setPhotoEdited(true);
     setAvatarLoadError(false);
     setProfileMsg(null);
   };
@@ -107,7 +102,7 @@ export const ProfilePage: React.FC = () => {
 
     const parsed = userProfileSchema.safeParse({
       displayName,
-      photoUrl: stagedPhotoFile ? '' : photoPreviewUrl,
+      photoUrl: photoPreviewUrl,
     });
 
     if (!parsed.success) {
@@ -126,14 +121,10 @@ export const ProfilePage: React.FC = () => {
     try {
       await updateMyProfile({
         displayName: parsed.data.displayName,
-        photoFile: stagedPhotoFile,
-        photoUrl: stagedPhotoFile ? undefined : photoPreviewUrl,
+        photoUrl: photoPreviewUrl,
       });
-      if (objectPreviewRef.current) {
-        URL.revokeObjectURL(objectPreviewRef.current);
-        objectPreviewRef.current = null;
-      }
-      setStagedPhotoFile(null);
+      setNameDirty(false);
+      setPhotoEdited(false);
       setProfileMsg({ type: 'ok', text: t.profile.profileSaved });
     } catch (err) {
       setProfileMsg({
@@ -241,7 +232,7 @@ export const ProfilePage: React.FC = () => {
                     {displayName.trim() || profileDisplayName}
                   </p>
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-zinc-400 mt-0.5">
-                    <span className="font-mono truncate">{user?.email}</span>
+                    <span className="font-mono truncate max-w-full">{user?.email}</span>
                     <span aria-hidden="true">·</span>
                     <span className="text-[#4ade80]">{t.profile.verifiedBadge}</span>
                     <span aria-hidden="true">·</span>
@@ -253,7 +244,7 @@ export const ProfilePage: React.FC = () => {
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/jpeg,image/png,image/webp"
+                    accept="image/*"
                     onChange={handlePhotoChange}
                     className="hidden"
                     aria-label={t.profile.photoLabel}
@@ -262,7 +253,8 @@ export const ProfilePage: React.FC = () => {
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="min-h-[40px] sm:min-h-0"
+                    disabled={processingPhoto}
+                    className="min-h-[42px] sm:min-h-0"
                     onClick={() => fileInputRef.current?.click()}
                   >
                     <Camera className="w-3.5 h-3.5 text-[#4ade80]" />
@@ -273,7 +265,8 @@ export const ProfilePage: React.FC = () => {
                       type="button"
                       variant="danger"
                       size="sm"
-                      className="min-h-[40px] sm:min-h-0"
+                      disabled={processingPhoto}
+                      className="min-h-[42px] sm:min-h-0"
                       onClick={handleRemovePhoto}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -292,7 +285,10 @@ export const ProfilePage: React.FC = () => {
                 required
                 maxLength={120}
                 value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
+                onChange={(e) => {
+                  setDisplayName(e.target.value);
+                  setNameDirty(true);
+                }}
                 placeholder={t.profile.displayNamePlaceholder}
               />
 
@@ -316,7 +312,7 @@ export const ProfilePage: React.FC = () => {
               <Button
                 type="submit"
                 className="w-full sm:w-auto min-h-[44px] sm:min-h-0"
-                disabled={savingProfile || !displayName.trim()}
+                disabled={savingProfile || processingPhoto || !displayName.trim()}
               >
                 {savingProfile ? t.common.saving : t.profile.saveProfile}
               </Button>
@@ -382,7 +378,7 @@ export const ProfilePage: React.FC = () => {
                         aria-label={
                           showCurrentPassword ? t.login.hidePassword : t.login.showPassword
                         }
-                        className="absolute right-1 top-1/2 -translate-y-1/2 min-h-[36px] min-w-[36px] inline-flex items-center justify-center text-zinc-400 hover:text-zinc-100 rounded-md cursor-pointer"
+                        className="absolute right-0.5 top-1/2 -translate-y-1/2 min-h-[42px] min-w-[42px] sm:min-h-[34px] sm:min-w-[34px] inline-flex items-center justify-center text-zinc-400 hover:text-zinc-100 rounded-md cursor-pointer"
                       >
                         {showCurrentPassword ? (
                           <EyeOff className="w-4 h-4" />
@@ -420,7 +416,7 @@ export const ProfilePage: React.FC = () => {
                           aria-label={
                             showNewPassword ? t.login.hidePassword : t.login.showPassword
                           }
-                          className="absolute right-1 top-1/2 -translate-y-1/2 min-h-[36px] min-w-[36px] inline-flex items-center justify-center text-zinc-400 hover:text-zinc-100 rounded-md cursor-pointer"
+                          className="absolute right-0.5 top-1/2 -translate-y-1/2 min-h-[42px] min-w-[42px] sm:min-h-[34px] sm:min-w-[34px] inline-flex items-center justify-center text-zinc-400 hover:text-zinc-100 rounded-md cursor-pointer"
                         >
                           {showNewPassword ? (
                             <EyeOff className="w-4 h-4" />
@@ -457,7 +453,7 @@ export const ProfilePage: React.FC = () => {
                           aria-label={
                             showConfirmPassword ? t.login.hidePassword : t.login.showPassword
                           }
-                          className="absolute right-1 top-1/2 -translate-y-1/2 min-h-[36px] min-w-[36px] inline-flex items-center justify-center text-zinc-400 hover:text-zinc-100 rounded-md cursor-pointer"
+                          className="absolute right-0.5 top-1/2 -translate-y-1/2 min-h-[42px] min-w-[42px] sm:min-h-[34px] sm:min-w-[34px] inline-flex items-center justify-center text-zinc-400 hover:text-zinc-100 rounded-md cursor-pointer"
                         >
                           {showConfirmPassword ? (
                             <EyeOff className="w-4 h-4" />
