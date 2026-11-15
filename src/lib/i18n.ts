@@ -48,6 +48,7 @@ export interface TranslationStrings {
     personal: string;
     workspaceOwner: string;
     adminPortal: string;
+    openMenu: string;
   };
   login: {
     kicker: string;
@@ -441,6 +442,7 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       personal: 'Personal',
       workspaceOwner: 'Workspace Owner',
       adminPortal: 'Admin Portal',
+      openMenu: 'All Pages / Menu',
     },
     login: {
       kicker: 'EkTally · Dual-Mode Business & Personal Ledger',
@@ -842,6 +844,7 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       personal: 'ব্যক্তিগত',
       workspaceOwner: 'অ্যাকাউন্ট মালিক',
       adminPortal: 'অ্যাডমিন পোর্টাল',
+      openMenu: 'সব পেজ / মেনু',
     },
     login: {
       kicker: 'EkTally · ব্যবসা ও ব্যক্তিগত হিসাবের দ্বৈত প্ল্যাটফর্ম',

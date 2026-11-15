@@ -23,7 +23,7 @@ import {
   Users,
   X,
 } from 'lucide-react';
-import { BusinessProfile } from '../../types';
+import { AppMode, BusinessProfile } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
 import { useLanguage } from '../../context/LanguageContext';
 import { useMode } from '../../context/ModeContext';
@@ -138,7 +138,16 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
     ? { to: '/admin', label: t.nav.adminPortal, icon: ShieldCheck }
     : navItems.find((item) =>
         item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to)
-      ) || navItems[0];
+      ) ||
+      navItems.find((item) => item.to === '/') ||
+      navItems[0];
+
+  const handleSwitchMode = (nextMode: AppMode) => {
+    setMode(nextMode);
+    if (location.pathname.startsWith('/profile') || location.pathname.startsWith('/admin')) {
+      navigate('/');
+    }
+  };
 
   const displayBusinessName =
     businesses.length === 0 ? t.business.addBusiness : activeBusiness?.name || businessName;
@@ -463,13 +472,14 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
       )}
 
       <div className="flex-1 min-w-0 flex flex-col">
-        <header className="h-14 bg-[#121214] border-b border-[#27272a] px-3 sm:px-6 flex items-center justify-between gap-2 sm:gap-3 sticky top-0 z-30 no-print">
+        <header className="h-14 bg-[#121214] border-b border-[#27272a] px-2.5 sm:px-6 flex items-center justify-between gap-1.5 sm:gap-3 sticky top-0 z-30 no-print">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
             <button
               type="button"
               onClick={() => setMobileOpen(true)}
-              aria-label="Open navigation menu"
-              className="lg:hidden min-h-[44px] min-w-[44px] inline-flex items-center justify-center -ml-1.5 text-zinc-400 hover:text-zinc-100 rounded-lg cursor-pointer shrink-0"
+              aria-label={t.nav.openMenu}
+              title={t.nav.openMenu}
+              className="lg:hidden min-h-[38px] min-w-[38px] inline-flex items-center justify-center bg-[#09090b] border border-[#27272a] hover:border-zinc-500 text-zinc-100 rounded-lg transition-colors cursor-pointer shrink-0"
             >
               <Menu className="w-5 h-5" />
             </button>
@@ -636,9 +646,9 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
             >
               <button
                 type="button"
-                onClick={() => setMode('business')}
+                onClick={() => handleSwitchMode('business')}
                 className={cn(
-                  'inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 sm:py-1 text-[11px] sm:text-xs font-medium rounded-md transition-colors cursor-pointer whitespace-nowrap shrink-0',
+                  'inline-flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-1.5 sm:py-1 text-[11px] sm:text-xs font-medium rounded-md transition-colors cursor-pointer whitespace-nowrap shrink-0',
                   mode === 'business'
                     ? 'bg-[#22c55e] text-zinc-950 font-semibold'
                     : 'text-zinc-400 hover:text-zinc-100'
@@ -649,9 +659,9 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
               </button>
               <button
                 type="button"
-                onClick={() => setMode('personal')}
+                onClick={() => handleSwitchMode('personal')}
                 className={cn(
-                  'inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 sm:py-1 text-[11px] sm:text-xs font-medium rounded-md transition-colors cursor-pointer whitespace-nowrap shrink-0',
+                  'inline-flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-1.5 sm:py-1 text-[11px] sm:text-xs font-medium rounded-md transition-colors cursor-pointer whitespace-nowrap shrink-0',
                   mode === 'personal'
                     ? 'bg-[#22c55e] text-zinc-950 font-semibold'
                     : 'text-zinc-400 hover:text-zinc-100'
@@ -748,6 +758,21 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
                     </span>
                     <ChevronRight className="w-4 h-4 text-zinc-500 shrink-0" />
                   </NavLink>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileMoreOpen(false);
+                      setMobileOpen(true);
+                    }}
+                    className="w-full flex items-center justify-between gap-2 px-2.5 py-2 min-h-[40px] text-xs font-medium text-zinc-200 hover:text-zinc-100 hover:bg-[#18181b] rounded-lg border border-[#27272a]/70 transition-colors cursor-pointer"
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      <Menu className="w-3.5 h-3.5 text-[#4ade80]" />
+                      <span>{t.nav.openMenu}</span>
+                    </span>
+                    <ChevronRight className="w-3.5 h-3.5 text-zinc-500" />
+                  </button>
 
                   <div className="flex items-center justify-between px-2 py-1.5 rounded-lg bg-[#09090b]/60 border border-[#27272a]/70">
                     <span className="text-[11px] text-zinc-400">{t.common.languageLabel}</span>
