@@ -199,11 +199,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
   };
 
   return (
-    <div className="relative min-h-[100dvh] w-full overflow-x-clip bg-[#050507] text-zinc-100 flex flex-col justify-between lg:grid lg:grid-cols-2 lg:grid-rows-[1fr_auto]">
+    <div className="relative min-h-[max(100vh,100dvh)] w-full overflow-x-hidden bg-[#050507] text-zinc-100 flex flex-col justify-between lg:grid lg:grid-cols-2 lg:grid-rows-[1fr_auto]">
       {/* Full-Screen Modern Black & Light Green Animated Backdrop (Mobile & PC) */}
       <div
         aria-hidden="true"
-        className="pointer-events-none fixed inset-0 lg:absolute bg-gradient-to-br from-[#050507] via-[#07150d] to-[#050507] overflow-hidden"
+        className="pointer-events-none fixed -inset-2 lg:absolute lg:inset-0 bg-gradient-to-br from-[#050507] via-[#07150d] to-[#050507] overflow-hidden"
       >
         <div className="absolute -top-32 -left-24 w-[420px] h-[420px] rounded-full bg-[#4ade80]/15 blur-[110px]" />
         <div className="absolute -bottom-36 -right-20 w-[460px] h-[460px] rounded-full bg-[#22c55e]/15 blur-[120px]" />
@@ -212,7 +212,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
       </div>
 
       {/* 1. Brand Mark & Hero Statement (Mobile: Top-aligned compact hero | Desktop: Left Top/Center) */}
-      <div className="relative z-10 lg:col-start-1 lg:row-start-1 flex-1 flex flex-col justify-start lg:justify-between px-4 pt-3.5 pb-2 sm:p-10 sm:pb-6 lg:p-14 lg:pb-8">
+      <div className="relative z-10 lg:col-start-1 lg:row-start-1 flex-1 flex flex-col justify-start lg:justify-between px-4 pt-[60px] pb-2 sm:p-10 sm:pt-14 sm:pb-6 lg:p-14 lg:pb-8">
         <div className="flex items-center justify-between gap-2">
           <img
             src={EKTALLY_LOGO_URL}
@@ -539,9 +539,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
         </div>
       </div>
 
-      {/* 3. Architectural Highlights (Mobile: Compact bottom row | Desktop: Left Bottom) */}
-      <div className="relative z-10 lg:col-start-1 lg:row-start-2 px-4 pt-2 pb-4 sm:px-10 sm:pb-10 lg:px-14 lg:pt-0 lg:pb-14">
-        <div className="border-t border-[#4ade80]/15 pt-3 sm:pt-5 grid grid-cols-2 gap-3 sm:gap-5 max-w-xl">
+      {/* 3. Architectural Highlights & Footer (Mobile: Compact bottom | Desktop: Left Bottom) */}
+      <div className="relative z-10 lg:col-start-1 lg:row-start-2 px-4 pt-2 pb-4 sm:px-10 sm:pb-8 lg:px-14 lg:pt-0 lg:pb-10">
+        <div className="border-t border-[#22c55e]/15 pt-3 sm:pt-5 grid grid-cols-2 gap-3 sm:gap-5 max-w-xl">
           <div>
             <p className="text-xs font-medium text-[#86efac]">{t.login.highlight1Title}</p>
             <p className="text-[11px] sm:text-xs text-zinc-400 mt-0.5 sm:mt-1 leading-snug sm:leading-relaxed">
@@ -561,6 +561,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
         <div className="mt-3 sm:mt-4 max-w-[220px]">
           <PWAInstallButton />
         </div>
+        <footer className="mt-3 sm:mt-5 max-w-xl">
+          <p className="text-[11px] font-mono text-zinc-500 tracking-wide">
+            Developed by Shihab 2026
+          </p>
+        </footer>
       </div>
     </div>
   );
