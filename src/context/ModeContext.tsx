@@ -83,7 +83,7 @@ export const ModeProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [user, isAuthorized]);
 
   const defaultBusinessId = useMemo(() => {
-    const found = businesses.find((b) => b.isDefault);
+    const found = businesses.find((b) => b.isDefault) || businesses[0];
     if (found) return found.id;
     return user ? getDefaultBusinessId(user.uid) : '';
   }, [businesses, user]);
@@ -152,12 +152,13 @@ export const ModeProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const deleteBusiness = useCallback(
     async (business: BusinessProfile): Promise<void> => {
       if (!user) throw new Error('You must be signed in.');
-      await dbService.deleteBusiness(user, business);
-      if (activeBusinessId === business.id && defaultBusinessId) {
-        setActiveBusinessId(defaultBusinessId);
+      const remaining = businesses.filter((b) => b.id !== business.id);
+      await dbService.deleteBusiness(user, business, remaining);
+      if (activeBusinessId === business.id || selectedBusinessId === business.id) {
+        setActiveBusinessId(remaining[0]?.id || '');
       }
     },
-    [user, activeBusinessId, defaultBusinessId, setActiveBusinessId]
+    [user, businesses, activeBusinessId, selectedBusinessId, setActiveBusinessId]
   );
 
   const matchesBusiness = useCallback(

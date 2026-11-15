@@ -5,6 +5,7 @@ import {
   Building2,
   Check,
   ChevronDown,
+  ChevronRight,
   FileText,
   Handshake,
   LayoutDashboard,
@@ -15,10 +16,13 @@ import {
   Receipt,
   Settings,
   ShieldCheck,
+  Trash2,
   User as UserIcon,
+  UserCircle,
   Users,
   X,
 } from 'lucide-react';
+import { BusinessProfile } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
 import { useLanguage } from '../../context/LanguageContext';
 import { useMode } from '../../context/ModeContext';
@@ -37,7 +41,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
   children,
   headerAction,
 }) => {
-  const { user, isAdmin, logout } = useAuth();
+  const { user, profileDisplayName, profilePhotoUrl, isAdmin, logout } = useAuth();
   const { t } = useLanguage();
   const {
     mode,
@@ -47,6 +51,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
     activeBusinessId,
     setActiveBusinessId,
     addBusiness,
+    deleteBusiness,
   } = useMode();
 
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -58,6 +63,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
   const [sidebarBizName, setSidebarBizName] = useState('');
   const [bizSaving, setBizSaving] = useState(false);
   const [bizError, setBizError] = useState<string | null>(null);
+  const [confirmDeleteBizId, setConfirmDeleteBizId] = useState<string | null>(null);
 
   const bizDropdownRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
@@ -73,12 +79,14 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
           { to: '/partners', label: t.nav.partners, icon: Handshake },
           { to: '/receipts', label: t.nav.receiptStudio, icon: FileText },
           { to: '/settings', label: t.nav.settingsData, icon: Settings },
+          { to: '/profile', label: t.nav.myProfile, icon: UserCircle },
         ]
       : [
           { to: '/', label: t.nav.personalOverview, icon: LayoutDashboard },
           { to: '/expenses', label: t.nav.dailyExpenses, icon: Receipt },
           { to: '/receipts', label: t.nav.receiptStudio, icon: FileText },
           { to: '/settings', label: t.nav.settingsBudget, icon: Settings },
+          { to: '/profile', label: t.nav.myProfile, icon: UserCircle },
         ];
 
   useEffect(() => {
@@ -104,18 +112,23 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, [bizMenuOpen]);
 
+  useEffect(() => {
+    setAvatarFailed(false);
+  }, [profilePhotoUrl]);
+
   const currentNav = location.pathname.startsWith('/admin')
     ? { to: '/admin', label: t.nav.adminPortal, icon: ShieldCheck }
     : navItems.find((item) =>
         item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to)
       ) || navItems[0];
 
-  const displayBusinessName = activeBusiness?.name || businessName;
+  const displayBusinessName =
+    businesses.length === 0 ? t.business.addBusiness : activeBusiness?.name || businessName;
 
   const workspaceLabel =
     mode === 'business'
       ? displayBusinessName
-      : `${user?.displayName || businessName} · ${t.nav.personal}`;
+      : `${profileDisplayName || businessName} · ${t.nav.personal}`;
 
   const handleHeaderAddBusiness = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -144,6 +157,19 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
       setSidebarAddOpen(false);
     } catch (err) {
       setBizError(err instanceof Error ? err.message : 'Unable to add business.');
+    } finally {
+      setBizSaving(false);
+    }
+  };
+
+  const handleDeleteBusiness = async (biz: BusinessProfile) => {
+    setBizError(null);
+    setBizSaving(true);
+    try {
+      await deleteBusiness(biz);
+      setConfirmDeleteBizId(null);
+    } catch (err) {
+      setBizError(err instanceof Error ? err.message : 'Unable to delete business.');
     } finally {
       setBizSaving(false);
     }
@@ -203,21 +229,69 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
             </div>
 
             {businesses.length > 0 ? (
-              <select
-                aria-label={t.business.switchBusiness}
-                value={activeBusinessId}
-                onChange={(e) => setActiveBusinessId(e.target.value)}
-                className="w-full px-2.5 py-2 text-base sm:text-xs font-medium bg-[#121214] text-zinc-100 border border-[#27272a] rounded-md focus:outline-none focus:border-[#22c55e] truncate"
-              >
-                {businesses.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name}
-                  </option>
-                ))}
-              </select>
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-1.5">
+                  <select
+                    aria-label={t.business.switchBusiness}
+                    value={activeBusinessId}
+                    onChange={(e) => {
+                      setActiveBusinessId(e.target.value);
+                      setConfirmDeleteBizId(null);
+                    }}
+                    className="flex-1 min-w-0 px-2.5 py-2 text-base sm:text-xs font-medium bg-[#121214] text-zinc-100 border border-[#27272a] rounded-md focus:outline-none focus:border-[#22c55e] truncate"
+                  >
+                    {businesses.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.name}
+                      </option>
+                    ))}
+                  </select>
+                  {activeBusiness && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setConfirmDeleteBizId((prev) =>
+                          prev === activeBusiness.id ? null : activeBusiness.id
+                        );
+                        setBizError(null);
+                      }}
+                      title={`${t.common.delete} ${activeBusiness.name}`}
+                      aria-label={`${t.common.delete} ${activeBusiness.name}`}
+                      className="min-h-[36px] min-w-[36px] sm:min-h-[30px] sm:min-w-[30px] inline-flex items-center justify-center bg-[#121214] border border-[#27272a] hover:border-red-500/40 text-zinc-400 hover:text-red-400 rounded-md transition-colors cursor-pointer shrink-0"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {activeBusiness && confirmDeleteBizId === activeBusiness.id && (
+                  <div className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-md bg-red-500/10 border border-red-500/30 text-[11px]">
+                    <span className="text-red-300 truncate">
+                      {t.common.delete} {activeBusiness.name}?
+                    </span>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        disabled={bizSaving}
+                        onClick={() => handleDeleteBusiness(activeBusiness)}
+                        className="font-semibold text-red-400 hover:text-red-300 px-1.5 py-0.5 cursor-pointer"
+                      >
+                        {t.common.delete}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmDeleteBizId(null)}
+                        className="text-zinc-400 hover:text-zinc-200 px-1 py-0.5 cursor-pointer"
+                      >
+                        {t.common.no}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             ) : (
-              <div className="px-2.5 py-1.5 text-xs font-medium text-zinc-200 bg-[#121214] border border-[#27272a] rounded-md truncate">
-                {displayBusinessName}
+              <div className="px-2.5 py-1.5 text-xs text-zinc-400 bg-[#121214] border border-[#27272a] rounded-md truncate">
+                {t.business.yourBusinessName}
               </div>
             )}
 
@@ -240,6 +314,9 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
                   {bizSaving ? t.common.saving : t.business.saveName}
                 </button>
               </form>
+            )}
+            {!sidebarAddOpen && bizError && (
+              <p className="text-[11px] text-red-400">{bizError}</p>
             )}
           </div>
         )}
@@ -299,32 +376,45 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
       </nav>
 
       <div className="p-3 border-t border-[#27272a] bg-[#09090b]/60 shrink-0">
-        <div className="flex items-center gap-3 px-2 py-2">
+        <NavLink
+          to="/profile"
+          onClick={() => setMobileOpen(false)}
+          className={({ isActive }) =>
+            cn(
+              'flex items-center gap-3 px-2 py-2 rounded-lg transition-colors border',
+              isActive
+                ? 'bg-[#22c55e]/10 border-[#22c55e]/30'
+                : 'border-transparent hover:bg-[#18181b] hover:border-[#27272a]'
+            )
+          }
+          title={t.nav.myProfile}
+        >
           <div className="w-8 h-8 rounded-full overflow-hidden bg-[#18181b] border border-[#27272a] shrink-0">
-            {!avatarFailed && user?.photoURL ? (
+            {!avatarFailed && profilePhotoUrl ? (
               <img
-                src={user.photoURL}
-                alt={user.displayName || 'Account'}
+                src={profilePhotoUrl}
+                alt={profileDisplayName || 'Account'}
                 referrerPolicy="no-referrer"
                 onError={() => setAvatarFailed(true)}
                 className="w-full h-full object-cover"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-xs font-semibold text-[#4ade80]">
-                {(user?.displayName || user?.email || 'U').charAt(0).toUpperCase()}
+                {(profileDisplayName || user?.email || 'U').charAt(0).toUpperCase()}
               </div>
             )}
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold text-zinc-100 truncate">
-              {user?.displayName || t.nav.workspaceOwner}
+              {profileDisplayName}
             </p>
             <p className="text-[11px] font-mono text-zinc-400 truncate">
               {user?.email}
             </p>
           </div>
-        </div>
-        <PWAInstallButton className="mt-1 mb-1.5" />
+          <ChevronRight className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+        </NavLink>
+        <PWAInstallButton className="mt-1.5 mb-1.5" />
         <button
           type="button"
           onClick={logout}
@@ -409,36 +499,84 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
                     </div>
 
                     <div className="max-h-48 overflow-y-auto space-y-1">
-                      {businesses.map((b) => {
-                        const selected = b.id === activeBusinessId;
-                        return (
-                          <button
-                            key={b.id}
-                            type="button"
-                            onClick={() => {
-                              setActiveBusinessId(b.id);
-                              setBizMenuOpen(false);
-                              setBizError(null);
-                            }}
-                            className={cn(
-                              'w-full flex items-center justify-between gap-2 px-2.5 py-2 text-xs rounded-lg transition-colors cursor-pointer text-left',
-                              selected
-                                ? 'bg-[#22c55e]/15 text-[#4ade80] border border-[#22c55e]/30'
-                                : 'text-zinc-200 hover:bg-[#18181b] border border-transparent'
-                            )}
-                          >
-                            <span className="truncate font-medium">{b.name}</span>
-                            <span className="inline-flex items-center gap-1.5 shrink-0">
-                              {b.isDefault && (
-                                <span className="text-[10px] font-mono text-zinc-400">
-                                  {t.business.primaryBusiness}
+                      {businesses.length === 0 ? (
+                        <p className="text-[11px] text-zinc-400 px-1.5 py-2">
+                          {t.business.yourBusinessName}
+                        </p>
+                      ) : (
+                        businesses.map((b) => {
+                          const selected = b.id === activeBusinessId;
+                          const confirming = confirmDeleteBizId === b.id;
+                          return (
+                            <div key={b.id} className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveBusinessId(b.id);
+                                  setBizMenuOpen(false);
+                                  setBizError(null);
+                                  setConfirmDeleteBizId(null);
+                                }}
+                                className={cn(
+                                  'flex-1 min-w-0 flex items-center justify-between gap-2 px-2.5 py-2 text-xs rounded-lg transition-colors cursor-pointer text-left',
+                                  selected
+                                    ? 'bg-[#22c55e]/15 text-[#4ade80] border border-[#22c55e]/30'
+                                    : 'text-zinc-200 hover:bg-[#18181b] border border-transparent'
+                                )}
+                              >
+                                <span className="truncate font-medium">{b.name}</span>
+                                <span className="inline-flex items-center gap-1.5 shrink-0">
+                                  {b.isDefault && (
+                                    <span className="text-[10px] font-mono text-zinc-400">
+                                      {t.business.primaryBusiness}
+                                    </span>
+                                  )}
+                                  {selected && <Check className="w-3.5 h-3.5 text-[#4ade80]" />}
                                 </span>
+                              </button>
+                              {confirming ? (
+                                <div className="inline-flex items-center gap-1 bg-red-500/10 border border-red-500/30 rounded-md px-1.5 py-1 shrink-0">
+                                  <button
+                                    type="button"
+                                    disabled={bizSaving}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteBusiness(b);
+                                    }}
+                                    className="text-[11px] font-semibold text-red-400 hover:text-red-300 cursor-pointer"
+                                  >
+                                    {t.common.delete}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setConfirmDeleteBizId(null);
+                                    }}
+                                    className="text-[11px] text-zinc-400 hover:text-zinc-200 cursor-pointer"
+                                  >
+                                    {t.common.no}
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setConfirmDeleteBizId(b.id);
+                                    setBizError(null);
+                                  }}
+                                  title={`${t.common.delete} ${b.name}`}
+                                  aria-label={`${t.common.delete} ${b.name}`}
+                                  className="p-1.5 text-zinc-500 hover:text-red-400 rounded-md transition-colors cursor-pointer shrink-0"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
                               )}
-                              {selected && <Check className="w-3.5 h-3.5 text-[#4ade80]" />}
-                            </span>
-                          </button>
-                        );
-                      })}
+                            </div>
+                          );
+                        })
+                      )}
                     </div>
 
                     <form
@@ -514,26 +652,86 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
         {(mode === 'business' || headerAction) && (
           <div className="md:hidden bg-[#121214]/70 border-b border-[#27272a] px-4 py-2.5 flex flex-col gap-2 no-print">
             {mode === 'business' && (
-              <div className="flex items-center justify-between gap-2">
-                <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-zinc-400 shrink-0">
-                  <Building2 className="w-3.5 h-3.5 text-[#4ade80]" />
-                  <span>{t.business.activeBusinessLabel}</span>
-                </span>
-                {businesses.length > 0 ? (
-                  <select
-                    aria-label={t.business.switchBusiness}
-                    value={activeBusinessId}
-                    onChange={(e) => setActiveBusinessId(e.target.value)}
-                    className="flex-1 min-w-0 max-w-[65%] px-2.5 py-1.5 text-sm font-medium bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg focus:outline-none focus:border-[#22c55e] truncate"
-                  >
-                    {businesses.map((b) => (
-                      <option key={b.id} value={b.id}>
-                        {b.name}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <span className="text-xs font-medium text-zinc-200 truncate">{displayBusinessName}</span>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-zinc-400 shrink-0">
+                    <Building2 className="w-3.5 h-3.5 text-[#4ade80]" />
+                    <span>{t.business.activeBusinessLabel}</span>
+                  </span>
+                  <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
+                    {businesses.length > 0 ? (
+                      <>
+                        <select
+                          aria-label={t.business.switchBusiness}
+                          value={activeBusinessId}
+                          onChange={(e) => {
+                            setActiveBusinessId(e.target.value);
+                            setConfirmDeleteBizId(null);
+                          }}
+                          className="flex-1 min-w-0 max-w-[180px] px-2.5 py-1.5 text-sm font-medium bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg focus:outline-none focus:border-[#22c55e] truncate"
+                        >
+                          {businesses.map((b) => (
+                            <option key={b.id} value={b.id}>
+                              {b.name}
+                            </option>
+                          ))}
+                        </select>
+                        {activeBusiness && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setConfirmDeleteBizId((prev) =>
+                                prev === activeBusiness.id ? null : activeBusiness.id
+                              );
+                              setBizError(null);
+                            }}
+                            title={`${t.common.delete} ${activeBusiness.name}`}
+                            aria-label={`${t.common.delete} ${activeBusiness.name}`}
+                            className="min-h-[34px] min-w-[34px] inline-flex items-center justify-center bg-[#09090b] border border-[#27272a] hover:border-red-500/40 text-zinc-400 hover:text-red-400 rounded-lg transition-colors cursor-pointer shrink-0"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSidebarAddOpen(true);
+                          setMobileOpen(true);
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-[#4ade80] bg-[#22c55e]/10 border border-[#22c55e]/30 rounded-lg cursor-pointer"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>{t.business.addBusiness}</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {activeBusiness && confirmDeleteBizId === activeBusiness.id && (
+                  <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-red-500/10 border border-red-500/30 text-xs">
+                    <span className="text-red-300 truncate">
+                      {t.common.delete} {activeBusiness.name}?
+                    </span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        disabled={bizSaving}
+                        onClick={() => handleDeleteBusiness(activeBusiness)}
+                        className="font-semibold text-red-400 hover:text-red-300 px-1.5 py-0.5 cursor-pointer"
+                      >
+                        {t.common.delete}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmDeleteBizId(null)}
+                        className="text-zinc-400 hover:text-zinc-200 px-1.5 py-0.5 cursor-pointer"
+                      >
+                        {t.common.no}
+                      </button>
+                    </div>
+                  </div>
                 )}
               </div>
             )}

@@ -226,6 +226,33 @@ export const customerReceiptSchema = receiptTemplateSchema.extend({
   dueAmount: z.coerce.number().min(0).max(999999999),
 });
 
+export const userProfileSchema = z.object({
+  displayName: z
+    .string()
+    .trim()
+    .min(2, 'Your name is required.')
+    .max(120, 'Name must be 120 characters or fewer.'),
+  photoUrl: z.string().max(80000).default(''),
+});
+
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, 'Current password is required.').max(128),
+    newPassword: z
+      .string()
+      .min(6, 'Password must be at least 6 characters.')
+      .max(128),
+    confirmPassword: z.string().min(1, 'Please confirm your new password.').max(128),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: 'Passwords do not match.',
+    path: ['confirmPassword'],
+  })
+  .refine((data) => data.currentPassword !== data.newPassword, {
+    message: 'New password must be different from your current password.',
+    path: ['newPassword'],
+  });
+
 export type LoginFormValues = z.infer<typeof loginSchema>;
 export type RegisterFormValues = z.infer<typeof registerSchema>;
 export type ExpenseFormValues = z.infer<typeof expenseSchema>;
@@ -235,3 +262,5 @@ export type BusinessPartnerFormValues = z.infer<typeof businessPartnerSchema>;
 export type SettingsFormValues = z.infer<typeof settingsSchema>;
 export type ReceiptTemplateFormValues = z.infer<typeof receiptTemplateSchema>;
 export type CustomerReceiptFormValues = z.infer<typeof customerReceiptSchema>;
+export type UserProfileFormValues = z.infer<typeof userProfileSchema>;
+export type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;

@@ -341,3 +341,12 @@ export interface AdminUser {
   createdAt?: Timestamp;
 }
 
+export interface UserProfileData {
+  id: string;
+  userId: string;
+  displayName: string;
+  photoUrl: string;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+

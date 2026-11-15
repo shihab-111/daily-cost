@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Building2,
   Check,
@@ -7,6 +8,7 @@ import {
   Plus,
   ShieldCheck,
   Trash2,
+  UserCircle,
   Wallet,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
@@ -129,7 +131,7 @@ export const SettingsPage: React.FC = () => {
     } catch (err) {
       setBizMsg({
         type: 'err',
-        text: err instanceof Error ? err.message : t.business.cannotDeletePrimary,
+        text: err instanceof Error ? err.message : 'Unable to delete business.',
       });
     } finally {
       setBizSaving(false);
@@ -160,7 +162,7 @@ export const SettingsPage: React.FC = () => {
     setSavingSettings(true);
     try {
       await dbService.saveSettings(user, parsed.data, Boolean(settings));
-      const defaultBiz = businesses.find((b) => b.isDefault);
+      const defaultBiz = businesses.find((b) => b.isDefault) || businesses[0];
       if (defaultBiz && defaultBiz.name !== parsed.data.businessName) {
         await renameBusiness(defaultBiz, parsed.data.businessName);
       }
@@ -230,101 +232,105 @@ export const SettingsPage: React.FC = () => {
           </form>
 
           <div className="divide-y divide-[#27272a] border border-[#27272a] rounded-lg bg-[#09090b]">
-            {businesses.map((biz) => {
-              const isSelected = biz.id === activeBusinessId;
-              const isEditing = editingBizId === biz.id;
-              return (
-                <div
-                  key={biz.id}
-                  className="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                    {isEditing ? (
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-1 w-full max-w-md">
-                        <input
-                          type="text"
-                          maxLength={140}
-                          value={editingBizName}
-                          onChange={(e) => setEditingBizName(e.target.value)}
-                          className="w-full sm:flex-1 px-2.5 py-2 sm:py-1.5 text-base sm:text-sm bg-[#121214] text-zinc-100 border border-[#22c55e]/60 rounded-lg focus:outline-none"
-                        />
-                        <div className="flex items-center gap-2">
-                          <Button
-                            type="button"
-                            size="sm"
-                            className="flex-1 sm:flex-none min-h-[38px] sm:min-h-0"
-                            disabled={bizSaving || !editingBizName.trim()}
-                            onClick={() => handleSaveRename(biz)}
-                          >
-                            <Check className="w-3.5 h-3.5" />
-                            {t.business.saveName}
-                          </Button>
+            {businesses.length === 0 ? (
+              <div className="p-4 text-xs text-zinc-400">
+                {t.business.yourBusinessName}
+              </div>
+            ) : (
+              businesses.map((biz) => {
+                const isSelected = biz.id === activeBusinessId;
+                const isEditing = editingBizId === biz.id;
+                return (
+                  <div
+                    key={biz.id}
+                    className="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      {isEditing ? (
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-1 w-full max-w-md">
+                          <input
+                            type="text"
+                            maxLength={140}
+                            value={editingBizName}
+                            onChange={(e) => setEditingBizName(e.target.value)}
+                            className="w-full sm:flex-1 px-2.5 py-2 sm:py-1.5 text-base sm:text-sm bg-[#121214] text-zinc-100 border border-[#22c55e]/60 rounded-lg focus:outline-none"
+                          />
+                          <div className="flex items-center gap-2">
+                            <Button
+                              type="button"
+                              size="sm"
+                              className="flex-1 sm:flex-none min-h-[38px] sm:min-h-0"
+                              disabled={bizSaving || !editingBizName.trim()}
+                              onClick={() => handleSaveRename(biz)}
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                              {t.business.saveName}
+                            </Button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingBizId(null)}
+                              className="text-xs text-zinc-400 hover:text-zinc-200 px-2.5 min-h-[38px] sm:min-h-0 cursor-pointer"
+                            >
+                              {t.expenses.cancelEdit}
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
                           <button
                             type="button"
-                            onClick={() => setEditingBizId(null)}
-                            className="text-xs text-zinc-400 hover:text-zinc-200 px-2.5 min-h-[38px] sm:min-h-0 cursor-pointer"
+                            onClick={() => setActiveBusinessId(biz.id)}
+                            className="text-left min-w-0 flex items-center gap-2 cursor-pointer group"
                           >
-                            {t.expenses.cancelEdit}
+                            <span
+                              className={`w-2 h-2 rounded-full shrink-0 ${
+                                isSelected ? 'bg-[#22c55e]' : 'bg-zinc-600 group-hover:bg-zinc-400'
+                              }`}
+                            />
+                            <span
+                              className={`text-sm font-medium truncate ${
+                                isSelected ? 'text-[#4ade80]' : 'text-zinc-100'
+                              }`}
+                            >
+                              {biz.name}
+                            </span>
                           </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
+                          {biz.isDefault && (
+                            <span className="text-[10px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#18181b] border border-[#27272a] text-zinc-400 shrink-0">
+                              {t.business.primaryBusiness}
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </div>
+
+                    {!isEditing && (
+                      <div className="flex flex-wrap items-center gap-2 shrink-0">
+                        {!isSelected && (
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            className="min-h-[38px] sm:min-h-0"
+                            onClick={() => setActiveBusinessId(biz.id)}
+                          >
+                            {t.business.switchBusiness}
+                          </Button>
+                        )}
                         <button
                           type="button"
-                          onClick={() => setActiveBusinessId(biz.id)}
-                          className="text-left min-w-0 flex items-center gap-2 cursor-pointer group"
+                          onClick={() => {
+                            setEditingBizId(biz.id);
+                            setEditingBizName(biz.name);
+                            setBizMsg(null);
+                          }}
+                          title={t.business.rename}
+                          aria-label={`${t.business.rename} ${biz.name}`}
+                          className="min-h-[38px] min-w-[38px] sm:min-h-0 sm:min-w-0 inline-flex items-center justify-center p-1.5 text-zinc-400 hover:text-[#4ade80] rounded-md cursor-pointer"
                         >
-                          <span
-                            className={`w-2 h-2 rounded-full shrink-0 ${
-                              isSelected ? 'bg-[#22c55e]' : 'bg-zinc-600 group-hover:bg-zinc-400'
-                            }`}
-                          />
-                          <span
-                            className={`text-sm font-medium truncate ${
-                              isSelected ? 'text-[#4ade80]' : 'text-zinc-100'
-                            }`}
-                          >
-                            {biz.name}
-                          </span>
+                          <Edit3 className="w-4 h-4" />
                         </button>
-                        {biz.isDefault && (
-                          <span className="text-[10px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#18181b] border border-[#27272a] text-zinc-400 shrink-0">
-                            {t.business.primaryBusiness}
-                          </span>
-                        )}
-                      </>
-                    )}
-                  </div>
-
-                  {!isEditing && (
-                    <div className="flex flex-wrap items-center gap-2 shrink-0">
-                      {!isSelected && (
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          size="sm"
-                          className="min-h-[38px] sm:min-h-0"
-                          onClick={() => setActiveBusinessId(biz.id)}
-                        >
-                          {t.business.switchBusiness}
-                        </Button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditingBizId(biz.id);
-                          setEditingBizName(biz.name);
-                          setBizMsg(null);
-                        }}
-                        title={t.business.rename}
-                        aria-label={`${t.business.rename} ${biz.name}`}
-                        className="min-h-[38px] min-w-[38px] sm:min-h-0 sm:min-w-0 inline-flex items-center justify-center p-1.5 text-zinc-400 hover:text-[#4ade80] rounded-md cursor-pointer"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                      </button>
-                      {!biz.isDefault &&
-                        (confirmDeleteBizId === biz.id ? (
+                        {confirmDeleteBizId === biz.id ? (
                           <div className="inline-flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded px-2.5 py-1.5 sm:py-0.5">
                             <button
                               type="button"
@@ -351,12 +357,13 @@ export const SettingsPage: React.FC = () => {
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
-                        ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
           </div>
         </Card>
 
@@ -478,14 +485,25 @@ export const SettingsPage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="p-4 rounded-lg bg-[#09090b] border border-[#27272a] space-y-1 min-w-0">
-              <p className="text-[11px] font-mono text-zinc-400 uppercase">
-                {t.settings.verifiedAccount}
-              </p>
-              <p className="text-sm font-medium text-zinc-100 truncate">{user?.email}</p>
-              <p className="text-[11px] font-mono text-[#4ade80] truncate">
-                UID: {user?.uid}
-              </p>
+            <div className="p-4 rounded-lg bg-[#09090b] border border-[#27272a] flex flex-col justify-between gap-3 min-w-0">
+              <div className="space-y-1 min-w-0">
+                <p className="text-[11px] font-mono text-zinc-400 uppercase">
+                  {t.settings.verifiedAccount}
+                </p>
+                <p className="text-sm font-medium text-zinc-100 truncate">{user?.email}</p>
+                <p className="text-[11px] font-mono text-[#4ade80] truncate">
+                  UID: {user?.uid}
+                </p>
+              </div>
+              <div>
+                <Link
+                  to="/profile"
+                  className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#18181b] text-zinc-100 border border-[#27272a] hover:bg-zinc-800 rounded-lg transition-colors whitespace-nowrap"
+                >
+                  <UserCircle className="w-3.5 h-3.5 text-[#4ade80]" />
+                  {t.profile.manageProfileBtn}
+                </Link>
+              </div>
             </div>
 
             <div className="p-4 rounded-lg bg-[#09090b] border border-[#27272a] flex flex-col justify-between gap-3">

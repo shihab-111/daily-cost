@@ -42,6 +42,7 @@ export interface TranslationStrings {
     receiptStudio: string;
     settingsData: string;
     settingsBudget: string;
+    myProfile: string;
     activeMode: string;
     business: string;
     personal: string;
@@ -289,6 +290,39 @@ export interface TranslationStrings {
     allExpensesCsv: string;
     inventoryCsv: string;
   };
+  profile: {
+    sectionTitle: string;
+    sectionDesc: string;
+    photoLabel: string;
+    photoHint: string;
+    uploadPhoto: string;
+    changePhoto: string;
+    removePhoto: string;
+    displayNameLabel: string;
+    displayNamePlaceholder: string;
+    emailLabel: string;
+    emailReadOnlyHint: string;
+    saveProfile: string;
+    profileSaved: string;
+    verifiedBadge: string;
+    roleAdmin: string;
+    roleOwner: string;
+    passwordSectionTitle: string;
+    passwordSectionDesc: string;
+    currentPasswordLabel: string;
+    currentPasswordPlaceholder: string;
+    newPasswordLabel: string;
+    newPasswordPlaceholder: string;
+    confirmPasswordLabel: string;
+    confirmPasswordPlaceholder: string;
+    passwordHint: string;
+    updatePassword: string;
+    updatingPassword: string;
+    passwordUpdated: string;
+    providerNoPassword: string;
+    manageProfileBtn: string;
+    invalidImageFile: string;
+  };
   business: {
     yourBusinessName: string;
     activeBusinessLabel: string;
@@ -401,6 +435,7 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       receiptStudio: 'Receipt Studio',
       settingsData: 'Settings & Data',
       settingsBudget: 'Settings & Budget',
+      myProfile: 'My Profile',
       activeMode: 'Active Mode',
       business: 'Business',
       personal: 'Personal',
@@ -657,6 +692,39 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       allExpensesCsv: 'All Expenses CSV',
       inventoryCsv: 'Inventory CSV',
     },
+    profile: {
+      sectionTitle: 'My Profile',
+      sectionDesc: 'Manage your profile photo, display name, and verified account details.',
+      photoLabel: 'Profile Photo',
+      photoHint: 'JPEG, PNG, or WebP · Automatically cropped and optimized',
+      uploadPhoto: 'Upload Photo',
+      changePhoto: 'Change Photo',
+      removePhoto: 'Remove Photo',
+      displayNameLabel: 'Full Name *',
+      displayNamePlaceholder: 'e.g., Tanvir Ahmed',
+      emailLabel: 'Account Email',
+      emailReadOnlyHint: 'Verified sign-in email cannot be edited directly.',
+      saveProfile: 'Save Profile',
+      profileSaved: 'Profile photo and name updated successfully.',
+      verifiedBadge: 'Email Verified',
+      roleAdmin: 'Administrator',
+      roleOwner: 'Workspace Owner',
+      passwordSectionTitle: 'Change Password',
+      passwordSectionDesc: 'Verify your current password to set a new account password.',
+      currentPasswordLabel: 'Current Password *',
+      currentPasswordPlaceholder: 'Enter your current password',
+      newPasswordLabel: 'New Password *',
+      newPasswordPlaceholder: 'Minimum 6 characters',
+      confirmPasswordLabel: 'Confirm New Password *',
+      confirmPasswordPlaceholder: 'Re-enter new password',
+      passwordHint: 'Use at least 6 characters that differ from your current password.',
+      updatePassword: 'Update Password',
+      updatingPassword: 'Updating Password...',
+      passwordUpdated: 'Your password has been updated.',
+      providerNoPassword: 'Password change is unavailable for this sign-in provider.',
+      manageProfileBtn: 'Manage Profile & Password',
+      invalidImageFile: 'Please choose a valid JPEG, PNG, or WebP image file.',
+    },
     business: {
       yourBusinessName: 'Add your business name',
       activeBusinessLabel: 'Active Business',
@@ -768,6 +836,7 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       receiptStudio: 'রসিদ / মেমো স্টুডিও',
       settingsData: 'সেটিংস ও ডেটা',
       settingsBudget: 'সেটিংস ও বাজেট',
+      myProfile: 'আমার প্রোফাইল',
       activeMode: 'বর্তমান মোড',
       business: 'ব্যবসা',
       personal: 'ব্যক্তিগত',
@@ -1023,6 +1092,39 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       allExpensesCsv: 'সব খরচের CSV',
       inventoryCsv: 'স্টক CSV',
     },
+    profile: {
+      sectionTitle: 'আমার প্রোফাইল',
+      sectionDesc: 'আপনার প্রোফাইল ছবি, নাম এবং ভেরিফায়েড অ্যাকাউন্টের তথ্য পরিবর্তন করুন।',
+      photoLabel: 'প্রোফাইল ছবি',
+      photoHint: 'JPEG, PNG বা WebP · স্বয়ংক্রিয়ভাবে ক্রপ ও অপ্টিমাইজ হবে',
+      uploadPhoto: 'ছবি আপলোড করুন',
+      changePhoto: 'ছবি পরিবর্তন করুন',
+      removePhoto: 'ছবি মুছুন',
+      displayNameLabel: 'আপনার নাম *',
+      displayNamePlaceholder: 'যেমন: তানভীর আহমেদ',
+      emailLabel: 'অ্যাকাউন্ট ইমেইল',
+      emailReadOnlyHint: 'ভেরিফায়েড সাইন-ইন ইমেইল এখান থেকে পরিবর্তন করা যায় না।',
+      saveProfile: 'প্রোফাইল সংরক্ষণ করুন',
+      profileSaved: 'আপনার প্রোফাইল ছবি ও নাম সফলভাবে সংরক্ষণ হয়েছে।',
+      verifiedBadge: 'ইমেইল ভেরিফায়েড',
+      roleAdmin: 'অ্যাডমিনিস্ট্রেটর',
+      roleOwner: 'ওয়ার্কস্পেস মালিক',
+      passwordSectionTitle: 'পাসওয়ার্ড পরিবর্তন',
+      passwordSectionDesc: 'নতুন পাসওয়ার্ড সেট করতে আপনার বর্তমান পাসওয়ার্ড যাচাই করুন।',
+      currentPasswordLabel: 'বর্তমান পাসওয়ার্ড *',
+      currentPasswordPlaceholder: 'বর্তমান পাসওয়ার্ড লিখুন',
+      newPasswordLabel: 'নতুন পাসওয়ার্ড *',
+      newPasswordPlaceholder: 'কমপক্ষে ৬ অক্ষরের পাসওয়ার্ড',
+      confirmPasswordLabel: 'নতুন পাসওয়ার্ড নিশ্চিত করুন *',
+      confirmPasswordPlaceholder: 'আবার নতুন পাসওয়ার্ড লিখুন',
+      passwordHint: 'কমপক্ষে ৬ অক্ষরের পাসওয়ার্ড দিন যা বর্তমান পাসওয়ার্ড থেকে আলাদা।',
+      updatePassword: 'পাসওয়ার্ড আপডেট করুন',
+      updatingPassword: 'আপডেট হচ্ছে...',
+      passwordUpdated: 'আপনার পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে।',
+      providerNoPassword: 'এই সাইন-ইন মাধ্যমের জন্য পাসওয়ার্ড পরিবর্তন প্রযোজ্য নয়।',
+      manageProfileBtn: 'প্রোফাইল ও পাসওয়ার্ড',
+      invalidImageFile: 'অনুগ্রহ করে একটি সঠিক JPEG, PNG বা WebP ছবি নির্বাচন করুন।',
+    },
     business: {
       yourBusinessName: 'আপনার ব্যবসার নাম যোগ করুন',
       activeBusinessLabel: 'বর্তমান ব্যবসা',
@@ -1100,6 +1202,11 @@ const VALIDATION_BN_MAP: Record<string, string> = {
   'Your name is required.': 'আপনার নাম লিখুন।',
   'Business or workspace name is required.': 'ব্যবসা বা ওয়ার্কস্পেসের নাম লিখুন।',
   'Passwords do not match.': 'দুটি পাসওয়ার্ড মিলছে না।',
+  'Current password is required.': 'বর্তমান পাসওয়ার্ড লিখুন।',
+  'Please confirm your new password.': 'নতুন পাসওয়ার্ডটি নিশ্চিত করুন।',
+  'New password must be different from your current password.':
+    'নতুন পাসওয়ার্ড অবশ্যই বর্তমান পাসওয়ার্ড থেকে আলাদা হতে হবে।',
+  'Name must be 120 characters or fewer.': 'নাম সর্বোচ্চ ১২০ অক্ষরের মধ্যে হতে হবে।',
 };
 
 export function translateValidationMessage(

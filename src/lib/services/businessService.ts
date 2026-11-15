@@ -4,6 +4,8 @@ import {
   deleteDoc,
   doc,
   getDoc,
+  getDocs,
+  limit,
   onSnapshot,
   query,
   serverTimestamp,
@@ -16,6 +18,28 @@ import { BusinessProfile } from '../../types';
 import { generateSafeId } from '../utils';
 
 const inFlightDefaultEnsure = new Map<string, Promise<void>>();
+const BIZ_CLEARED_PREFIX = 'bd_ledger_biz_cleared_';
+
+function isBusinessesCleared(uid: string): boolean {
+  try {
+    return typeof window !== 'undefined' && window.localStorage.getItem(`${BIZ_CLEARED_PREFIX}${uid}`) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function setBusinessesCleared(uid: string, cleared: boolean): void {
+  try {
+    if (typeof window === 'undefined') return;
+    if (cleared) {
+      window.localStorage.setItem(`${BIZ_CLEARED_PREFIX}${uid}`, '1');
+    } else {
+      window.localStorage.removeItem(`${BIZ_CLEARED_PREFIX}${uid}`);
+    }
+  } catch {
+    // ignore storage errors
+  }
+}
 
 export function getDefaultBusinessId(uid: string): string {
   return `biz_default_${uid}`;
@@ -25,6 +49,10 @@ export async function ensureDefaultBusiness(
   user: User,
   defaultName?: string
 ): Promise<void> {
+  if (isBusinessesCleared(user.uid)) {
+    return;
+  }
+
   const existingPromise = inFlightDefaultEnsure.get(user.uid);
   if (existingPromise) {
     return existingPromise;
@@ -44,6 +72,17 @@ export async function ensureDefaultBusiness(
     }
 
     if (exists) return;
+
+    try {
+      const anyBizSnap = await getDocs(
+        query(collection(db, 'businesses'), where('userId', '==', user.uid), limit(1))
+      );
+      if (!anyBizSnap.empty) {
+        return;
+      }
+    } catch {
+      // fall through only if list check is unavailable
+    }
 
     let resolvedName = defaultName?.trim() || '';
     if (!resolvedName) {
@@ -92,7 +131,9 @@ export function subscribeBusinesses(
   return onSnapshot(
     q,
     (snap) => {
-      if (snap.empty && (typeof navigator === 'undefined' || navigator.onLine)) {
+      if (!snap.empty) {
+        setBusinessesCleared(user.uid, false);
+      } else if (!isBusinessesCleared(user.uid) && (typeof navigator === 'undefined' || navigator.onLine)) {
         ensureDefaultBusiness(user).catch((err) => {
           onError(err instanceof Error ? err : new Error(String(err)));
         });
@@ -131,6 +172,9 @@ export async function addBusiness(
   if (!cleanName) {
     throw new Error('Business name is required.');
   }
+  const wasCleared = isBusinessesCleared(user.uid);
+  setBusinessesCleared(user.uid, false);
+
   const businessId = generateSafeId('biz');
   const path = `businesses/${businessId}`;
 
@@ -145,6 +189,24 @@ export async function addBusiness(
     OperationType.CREATE,
     path
   );
+
+  if (wasCleared) {
+    try {
+      const settingsSnap = await getDoc(doc(db, 'settings', user.uid));
+      if (settingsSnap.exists()) {
+        await commitOfflineSafe(
+          updateDoc(doc(db, 'settings', user.uid), {
+            businessName: cleanName,
+            updatedAt: serverTimestamp(),
+          }),
+          OperationType.UPDATE,
+          `settings/${user.uid}`
+        );
+      }
+    } catch {
+      // best-effort sync
+    }
+  }
 
   return {
     id: businessId,
@@ -193,16 +255,38 @@ export async function renameBusiness(
 }
 
 export async function deleteBusiness(
-  _user: User,
-  business: BusinessProfile
+  user: User,
+  business: BusinessProfile,
+  remainingBusinesses: BusinessProfile[] = []
 ): Promise<void> {
-  if (business.isDefault) {
-    throw new Error('Primary business cannot be deleted.');
+  if (remainingBusinesses.length === 0) {
+    setBusinessesCleared(user.uid, true);
   }
+
   const path = `businesses/${business.id}`;
   await commitOfflineSafe(
     deleteDoc(doc(db, 'businesses', business.id)),
     OperationType.DELETE,
     path
   );
+
+  const nextName = remainingBusinesses[0]?.name?.trim() || 'EkTally';
+  try {
+    const settingsSnap = await getDoc(doc(db, 'settings', user.uid));
+    if (settingsSnap.exists()) {
+      const currentName = (settingsSnap.data() as { businessName?: string })?.businessName;
+      if (business.isDefault || currentName === business.name || remainingBusinesses.length === 0) {
+        await commitOfflineSafe(
+          updateDoc(doc(db, 'settings', user.uid), {
+            businessName: nextName.slice(0, 140),
+            updatedAt: serverTimestamp(),
+          }),
+          OperationType.UPDATE,
+          `settings/${user.uid}`
+        );
+      }
+    }
+  } catch {
+    // best-effort sync with primary settings document
+  }
 }

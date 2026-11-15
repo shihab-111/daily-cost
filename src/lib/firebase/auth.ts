@@ -2,10 +2,13 @@ import {
   browserLocalPersistence,
   browserSessionPersistence,
   createUserWithEmailAndPassword,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
   sendEmailVerification,
   setPersistence,
   signInWithEmailAndPassword,
   signOut,
+  updatePassword,
   updateProfile,
   User,
   UserCredential,
@@ -79,6 +82,47 @@ export async function sendVerificationToUser(user: User) {
     }
   }
   return sendEmailVerification(user);
+}
+
+export async function updateUserAuthProfile(
+  user: User,
+  updates: { displayName?: string; photoURL?: string }
+): Promise<void> {
+  const payload: { displayName?: string; photoURL?: string | null } = {};
+  if (typeof updates.displayName === 'string' && updates.displayName.trim()) {
+    payload.displayName = updates.displayName.trim().slice(0, 120);
+  }
+  if (updates.photoURL !== undefined) {
+    // Firebase Auth photoURL only supports short URLs (< ~2048 chars), not large data URLs.
+    if (updates.photoURL === '') {
+      payload.photoURL = '';
+    } else if (
+      updates.photoURL.startsWith('https://') &&
+      updates.photoURL.length <= 1900
+    ) {
+      payload.photoURL = updates.photoURL;
+    }
+  }
+  if (Object.keys(payload).length === 0) return;
+  await updateProfile(user, payload as { displayName?: string | null; photoURL?: string | null });
+}
+
+export function hasPasswordProvider(user: User | null): boolean {
+  if (!user) return false;
+  return user.providerData.some((p) => p.providerId === 'password');
+}
+
+export async function changeUserPassword(
+  user: User,
+  currentPassword: string,
+  newPassword: string
+): Promise<void> {
+  if (!user.email) {
+    throw new Error('No email address is associated with this account.');
+  }
+  const credential = EmailAuthProvider.credential(user.email, currentPassword);
+  await reauthenticateWithCredential(user, credential);
+  await updatePassword(user, newPassword);
 }
 
 export async function signOutUser() {

@@ -93,6 +93,44 @@ export async function processImageAsset(file: File): Promise<ProcessedImageAsset
   };
 }
 
+export async function processAvatarImage(file: File): Promise<string> {
+  if (!file.type.startsWith('image/')) {
+    throw new Error(`Unsupported file "${file.name}". Please select a JPEG, PNG, or WebP image.`);
+  }
+
+  const img = await loadImage(file);
+  const srcSize = Math.min(img.naturalWidth, img.naturalHeight);
+  const sx = Math.max(0, Math.round((img.naturalWidth - srcSize) / 2));
+  const sy = Math.max(0, Math.round((img.naturalHeight - srcSize) / 2));
+
+  const renderSquare = (dim: number, quality: number): string => {
+    const canvas = document.createElement('canvas');
+    canvas.width = dim;
+    canvas.height = dim;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Canvas 2D context is unavailable.');
+    ctx.fillStyle = '#09090b';
+    ctx.fillRect(0, 0, dim, dim);
+    ctx.drawImage(img, sx, sy, srcSize, srcSize, 0, 0, dim, dim);
+    return canvas.toDataURL('image/jpeg', quality);
+  };
+
+  let dim = 320;
+  let quality = 0.82;
+  let dataUrl = renderSquare(dim, quality);
+
+  while (dataUrl.length > MAX_THUMB_DATA_URL_CHARS && quality > 0.4) {
+    quality -= 0.1;
+    dataUrl = renderSquare(dim, quality);
+  }
+  while (dataUrl.length > MAX_THUMB_DATA_URL_CHARS && dim > 160) {
+    dim = Math.round(dim * 0.78);
+    dataUrl = renderSquare(dim, 0.7);
+  }
+
+  return dataUrl;
+}
+
 /**
  * Attempts Firebase Storage upload when bucket rules allow it;
  * gracefully falls back to the compressed base64 dataUrl stored inside

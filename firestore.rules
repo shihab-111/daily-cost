@@ -417,6 +417,16 @@ service cloud.firestore {
         && data.createdAt is timestamp;
     }
 
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['userId', 'displayName', 'photoUrl', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['userId', 'displayName', 'photoUrl', 'createdAt', 'updatedAt'])
+        && isValidId(data.userId)
+        && data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 120
+        && data.photoUrl is string && data.photoUrl.size() <= 80000
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
     // --- Collection Rules (Strict Per-Tenant userId Isolation) ---
 
     // 0. Admin Directory (/admins/{adminUid})
@@ -769,8 +779,7 @@ service cloud.firestore {
         && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'updatedAt']);
       allow delete: if isVerified()
         && isValidId(businessId)
-        && existing().userId == request.auth.uid
-        && existing().isDefault == false;
+        && existing().userId == request.auth.uid;
     }
 
     // 11. Business Partners (Investment & Due tracking, strictly owned by userId)
@@ -795,6 +804,29 @@ service cloud.firestore {
           'currency', 'notes', 'updatedAt'
         ]);
       allow delete: if isVerified() && isValidId(partnerId) && existing().userId == request.auth.uid;
+    }
+
+    // 12. Per-User Profile (/userProfiles/{userId})
+    match /userProfiles/{userId} {
+      allow get: if isVerified() && isValidId(userId) && ((isOwner(userId) && (resource == null || existing().userId == request.auth.uid)) || isAdmin());
+      allow list: if isAdmin() || (isVerified() && resource.data.userId == request.auth.uid);
+      allow create: if isVerified()
+        && isValidId(userId)
+        && isOwner(userId)
+        && isValidUserProfile(incoming())
+        && incoming().userId == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isVerified()
+        && isValidId(userId)
+        && isOwner(userId)
+        && isValidUserProfile(incoming())
+        && existing().userId == request.auth.uid
+        && incoming().userId == existing().userId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoUrl', 'updatedAt']);
+      allow delete: if false;
     }
   }
 }

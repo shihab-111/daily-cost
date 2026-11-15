@@ -1,15 +1,20 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { useLanguage } from '../context/LanguageContext';
+import { UserProfileData } from '../types';
 import { auth } from '../lib/firebase/client';
 import {
+  changeUserPassword,
+  hasPasswordProvider,
   isUserVerified,
   registerWithUserEmail,
   sendVerificationToUser,
   signInWithUserEmail,
   signOutUser,
+  updateUserAuthProfile,
 } from '../lib/firebase/auth';
 import { dbService } from '../lib/firebase/db';
+import { processAvatarImage, tryUploadToStorageOrFallback } from '../lib/firebase/storage';
 
 const PENDING_PROFILE_PREFIX = 'ektally_pending_profile_';
 
@@ -73,6 +78,10 @@ function isNetworkOrOfflineError(err: unknown): boolean {
 
 interface AuthContextValue {
   user: User | null;
+  userProfile: UserProfileData | null;
+  profileDisplayName: string;
+  profilePhotoUrl: string;
+  canChangePassword: boolean;
   authLoading: boolean;
   verifyingTenant: boolean;
   isAuthorized: boolean;
@@ -91,6 +100,12 @@ interface AuthContextValue {
   ) => Promise<{ verificationSent: boolean; verificationError?: string }>;
   resendVerification: () => Promise<void>;
   refreshVerificationStatus: () => Promise<boolean>;
+  updateMyProfile: (input: {
+    displayName: string;
+    photoFile?: File | null;
+    photoUrl?: string;
+  }) => Promise<void>;
+  changeMyPassword: (currentPassword: string, newPassword: string) => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
 }
@@ -100,6 +115,8 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { language, t } = useLanguage();
   const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfileData | null>(null);
+  const [, setProfileRevision] = useState(0);
   const [authLoading, setAuthLoading] = useState(true);
   const [verifyingTenant, setVerifyingTenant] = useState(false);
   const [isAuthorized, setIsAuthorized] = useState(false);
@@ -222,6 +239,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (!nextUser) {
         pendingOnlineSyncRef.current = null;
+        setUserProfile(null);
         setIsAuthorized(false);
         setIsAdmin(false);
         setAuthLoading(false);
@@ -236,6 +254,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return () => unsub();
   }, [hydrateTenant]);
+
+  useEffect(() => {
+    if (!user || !isAuthorized) {
+      setUserProfile(null);
+      return;
+    }
+    const unsub = dbService.subscribeUserProfile(
+      user,
+      (profile) => setUserProfile(profile),
+      () => {
+        // Non-fatal fallback to Firebase Auth fields
+      }
+    );
+    return () => unsub();
+  }, [user, isAuthorized]);
 
   const mapAuthError = useCallback(
     (err: unknown, fallback: string): string => {
@@ -344,22 +377,122 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return false;
   }, [hydrateTenant]);
 
+  const updateMyProfile = useCallback(
+    async (input: { displayName: string; photoFile?: File | null; photoUrl?: string }) => {
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error('You must be signed in to update your profile.');
+      }
+      const cleanName = input.displayName.trim().slice(0, 120);
+      if (!cleanName) {
+        throw new Error('Your name is required.');
+      }
+
+      let resolvedPhotoUrl =
+        input.photoUrl !== undefined ? input.photoUrl : userProfile?.photoUrl ?? currentUser.photoURL ?? '';
+
+      if (input.photoFile) {
+        const compressedDataUrl = await processAvatarImage(input.photoFile);
+        resolvedPhotoUrl = await tryUploadToStorageOrFallback(
+          `users/${currentUser.uid}/profile/avatar_${Date.now()}.jpg`,
+          input.photoFile,
+          compressedDataUrl
+        );
+      }
+
+      resolvedPhotoUrl = (resolvedPhotoUrl || '').slice(0, 80000);
+
+      await dbService.saveUserProfile(
+        currentUser,
+        { displayName: cleanName, photoUrl: resolvedPhotoUrl },
+        Boolean(userProfile)
+      );
+
+      try {
+        await updateUserAuthProfile(currentUser, {
+          displayName: cleanName,
+          photoURL: resolvedPhotoUrl,
+        });
+      } catch {
+        // Non-fatal offline or URL length fallback; Firestore profile remains authoritative
+      }
+
+      setProfileRevision((prev) => prev + 1);
+    },
+    [userProfile]
+  );
+
+  const changeMyPassword = useCallback(
+    async (currentPassword: string, newPassword: string) => {
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error('You must be signed in to change your password.');
+      }
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        throw new Error(
+          language === 'bn'
+            ? 'পাসওয়ার্ড পরিবর্তন করতে ইন্টারনেট সংযোগ প্রয়োজন।'
+            : 'An internet connection is required to change your password.'
+        );
+      }
+      try {
+        await changeUserPassword(currentUser, currentPassword, newPassword);
+      } catch (err) {
+        const code = (err as { code?: string })?.code || '';
+        if (code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
+          throw new Error(
+            language === 'bn' ? 'বর্তমান পাসওয়ার্ড সঠিক নয়।' : 'Current password is incorrect.'
+          );
+        }
+        if (code === 'auth/requires-recent-login') {
+          throw new Error(
+            language === 'bn'
+              ? 'নিরাপত্তার জন্য আবার সাইন ইন করে পাসওয়ার্ড পরিবর্তন করুন।'
+              : 'For security, please sign out and sign in again before changing your password.'
+          );
+        }
+        if (code === 'auth/weak-password') {
+          throw new Error(t.authErrors.weakPassword);
+        }
+        if (code === 'auth/too-many-requests') {
+          throw new Error(t.authErrors.tooManyRequests);
+        }
+        throw new Error(mapAuthError(err, 'Unable to update password.'));
+      }
+    },
+    [language, mapAuthError, t.authErrors.tooManyRequests, t.authErrors.weakPassword]
+  );
+
   const logout = useCallback(async () => {
     const currentUid = auth.currentUser?.uid;
     setAuthError(null);
     setVerificationSent(false);
     setVerificationNotice(null);
     setIsAdmin(false);
+    setUserProfile(null);
     dbService.clearSessionLoginMarker(currentUid);
     await signOutUser();
   }, []);
 
   const clearError = useCallback(() => setAuthError(null), []);
 
+  const profileDisplayName =
+    userProfile?.displayName?.trim() ||
+    user?.displayName?.trim() ||
+    user?.email?.split('@')[0]?.trim() ||
+    t.nav.workspaceOwner;
+
+  const profilePhotoUrl = userProfile?.photoUrl ?? user?.photoURL ?? '';
+  const canChangePassword = hasPasswordProvider(user);
+
   return (
     <AuthContext.Provider
       value={{
         user,
+        userProfile,
+        profileDisplayName,
+        profilePhotoUrl,
+        canChangePassword,
         authLoading,
         verifyingTenant,
         isAuthorized,
@@ -373,6 +506,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         registerWithEmail,
         resendVerification,
         refreshVerificationStatus,
+        updateMyProfile,
+        changeMyPassword,
         logout,
         clearError,
       }}

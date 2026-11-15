@@ -376,6 +376,19 @@
         "userId", "name", "phone", "sharePercent", "investedAmount", "dueAmount",
         "currency", "notes", "createdAt", "updatedAt"
       ]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Per-user profile storing customizable display name and compressed profile photo.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "displayName": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "photoUrl": { "type": "string", "maxLength": 80000 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "displayName", "photoUrl", "createdAt", "updatedAt"]
     }
   },
   "firestore": {
@@ -438,6 +451,10 @@
     "/businessPartners/{partnerId}": {
       "schema": { "$ref": "#/entities/BusinessPartner" },
       "description": "Tenant-isolated business partners with investment and due tracking."
+    },
+    "/userProfiles/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Per-user profile storing display name and profile photo."
     }
   }
 }

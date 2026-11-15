@@ -13,6 +13,7 @@ import {
   ReceiptAsset,
   ReceiptTemplate,
   UserDirectoryEntry,
+  UserProfileData,
   UserSettings,
 } from '../../types';
 import {
@@ -32,6 +33,7 @@ import * as customerService from '../services/customerService';
 import * as expenseService from '../services/expenseService';
 import * as partnerService from '../services/partnerService';
 import * as productService from '../services/productService';
+import * as profileService from '../services/profileService';
 import * as receiptService from '../services/receiptService';
 import * as settingsService from '../services/settingsService';
 
@@ -65,7 +67,11 @@ export interface BusinessDataAdapter {
   ): () => void;
   addBusiness(user: User, name: string): Promise<BusinessProfile>;
   renameBusiness(user: User, business: BusinessProfile, newName: string): Promise<void>;
-  deleteBusiness(user: User, business: BusinessProfile): Promise<void>;
+  deleteBusiness(
+    user: User,
+    business: BusinessProfile,
+    remainingBusinesses?: BusinessProfile[]
+  ): Promise<void>;
   subscribeExpenses(
     user: User,
     onData: (items: Expense[]) => void,
@@ -113,6 +119,16 @@ export interface BusinessDataAdapter {
     onData: (settings: UserSettings | null) => void,
     onError: (err: Error) => void
   ): () => void;
+  subscribeUserProfile(
+    user: User,
+    onData: (profile: UserProfileData | null) => void,
+    onError: (err: Error) => void
+  ): () => void;
+  saveUserProfile(
+    user: User,
+    values: { displayName: string; photoUrl: string },
+    hasExisting?: boolean
+  ): Promise<void>;
   subscribeActivityLogs(
     user: User,
     onData: (logs: ActivityLog[]) => void,
@@ -233,6 +249,8 @@ class FirestoreBusinessAdapter implements BusinessDataAdapter {
   subscribeProducts = productService.subscribeProducts;
   subscribeCustomers = customerService.subscribeCustomers;
   subscribeSettings = settingsService.subscribeSettings;
+  subscribeUserProfile = profileService.subscribeUserProfile;
+  saveUserProfile = profileService.saveUserProfile;
   subscribeActivityLogs = activityService.subscribeActivityLogs;
   fetchExpenseReceipts = expenseService.fetchExpenseReceipts;
   saveExpense = expenseService.saveExpense;

@@ -8,6 +8,7 @@ export const PWAInstallButton: React.FC<{ className?: string }> = ({ className =
   const { language } = useLanguage();
   const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
   const [showIOSGuide, setShowIOSGuide] = useState(false);
+  const [showBrowserGuide, setShowBrowserGuide] = useState(false);
 
   if (isInstalled) {
     return null;
@@ -92,7 +93,64 @@ export const PWAInstallButton: React.FC<{ className?: string }> = ({ className =
     );
   }
 
-  return null;
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setShowBrowserGuide(true)}
+        className={`w-full flex items-center justify-center gap-2 px-3 min-h-[40px] lg:min-h-0 py-2 text-xs font-semibold bg-[#22c55e]/15 text-[#4ade80] hover:bg-[#22c55e]/25 border border-[#22c55e]/30 rounded-lg transition-colors cursor-pointer whitespace-nowrap ${className}`}
+      >
+        <Download className="w-3.5 h-3.5 shrink-0" />
+        <span>{label}</span>
+      </button>
+
+      {showBrowserGuide && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
+          <div className="w-full max-w-sm bg-[#121214] border border-[#27272a] rounded-xl p-5 shadow-2xl space-y-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-semibold text-zinc-100">
+                  {language === 'bn' ? 'অ্যাপ ইনস্টল করুন' : 'Install EkTally App'}
+                </h3>
+                <p className="text-xs text-zinc-400 mt-1">
+                  {language === 'bn'
+                    ? 'অফলাইনে দ্রুত ব্যবহারের জন্য আপনার ফোনের হোম স্ক্রিনে যোগ করুন।'
+                    : 'Add EkTally to your home screen for quick offline access.'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowBrowserGuide(false)}
+                aria-label="Close"
+                className="min-h-[36px] min-w-[36px] inline-flex items-center justify-center text-zinc-400 hover:text-zinc-100 rounded-lg cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <ol className="text-xs text-zinc-300 space-y-2 leading-relaxed">
+              <li>
+                {language === 'bn'
+                  ? '১. আপনি যদি প্রিভিউ ফ্রেমের ভেতর থাকেন, তবে সরাসরি মোবাইল ব্রাউজারে (Chrome / Samsung Internet) অ্যাপটি খুলুন।'
+                  : '1. If viewing inside a preview frame, open the app directly in your mobile browser (Chrome / Edge / Samsung Internet).'}
+              </li>
+              <li>
+                {language === 'bn'
+                  ? '২. ব্রাউজারের মেনু (⋮) খুলে "Add to Home screen" বা "Install app" চাপুন।'
+                  : '2. Open the browser menu (⋮) and tap "Add to Home screen" or "Install app".'}
+              </li>
+            </ol>
+            <button
+              type="button"
+              onClick={() => setShowBrowserGuide(false)}
+              className="w-full min-h-[40px] py-2 text-xs font-semibold bg-[#22c55e] text-zinc-950 rounded-lg hover:bg-[#4ade80] transition-colors cursor-pointer"
+            >
+              {language === 'bn' ? 'বুঝেছি' : 'Got It'}
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
 };
 
 export const OfflineIndicator: React.FC = () => {
