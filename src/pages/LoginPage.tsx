@@ -199,7 +199,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
   };
 
   return (
-    <div className="relative min-h-screen overflow-x-clip bg-[#050507] text-zinc-100 flex flex-col justify-between lg:grid lg:grid-cols-2 lg:grid-rows-[1fr_auto]">
+    <div className="relative min-h-[100dvh] overflow-x-clip bg-[#050507] text-zinc-100 flex flex-col justify-between lg:grid lg:grid-cols-2 lg:grid-rows-[1fr_auto]">
       {/* Full-Screen Modern Black & Light Green Animated Backdrop (Mobile & PC) */}
       <div
         aria-hidden="true"
@@ -211,8 +211,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
         <BotanicalBackdropCanvas />
       </div>
 
-      {/* 1. Brand Mark & Hero Statement (Mobile: Top + Centered Hero | Desktop: Left Top/Center) */}
-      <div className="relative z-10 lg:col-start-1 lg:row-start-1 flex-1 flex flex-col justify-between px-4 pt-4 pb-4 sm:p-10 sm:pb-6 lg:p-14 lg:pb-8">
+      {/* 1. Brand Mark & Hero Statement (Mobile: Top-aligned compact hero | Desktop: Left Top/Center) */}
+      <div className="relative z-10 lg:col-start-1 lg:row-start-1 flex-1 flex flex-col justify-start lg:justify-between px-4 pt-3.5 pb-2 sm:p-10 sm:pb-6 lg:p-14 lg:pb-8">
         <div className="flex items-center justify-between gap-2">
           <img
             src={EKTALLY_LOGO_URL}
@@ -233,16 +233,21 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
           </div>
         </div>
 
-        <div className="my-auto py-8 max-w-xl">
+        <div className="mt-4 sm:mt-7 lg:my-auto lg:py-8 max-w-xl">
           <p className="hidden lg:block text-xs font-mono text-[#4ade80] mb-2 tracking-wide">
             {t.login.kicker}
           </p>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-white tracking-tight leading-[1.15] text-balance mb-0.5 lg:mb-3">
+          <h1 className="text-[30px] sm:text-4xl font-semibold text-white tracking-tight leading-[1.13] text-balance mb-1.5 lg:mb-3">
             {t.login.headlinePrefix}{' '}
             <span className="text-[#4ade80]">{t.login.headlineHighlight}</span>{' '}
             {t.login.headlineSuffix}
           </h1>
-          <p className="hidden lg:block text-sm text-zinc-400 leading-relaxed max-w-md">
+          <p className="lg:hidden text-[11px] sm:text-xs font-mono text-[#4ade80] mb-1.5 tracking-wide">
+            {language === 'bn'
+              ? 'ব্যবসা ও ব্যক্তিগত হিসাবের দ্বৈত প্ল্যাটফর্ম'
+              : 'Dual-Mode Business & Personal Ledger'}
+          </p>
+          <p className="text-xs sm:text-sm text-zinc-300/90 lg:text-zinc-400 leading-relaxed max-w-md">
             {t.login.subtitle}
           </p>
         </div>
@@ -534,15 +539,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
         </div>
       </div>
 
-      {/* 3. Architectural Highlights (Mobile: Bottom, after Login | Desktop: Left Bottom) */}
-      <div className="relative z-10 lg:col-start-1 lg:row-start-2 px-4 pt-3 pb-6 sm:px-10 sm:pb-12 lg:px-14 lg:pt-0 lg:pb-14">
-        <div className="border-t border-[#4ade80]/15 pt-4 sm:pt-6 grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-5 max-w-xl">
+      {/* 3. Architectural Highlights (Mobile: Compact bottom row | Desktop: Left Bottom) */}
+      <div className="relative z-10 lg:col-start-1 lg:row-start-2 px-4 pt-2 pb-4 sm:px-10 sm:pb-10 lg:px-14 lg:pt-0 lg:pb-14">
+        <div className="border-t border-[#4ade80]/15 pt-3 sm:pt-5 grid grid-cols-2 gap-3 sm:gap-5 max-w-xl">
           <div>
             <p className="text-xs font-medium text-[#86efac]">{t.login.highlight1Title}</p>
-            <p className="lg:hidden text-xs text-zinc-400 mt-1 leading-relaxed">
-              {t.login.subtitle}
-            </p>
-            <p className="hidden lg:block text-xs text-zinc-400 mt-1 leading-relaxed">
+            <p className="text-[11px] sm:text-xs text-zinc-400 mt-0.5 sm:mt-1 leading-snug sm:leading-relaxed">
               {t.login.highlight1Desc}
             </p>
           </div>
@@ -551,12 +553,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
               <ShieldCheck className="w-3.5 h-3.5 text-[#4ade80] shrink-0" />
               <span>{t.login.highlight3Title}</span>
             </div>
-            <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+            <p className="text-[11px] sm:text-xs text-zinc-400 mt-0.5 sm:mt-1 leading-snug sm:leading-relaxed">
               {t.login.highlight3Desc}
             </p>
           </div>
         </div>
-        <div className="mt-4 max-w-[220px]">
+        <div className="mt-3 sm:mt-4 max-w-[220px]">
           <PWAInstallButton />
         </div>
       </div>
