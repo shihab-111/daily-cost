@@ -199,11 +199,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
   };
 
   return (
-    <div className="relative min-h-[100dvh] overflow-x-clip bg-[#050507] text-zinc-100 flex flex-col justify-between lg:grid lg:grid-cols-2 lg:grid-rows-[1fr_auto]">
+    <div className="relative min-h-[100dvh] w-full overflow-x-clip bg-[#050507] text-zinc-100 flex flex-col justify-between lg:grid lg:grid-cols-2 lg:grid-rows-[1fr_auto]">
       {/* Full-Screen Modern Black & Light Green Animated Backdrop (Mobile & PC) */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[#050507] via-[#07150d] to-[#050507] overflow-hidden"
+        className="pointer-events-none fixed inset-0 lg:absolute bg-gradient-to-br from-[#050507] via-[#07150d] to-[#050507] overflow-hidden"
       >
         <div className="absolute -top-32 -left-24 w-[420px] h-[420px] rounded-full bg-[#4ade80]/15 blur-[110px]" />
         <div className="absolute -bottom-36 -right-20 w-[460px] h-[460px] rounded-full bg-[#22c55e]/15 blur-[120px]" />
@@ -233,20 +233,20 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
           </div>
         </div>
 
-        <div className="mt-4 sm:mt-7 lg:my-auto lg:py-8 max-w-xl">
+        <div className="mt-20 sm:mt-24 lg:my-auto lg:py-8 max-w-xl">
           <p className="hidden lg:block text-xs font-mono text-[#4ade80] mb-2 tracking-wide">
             {t.login.kicker}
           </p>
-          <h1 className="text-[30px] sm:text-4xl font-semibold text-white tracking-tight leading-[1.13] text-balance mb-1.5 lg:mb-3">
-            {t.login.headlinePrefix}{' '}
-            <span className="text-[#4ade80]">{t.login.headlineHighlight}</span>{' '}
-            {t.login.headlineSuffix}
-          </h1>
-          <p className="lg:hidden text-[11px] sm:text-xs font-mono text-[#4ade80] mb-1.5 tracking-wide">
+          <p className="lg:hidden text-[11px] sm:text-xs font-mono text-[#4ade80] mb-2.5 tracking-wide">
             {language === 'bn'
               ? 'ব্যবসা ও ব্যক্তিগত হিসাবের দ্বৈত প্ল্যাটফর্ম'
               : 'Dual-Mode Business & Personal Ledger'}
           </p>
+          <h1 className="text-[30px] sm:text-4xl font-semibold text-white tracking-tight leading-[1.13] text-balance mb-3">
+            {t.login.headlinePrefix}{' '}
+            <span className="text-[#4ade80]">{t.login.headlineHighlight}</span>{' '}
+            {t.login.headlineSuffix}
+          </h1>
           <p className="text-xs sm:text-sm text-zinc-300/90 lg:text-zinc-400 leading-relaxed max-w-md">
             {t.login.subtitle}
           </p>
@@ -260,7 +260,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
             setMobileAuthOpen(false);
           }
         }}
-        className={`max-lg:fixed max-lg:inset-0 max-lg:z-40 max-lg:p-4 max-lg:overflow-y-auto max-lg:flex max-lg:items-center max-lg:justify-center max-lg:transition-[opacity,visibility,backdrop-filter,background-color] max-lg:duration-300 max-lg:ease-[cubic-bezier(0.22,1,0.36,1)] ${
+        className={`max-lg:fixed max-lg:inset-0 max-lg:z-40 max-lg:p-4 max-lg:overflow-y-auto max-lg:overflow-x-hidden max-lg:flex max-lg:items-center max-lg:justify-center max-lg:transition-[opacity,visibility,backdrop-filter,background-color] max-lg:duration-300 max-lg:ease-[cubic-bezier(0.22,1,0.36,1)] ${
           showMobilePanel
             ? 'max-lg:bg-[#030604]/75 max-lg:backdrop-blur-md max-lg:opacity-100 max-lg:visible max-lg:pointer-events-auto'
             : 'max-lg:bg-[#030604]/0 max-lg:backdrop-blur-none max-lg:opacity-0 max-lg:invisible max-lg:pointer-events-none'

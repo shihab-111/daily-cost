@@ -11,14 +11,22 @@
 @layer base {
   html {
     color-scheme: dark;
+    background-color: #050507;
+    min-height: 100%;
     overflow-x: clip;
+    overscroll-behavior-y: none;
   }
 
   body {
-    background-color: #09090b;
+    background-color: #050507;
     color: #f4f4f5;
     font-family: var(--font-sans);
+    min-height: 100%;
     overflow-x: clip;
+  }
+
+  #root {
+    min-height: 100%;
   }
 
   h1, h2, h3, .font-display {
