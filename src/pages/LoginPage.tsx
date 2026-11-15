@@ -541,7 +541,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
 
       {/* 3. Architectural Highlights & Footer (Mobile: Compact bottom | Desktop: Left Bottom) */}
       <div className="relative z-10 lg:col-start-1 lg:row-start-2 px-4 pt-2 pb-4 sm:px-10 sm:pb-8 lg:px-14 lg:pt-0 lg:pb-10">
-        <div className="border-t border-[#22c55e]/15 pt-3 sm:pt-5 grid grid-cols-2 gap-3 sm:gap-5 max-w-xl">
+        <div className="lg:border-t lg:border-[#22c55e]/15 pt-2 lg:pt-5 grid grid-cols-2 gap-3 sm:gap-5 max-w-xl">
           <div>
             <p className="text-xs font-medium text-[#86efac]">{t.login.highlight1Title}</p>
             <p className="text-[11px] sm:text-xs text-zinc-400 mt-0.5 sm:mt-1 leading-snug sm:leading-relaxed">

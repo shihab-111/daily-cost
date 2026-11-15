@@ -12,8 +12,8 @@
   html {
     color-scheme: dark;
     background-color: #050507;
-    height: 100%;
-    overflow-x: hidden;
+    min-height: 100%;
+    overflow-x: clip;
     overscroll-behavior: none;
   }
 
@@ -23,12 +23,24 @@
     font-family: var(--font-sans);
     min-height: 100%;
     margin: 0;
-    overflow-x: hidden;
+    overflow-x: clip;
     overscroll-behavior: none;
   }
 
   #root {
     min-height: 100%;
+  }
+
+  @media (max-width: 1023px) {
+    html,
+    body {
+      scrollbar-width: none;
+    }
+
+    html::-webkit-scrollbar,
+    body::-webkit-scrollbar {
+      display: none;
+    }
   }
 
   h1, h2, h3, .font-display {
