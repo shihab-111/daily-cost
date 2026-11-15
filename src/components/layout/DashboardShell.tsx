@@ -11,6 +11,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  MoreVertical,
   Package,
   Plus,
   Receipt,
@@ -55,6 +56,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
   } = useMode();
 
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
   const [avatarFailed, setAvatarFailed] = useState(false);
 
   const [bizMenuOpen, setBizMenuOpen] = useState(false);
@@ -66,6 +68,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
   const [confirmDeleteBizId, setConfirmDeleteBizId] = useState<string | null>(null);
 
   const bizDropdownRef = useRef<HTMLDivElement>(null);
+  const mobileMoreRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -111,6 +114,21 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
     document.addEventListener('mousedown', handleOutsideClick);
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, [bizMenuOpen]);
+
+  useEffect(() => {
+    if (!mobileMoreOpen) return;
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (mobileMoreRef.current && !mobileMoreRef.current.contains(event.target as Node)) {
+        setMobileMoreOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [mobileMoreOpen]);
+
+  useEffect(() => {
+    setMobileMoreOpen(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     setAvatarFailed(false);
@@ -610,48 +628,48 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
               </div>
             )}
 
-            {/* Instant Dual-Mode Switch (PC & Tablet) */}
+            {/* Instant Dual-Mode Switch (Both Mobile and PC in Top Header) */}
             <div
               role="group"
               aria-label="Workspace mode switch"
-              className="hidden md:inline-flex items-center p-0.5 bg-[#09090b] border border-[#27272a] rounded-lg shrink-0"
+              className="inline-flex items-center p-0.5 bg-[#09090b] border border-[#27272a] rounded-lg shrink-0"
             >
               <button
                 type="button"
                 onClick={() => setMode('business')}
                 className={cn(
-                  'inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer whitespace-nowrap shrink-0',
+                  'inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 sm:py-1 text-[11px] sm:text-xs font-medium rounded-md transition-colors cursor-pointer whitespace-nowrap shrink-0',
                   mode === 'business'
                     ? 'bg-[#22c55e] text-zinc-950 font-semibold'
                     : 'text-zinc-400 hover:text-zinc-100'
                 )}
               >
-                <Briefcase className="w-3.5 h-3.5 shrink-0" />
+                <Briefcase className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
                 <span>{t.nav.business}</span>
               </button>
               <button
                 type="button"
                 onClick={() => setMode('personal')}
                 className={cn(
-                  'inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer whitespace-nowrap shrink-0',
+                  'inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 sm:py-1 text-[11px] sm:text-xs font-medium rounded-md transition-colors cursor-pointer whitespace-nowrap shrink-0',
                   mode === 'personal'
                     ? 'bg-[#22c55e] text-zinc-950 font-semibold'
                     : 'text-zinc-400 hover:text-zinc-100'
                 )}
               >
-                <UserIcon className="w-3.5 h-3.5 shrink-0" />
+                <UserIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
                 <span>{t.nav.personal}</span>
               </button>
             </div>
 
-            {/* Top-Right My Profile Option (Visible & Labeled on Both Mobile and PC) */}
+            {/* PC Top-Right My Profile Option */}
             <NavLink
               to="/profile"
               aria-label={t.nav.myProfile}
               title={t.nav.myProfile}
               className={({ isActive }) =>
                 cn(
-                  'inline-flex items-center gap-2 px-2.5 py-1.5 min-h-[40px] md:min-h-[34px] rounded-lg border transition-colors shrink-0 whitespace-nowrap',
+                  'hidden md:inline-flex items-center gap-2 px-2.5 py-1.5 min-h-[34px] rounded-lg border transition-colors shrink-0 whitespace-nowrap',
                   isActive
                     ? 'bg-[#22c55e]/15 border-[#22c55e]/40 text-[#4ade80]'
                     : 'bg-[#09090b] border-[#27272a] hover:border-zinc-600 text-zinc-200 hover:text-zinc-100'
@@ -675,6 +693,81 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
               </span>
               <span className="text-xs font-medium">{t.nav.myProfile}</span>
             </NavLink>
+
+            {/* Mobile Top-Right 3-Dot Menu Option */}
+            <div ref={mobileMoreRef} className="md:hidden relative shrink-0">
+              <button
+                type="button"
+                onClick={() => setMobileMoreOpen((prev) => !prev)}
+                aria-label="More options"
+                aria-expanded={mobileMoreOpen}
+                className={cn(
+                  'min-h-[40px] min-w-[38px] inline-flex items-center justify-center rounded-lg border transition-colors cursor-pointer',
+                  mobileMoreOpen
+                    ? 'bg-[#22c55e]/15 border-[#22c55e]/40 text-[#4ade80]'
+                    : 'bg-[#09090b] border-[#27272a] hover:border-zinc-600 text-zinc-200 hover:text-zinc-100'
+                )}
+              >
+                <MoreVertical className="w-4 h-4" />
+              </button>
+
+              {mobileMoreOpen && (
+                <div className="absolute right-0 mt-1.5 w-60 bg-[#121214] border border-[#27272a] rounded-xl shadow-2xl p-2 z-50 space-y-1.5">
+                  <NavLink
+                    to="/profile"
+                    onClick={() => setMobileMoreOpen(false)}
+                    className={({ isActive }) =>
+                      cn(
+                        'flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg border transition-colors',
+                        isActive
+                          ? 'bg-[#22c55e]/15 border-[#22c55e]/40 text-[#4ade80]'
+                          : 'bg-[#09090b] border-[#27272a] text-zinc-100 hover:border-zinc-600'
+                      )
+                    }
+                  >
+                    <span className="w-8 h-8 rounded-full overflow-hidden bg-[#18181b] border border-[#27272a] shrink-0 flex items-center justify-center">
+                      {!avatarFailed && profilePhotoUrl ? (
+                        <img
+                          src={profilePhotoUrl}
+                          alt={profileDisplayName || 'Account'}
+                          referrerPolicy="no-referrer"
+                          onError={() => setAvatarFailed(true)}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-xs font-semibold text-[#4ade80]">
+                          {(profileDisplayName || user?.email || 'U').charAt(0).toUpperCase()}
+                        </span>
+                      )}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-xs font-semibold truncate">{t.nav.myProfile}</span>
+                      <span className="block text-[11px] text-zinc-400 truncate">
+                        {profileDisplayName}
+                      </span>
+                    </span>
+                    <ChevronRight className="w-4 h-4 text-zinc-500 shrink-0" />
+                  </NavLink>
+
+                  <div className="flex items-center justify-between px-2 py-1.5 rounded-lg bg-[#09090b]/60 border border-[#27272a]/70">
+                    <span className="text-[11px] text-zinc-400">{t.common.languageLabel}</span>
+                    <LanguageToggle />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileMoreOpen(false);
+                      void logout();
+                    }}
+                    className="w-full flex items-center gap-2 px-2.5 py-2 min-h-[40px] text-xs font-medium text-zinc-300 hover:text-zinc-100 hover:bg-[#18181b] rounded-lg transition-colors cursor-pointer"
+                  >
+                    <LogOut className="w-3.5 h-3.5 text-zinc-400" />
+                    <span>{t.common.signOut}</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
@@ -687,125 +780,100 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
         )}
 
         {/* Mobile Non-Sticky Workspace & Page Actions Bar */}
-        <div className="md:hidden bg-[#121214]/70 border-b border-[#27272a] px-3 py-2.5 flex flex-col gap-2.5 no-print">
-          <div className="flex items-center justify-between gap-2">
-            <div
-              role="group"
-              aria-label="Workspace mode switch"
-              className="inline-flex items-center p-0.5 bg-[#09090b] border border-[#27272a] rounded-lg shrink-0"
-            >
-              <button
-                type="button"
-                onClick={() => setMode('business')}
-                className={cn(
-                  'inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-medium rounded-md transition-colors cursor-pointer whitespace-nowrap shrink-0',
-                  mode === 'business'
-                    ? 'bg-[#22c55e] text-zinc-950 font-semibold'
-                    : 'text-zinc-400 hover:text-zinc-100'
-                )}
-              >
-                <Briefcase className="w-3 h-3 shrink-0" />
-                <span>{t.nav.business}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setMode('personal')}
-                className={cn(
-                  'inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-medium rounded-md transition-colors cursor-pointer whitespace-nowrap shrink-0',
-                  mode === 'personal'
-                    ? 'bg-[#22c55e] text-zinc-950 font-semibold'
-                    : 'text-zinc-400 hover:text-zinc-100'
-                )}
-              >
-                <UserIcon className="w-3 h-3 shrink-0" />
-                <span>{t.nav.personal}</span>
-              </button>
-            </div>
-
+        {(mode === 'business' || headerAction) && (
+          <div className="md:hidden bg-[#121214]/70 border-b border-[#27272a] px-4 py-2.5 flex flex-col gap-2 no-print">
             {mode === 'business' && (
-              <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
-                {businesses.length > 0 ? (
-                  <>
-                    <select
-                      aria-label={t.business.switchBusiness}
-                      value={activeBusinessId}
-                      onChange={(e) => {
-                        setActiveBusinessId(e.target.value);
-                        setConfirmDeleteBizId(null);
-                      }}
-                      className="flex-1 min-w-0 max-w-[165px] px-2.5 py-1.5 text-xs font-medium bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg focus:outline-none focus:border-[#22c55e] truncate"
-                    >
-                      {businesses.map((b) => (
-                        <option key={b.id} value={b.id}>
-                          {b.name}
-                        </option>
-                      ))}
-                    </select>
-                    {activeBusiness && (
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-zinc-400 shrink-0">
+                    <Building2 className="w-3.5 h-3.5 text-[#4ade80]" />
+                    <span>{t.business.activeBusinessLabel}</span>
+                  </span>
+                  <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
+                    {businesses.length > 0 ? (
+                      <>
+                        <select
+                          aria-label={t.business.switchBusiness}
+                          value={activeBusinessId}
+                          onChange={(e) => {
+                            setActiveBusinessId(e.target.value);
+                            setConfirmDeleteBizId(null);
+                          }}
+                          className="flex-1 min-w-0 max-w-[180px] px-2.5 py-1.5 text-sm font-medium bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg focus:outline-none focus:border-[#22c55e] truncate"
+                        >
+                          {businesses.map((b) => (
+                            <option key={b.id} value={b.id}>
+                              {b.name}
+                            </option>
+                          ))}
+                        </select>
+                        {activeBusiness && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setConfirmDeleteBizId((prev) =>
+                                prev === activeBusiness.id ? null : activeBusiness.id
+                              );
+                              setBizError(null);
+                            }}
+                            title={`${t.common.delete} ${activeBusiness.name}`}
+                            aria-label={`${t.common.delete} ${activeBusiness.name}`}
+                            className="min-h-[34px] min-w-[34px] inline-flex items-center justify-center bg-[#09090b] border border-[#27272a] hover:border-red-500/40 text-zinc-400 hover:text-red-400 rounded-lg transition-colors cursor-pointer shrink-0"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </>
+                    ) : (
                       <button
                         type="button"
                         onClick={() => {
-                          setConfirmDeleteBizId((prev) =>
-                            prev === activeBusiness.id ? null : activeBusiness.id
-                          );
-                          setBizError(null);
+                          setSidebarAddOpen(true);
+                          setMobileOpen(true);
                         }}
-                        title={`${t.common.delete} ${activeBusiness.name}`}
-                        aria-label={`${t.common.delete} ${activeBusiness.name}`}
-                        className="min-h-[34px] min-w-[34px] inline-flex items-center justify-center bg-[#09090b] border border-[#27272a] hover:border-red-500/40 text-zinc-400 hover:text-red-400 rounded-lg transition-colors cursor-pointer shrink-0"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-[#4ade80] bg-[#22c55e]/10 border border-[#22c55e]/30 rounded-lg cursor-pointer"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>{t.business.addBusiness}</span>
                       </button>
                     )}
-                  </>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSidebarAddOpen(true);
-                      setMobileOpen(true);
-                    }}
-                    className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-[#4ade80] bg-[#22c55e]/10 border border-[#22c55e]/30 rounded-lg cursor-pointer whitespace-nowrap"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>{t.business.addBusiness}</span>
-                  </button>
+                  </div>
+                </div>
+
+                {activeBusiness && confirmDeleteBizId === activeBusiness.id && (
+                  <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-red-500/10 border border-red-500/30 text-xs">
+                    <span className="text-red-300 truncate">
+                      {t.common.delete} {activeBusiness.name}?
+                    </span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        disabled={bizSaving}
+                        onClick={() => handleDeleteBusiness(activeBusiness)}
+                        className="font-semibold text-red-400 hover:text-red-300 px-1.5 py-0.5 cursor-pointer"
+                      >
+                        {t.common.delete}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmDeleteBizId(null)}
+                        className="text-zinc-400 hover:text-zinc-200 px-1.5 py-0.5 cursor-pointer"
+                      >
+                        {t.common.no}
+                      </button>
+                    </div>
+                  </div>
                 )}
               </div>
             )}
-          </div>
 
-          {mode === 'business' && activeBusiness && confirmDeleteBizId === activeBusiness.id && (
-            <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-red-500/10 border border-red-500/30 text-xs">
-              <span className="text-red-300 truncate">
-                {t.common.delete} {activeBusiness.name}?
-              </span>
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  type="button"
-                  disabled={bizSaving}
-                  onClick={() => handleDeleteBusiness(activeBusiness)}
-                  className="font-semibold text-red-400 hover:text-red-300 px-1.5 py-0.5 cursor-pointer"
-                >
-                  {t.common.delete}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setConfirmDeleteBizId(null)}
-                  className="text-zinc-400 hover:text-zinc-200 px-1.5 py-0.5 cursor-pointer"
-                >
-                  {t.common.no}
-                </button>
+            {headerAction && (
+              <div className="flex flex-wrap items-center gap-2 [&>div]:flex [&>div]:flex-wrap [&>div]:w-full [&>div]:gap-2">
+                {headerAction}
               </div>
-            </div>
-          )}
-
-          {headerAction && (
-            <div className="flex flex-wrap items-center gap-2 [&>div]:flex [&>div]:flex-wrap [&>div]:w-full [&>div]:gap-2">
-              {headerAction}
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
 
         <main className="flex-1 pb-[env(safe-area-inset-bottom)]">{children}</main>
       </div>
