@@ -72,6 +72,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
   const navItems =
     mode === 'business'
       ? [
+          { to: '/profile', label: t.nav.myProfile, icon: UserCircle },
           { to: '/', label: t.nav.overview, icon: LayoutDashboard },
           { to: '/expenses', label: t.nav.businessExpenses, icon: Receipt },
           { to: '/products', label: t.nav.productInventory, icon: Package },
@@ -79,14 +80,13 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
           { to: '/partners', label: t.nav.partners, icon: Handshake },
           { to: '/receipts', label: t.nav.receiptStudio, icon: FileText },
           { to: '/settings', label: t.nav.settingsData, icon: Settings },
-          { to: '/profile', label: t.nav.myProfile, icon: UserCircle },
         ]
       : [
+          { to: '/profile', label: t.nav.myProfile, icon: UserCircle },
           { to: '/', label: t.nav.personalOverview, icon: LayoutDashboard },
           { to: '/expenses', label: t.nav.dailyExpenses, icon: Receipt },
           { to: '/receipts', label: t.nav.receiptStudio, icon: FileText },
           { to: '/settings', label: t.nav.settingsBudget, icon: Settings },
-          { to: '/profile', label: t.nav.myProfile, icon: UserCircle },
         ];
 
   useEffect(() => {
@@ -645,6 +645,37 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
             </div>
 
             {headerAction && <div className="hidden md:flex items-center gap-2 shrink-0">{headerAction}</div>}
+
+            <NavLink
+              to="/profile"
+              aria-label={t.nav.myProfile}
+              title={t.nav.myProfile}
+              className={({ isActive }) =>
+                cn(
+                  'inline-flex items-center gap-2 p-1 sm:px-2.5 sm:py-1.5 rounded-lg border transition-colors shrink-0 whitespace-nowrap',
+                  isActive
+                    ? 'bg-[#22c55e]/15 border-[#22c55e]/40 text-[#4ade80]'
+                    : 'bg-[#09090b] border-[#27272a] hover:border-zinc-600 text-zinc-200 hover:text-zinc-100'
+                )
+              }
+            >
+              <span className="w-7 h-7 sm:w-6 sm:h-6 rounded-full overflow-hidden bg-[#18181b] border border-[#27272a] shrink-0 flex items-center justify-center">
+                {!avatarFailed && profilePhotoUrl ? (
+                  <img
+                    src={profilePhotoUrl}
+                    alt={profileDisplayName || 'Account'}
+                    referrerPolicy="no-referrer"
+                    onError={() => setAvatarFailed(true)}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-[11px] font-semibold text-[#4ade80]">
+                    {(profileDisplayName || user?.email || 'U').charAt(0).toUpperCase()}
+                  </span>
+                )}
+              </span>
+              <span className="hidden sm:inline text-xs font-medium">{t.nav.myProfile}</span>
+            </NavLink>
           </div>
         </header>
 
