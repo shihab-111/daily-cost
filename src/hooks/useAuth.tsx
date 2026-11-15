@@ -8,6 +8,7 @@ import {
   hasPasswordProvider,
   isUserVerified,
   registerWithUserEmail,
+  sendUserPasswordResetEmail,
   sendVerificationToUser,
   signInWithUserEmail,
   signOutUser,
@@ -106,6 +107,7 @@ interface AuthContextValue {
     photoUrl?: string;
   }) => Promise<void>;
   changeMyPassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  sendPasswordReset: (email: string) => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
 }
@@ -467,6 +469,53 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     [language, mapAuthError, t.authErrors.tooManyRequests, t.authErrors.weakPassword]
   );
 
+  const sendPasswordReset = useCallback(
+    async (email: string) => {
+      const cleanEmail = email.trim();
+      if (!cleanEmail) {
+        throw new Error(
+          language === 'bn'
+            ? 'পাসওয়ার্ড রিসেট লিংক পেতে আগে আপনার ইমেইল লিখুন।'
+            : 'Please enter your email address first.'
+        );
+      }
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        throw new Error(
+          language === 'bn'
+            ? 'পাসওয়ার্ড রিসেট ইমেইল পাঠাতে ইন্টারনেট সংযোগ প্রয়োজন।'
+            : 'An internet connection is required to send a password reset email.'
+        );
+      }
+      try {
+        await sendUserPasswordResetEmail(cleanEmail);
+      } catch (err) {
+        const code = (err as { code?: string })?.code || '';
+        if (code === 'auth/invalid-email') {
+          throw new Error(t.authErrors.invalidEmail);
+        }
+        if (code === 'auth/user-not-found') {
+          throw new Error(
+            language === 'bn'
+              ? 'এই ইমেইলে কোনো অ্যাকাউন্ট পাওয়া যায়নি।'
+              : 'No account found with this email address.'
+          );
+        }
+        if (code === 'auth/too-many-requests') {
+          throw new Error(t.authErrors.tooManyRequests);
+        }
+        throw new Error(
+          mapAuthError(
+            err,
+            language === 'bn'
+              ? 'পাসওয়ার্ড রিসেট ইমেইল পাঠানো যায়নি।'
+              : 'Unable to send password reset email.'
+          )
+        );
+      }
+    },
+    [language, mapAuthError, t.authErrors.invalidEmail, t.authErrors.tooManyRequests]
+  );
+
   const logout = useCallback(async () => {
     const currentUid = auth.currentUser?.uid;
     setAuthError(null);
@@ -512,6 +561,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         refreshVerificationStatus,
         updateMyProfile,
         changeMyPassword,
+        sendPasswordReset,
         logout,
         clearError,
       }}

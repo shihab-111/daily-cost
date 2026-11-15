@@ -5,6 +5,7 @@ import {
   EmailAuthProvider,
   reauthenticateWithCredential,
   sendEmailVerification,
+  sendPasswordResetEmail,
   setPersistence,
   signInWithEmailAndPassword,
   signOut,
@@ -123,6 +124,24 @@ export async function changeUserPassword(
   const credential = EmailAuthProvider.credential(user.email, currentPassword);
   await reauthenticateWithCredential(user, credential);
   await updatePassword(user, newPassword);
+}
+
+export async function sendUserPasswordResetEmail(email: string): Promise<void> {
+  const cleanEmail = email.trim();
+  if (!cleanEmail) {
+    throw new Error('Please enter your email address.');
+  }
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    try {
+      await sendPasswordResetEmail(auth, cleanEmail, {
+        url: `${window.location.origin}/login`,
+      });
+      return;
+    } catch {
+      // Fallback without continue URL if origin is not allowlisted for email action links
+    }
+  }
+  await sendPasswordResetEmail(auth, cleanEmail);
 }
 
 export async function signOutUser() {

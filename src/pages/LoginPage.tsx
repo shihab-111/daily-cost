@@ -41,6 +41,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
     registerWithEmail,
     resendVerification,
     refreshVerificationStatus,
+    sendPasswordReset,
     logout,
     clearError,
   } = useAuth();
@@ -56,6 +57,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
   const [showPassword, setShowPassword] = useState(false);
 
   const [formError, setFormError] = useState<string | null>(null);
+  const [resetNotice, setResetNotice] = useState<string | null>(null);
+  const [sendingReset, setSendingReset] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [checkingVerify, setCheckingVerify] = useState(false);
   const [resendingVerify, setResendingVerify] = useState(false);
@@ -94,12 +97,36 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
   const switchAuthTab = (next: 'login' | 'register') => {
     setMode(next);
     setFormError(null);
+    setResetNotice(null);
     clearError();
+  };
+
+  const handleForgotPassword = async () => {
+    setFormError(null);
+    setResetNotice(null);
+    clearError();
+    if (!email.trim()) {
+      setFormError(t.login.enterEmailForReset);
+      document.getElementById('auth-email')?.focus();
+      return;
+    }
+    setSendingReset(true);
+    try {
+      await sendPasswordReset(email);
+      setResetNotice(t.login.resetEmailSentNotice);
+    } catch (err) {
+      setFormError(
+        err instanceof Error ? err.message : t.authErrors.invalidEmail
+      );
+    } finally {
+      setSendingReset(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
+    setResetNotice(null);
 
     if (mode === 'login') {
       const parsed = loginSchema.safeParse({ email, password, rememberMe });
@@ -410,6 +437,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                 </div>
               )}
 
+              {resetNotice && (
+                <div
+                  role="status"
+                  className="border border-[#22c55e]/30 bg-[#22c55e]/10 rounded-lg p-2.5 sm:p-3 text-xs text-[#86efac] leading-relaxed"
+                >
+                  {resetNotice}
+                </div>
+              )}
+
               <form onSubmit={handleSubmit} className="space-y-2.5 sm:space-y-3.5">
                 {mode === 'register' && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
@@ -465,9 +501,21 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
                 </div>
 
                 <div>
-                  <label htmlFor="auth-password" className="block text-xs font-medium text-zinc-300 mb-1 sm:mb-1.5">
-                    {t.login.password}
-                  </label>
+                  <div className="flex items-center justify-between gap-2 mb-1 sm:mb-1.5">
+                    <label htmlFor="auth-password" className="block text-xs font-medium text-zinc-300">
+                      {t.login.password}
+                    </label>
+                    {mode === 'login' && (
+                      <button
+                        type="button"
+                        onClick={handleForgotPassword}
+                        disabled={sendingReset || submitting}
+                        className="text-[11px] font-medium text-[#4ade80] hover:text-[#86efac] disabled:opacity-50 cursor-pointer whitespace-nowrap"
+                      >
+                        {sendingReset ? t.login.sendingResetLink : t.login.forgotPassword}
+                      </button>
+                    )}
+                  </div>
                   <div className="relative">
                     <input
                       id="auth-password"

@@ -27,6 +27,7 @@ export const ProfilePage: React.FC = () => {
     canChangePassword,
     updateMyProfile,
     changeMyPassword,
+    sendPasswordReset,
   } = useAuth();
   const { language, t } = useLanguage();
   const { activeBusiness } = useMode();
@@ -48,6 +49,7 @@ export const ProfilePage: React.FC = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
+  const [sendingResetLink, setSendingResetLink] = useState(false);
   const [passwordMsg, setPasswordMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -172,6 +174,23 @@ export const ProfilePage: React.FC = () => {
       });
     } finally {
       setSavingPassword(false);
+    }
+  };
+
+  const handleSendPasswordReset = async () => {
+    if (!user?.email) return;
+    setPasswordMsg(null);
+    setSendingResetLink(true);
+    try {
+      await sendPasswordReset(user.email);
+      setPasswordMsg({ type: 'ok', text: t.login.resetEmailSentNotice });
+    } catch (err) {
+      setPasswordMsg({
+        type: 'err',
+        text: err instanceof Error ? err.message : 'Unable to send password reset email.',
+      });
+    } finally {
+      setSendingResetLink(false);
     }
   };
 
@@ -355,12 +374,24 @@ export const ProfilePage: React.FC = () => {
               <>
                 <div className="space-y-4">
                   <div className="space-y-1.5 max-w-md">
-                    <label
-                      htmlFor="profile-current-password"
-                      className="block text-xs font-medium text-zinc-300"
-                    >
-                      {t.profile.currentPasswordLabel}
-                    </label>
+                    <div className="flex items-center justify-between gap-2">
+                      <label
+                        htmlFor="profile-current-password"
+                        className="block text-xs font-medium text-zinc-300"
+                      >
+                        {t.profile.currentPasswordLabel}
+                      </label>
+                      {user?.email && (
+                        <button
+                          type="button"
+                          onClick={handleSendPasswordReset}
+                          disabled={sendingResetLink || savingPassword}
+                          className="text-[11px] font-medium text-[#4ade80] hover:text-[#86efac] disabled:opacity-50 cursor-pointer whitespace-nowrap"
+                        >
+                          {sendingResetLink ? t.login.sendingResetLink : t.login.forgotPassword}
+                        </button>
+                      )}
+                    </div>
                     <div className="relative">
                       <input
                         id="profile-current-password"

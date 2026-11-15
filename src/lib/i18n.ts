@@ -102,6 +102,10 @@ export interface TranslationStrings {
     emailPlaceholder: string;
     showPassword: string;
     hidePassword: string;
+    forgotPassword: string;
+    sendingResetLink: string;
+    resetEmailSentNotice: string;
+    enterEmailForReset: string;
   };
   dashboard: {
     addProduct: string;
@@ -499,6 +503,10 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       emailPlaceholder: 'you@business.com',
       showPassword: 'Show password',
       hidePassword: 'Hide password',
+      forgotPassword: 'Forgot password?',
+      sendingResetLink: 'Sending reset link...',
+      resetEmailSentNotice: 'Password reset link sent to your email. Check your Inbox or Spam folder to set a new password.',
+      enterEmailForReset: 'Enter your account email address above first, then click "Forgot password?".',
     },
     dashboard: {
       addProduct: 'Add Product',
@@ -901,6 +909,10 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       emailPlaceholder: 'you@business.com',
       showPassword: 'পাসওয়ার্ড দেখুন',
       hidePassword: 'পাসওয়ার্ড লুকান',
+      forgotPassword: 'পাসওয়ার্ড ভুলে গেছেন?',
+      sendingResetLink: 'রিসেট লিংক পাঠানো হচ্ছে...',
+      resetEmailSentNotice: 'আপনার ইমেইলে পাসওয়ার্ড রিসেট লিংক পাঠানো হয়েছে। নতুন পাসওয়ার্ড সেট করতে Inbox বা Spam ফোল্ডার চেক করুন।',
+      enterEmailForReset: 'প্রথমে উপরের ঘরে আপনার অ্যাকাউন্টের ইমেইল লিখুন, তারপর "পাসওয়ার্ড ভুলে গেছেন?" চাপুন।',
     },
     dashboard: {
       addProduct: 'পণ্য যোগ করুন',
