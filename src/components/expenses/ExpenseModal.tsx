@@ -9,10 +9,14 @@ import { dbService, StagedAssetInput } from '../../lib/firebase/db';
 import { processImageAsset, tryUploadToStorageOrFallback } from '../../lib/firebase/storage';
 import { expenseCategorySchema, expenseSchema } from '../../lib/validators/schemas';
 import {
+  BUSINESS_EXPENSE_CATEGORIES,
   formatMoney,
+  getCategoriesForMode,
   getTodayDhakaDate,
   PAYMENT_METHODS,
+  PERSONAL_EXPENSE_CATEGORIES,
   resolveCategoryLabel,
+  resolveExpenseMode,
 } from '../../lib/utils';
 import { Button, Input, Modal, Select } from '../ui';
 
@@ -38,7 +42,7 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
   const [entryBusinessId, setEntryBusinessId] = useState<string>(activeBusinessId);
   const { allCategories, modeCategories, categoryLabels, categoryMap } = useExpenseCategories(
     user,
-    open,
+    Boolean(user),
     entryMode
   );
   const [title, setTitle] = useState('');
@@ -86,7 +90,7 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
     setNewCatUnitPrice('');
     setNewCatPhoto('');
     if (editingExpense) {
-      const m = editingExpense.mode || 'business';
+      const m = resolveExpenseMode(editingExpense, allCategories);
       setEntryMode(m);
       setEntryBusinessId(editingExpense.businessId || activeBusinessId);
       setTitle(editingExpense.title);
@@ -149,11 +153,20 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
 
   // Keep selected category aligned with the user's active categories for entryMode
   useEffect(() => {
-    if (!open || editingExpense || modeCategories.length === 0) return;
-    if (!modeCategories.some((c) => c.key === category)) {
+    if (!open || modeCategories.length === 0) return;
+    const oppositeMode: AppMode = entryMode === 'business' ? 'personal' : 'business';
+    const oppositeBuiltIn =
+      oppositeMode === 'business' ? BUSINESS_EXPENSE_CATEGORIES : PERSONAL_EXPENSE_CATEGORIES;
+    const isOppositeBuiltIn = Object.prototype.hasOwnProperty.call(oppositeBuiltIn, category);
+    const inCurrentList = modeCategories.some((c) => c.key === category);
+    const inOppositeList = allCategories.some(
+      (c) => c.mode === oppositeMode && c.key === category
+    );
+
+    if (isOppositeBuiltIn || (!editingExpense && !inCurrentList) || (!inCurrentList && inOppositeList)) {
       setCategory(modeCategories[0].key);
     }
-  }, [open, editingExpense, modeCategories, category]);
+  }, [open, editingExpense, modeCategories, allCategories, entryMode, category]);
 
   const applyCategoryDefaultsIfNew = (catKey: string) => {
     if (editingExpense) return;
@@ -178,12 +191,13 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
     setNewCatUnitPrice('');
     setNewCatPhoto('');
     const nextList = allCategories.filter((c) => c.mode === nextMode);
+    const builtInKeys = new Set(getCategoriesForMode(nextMode).map(([k]) => k));
     if (nextList.length > 0) {
       if (!nextList.some((c) => c.key === category)) {
         setCategory(nextList[0].key);
         applyCategoryDefaultsIfNew(nextList[0].key);
       }
-    } else {
+    } else if (!builtInKeys.has(category)) {
       setCategory(nextMode === 'business' ? 'facebook_ads' : 'groceries_bazaar');
     }
   };
@@ -317,6 +331,23 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
     e.preventDefault();
     setErrorMsg(null);
 
+    const oppositeMode: AppMode = entryMode === 'business' ? 'personal' : 'business';
+    const oppositeBuiltIn =
+      oppositeMode === 'business' ? BUSINESS_EXPENSE_CATEGORIES : PERSONAL_EXPENSE_CATEGORIES;
+    const isOppositeBuiltIn = Object.prototype.hasOwnProperty.call(oppositeBuiltIn, category);
+    const inCurrentCustom = allCategories.some((c) => c.mode === entryMode && c.key === category);
+    const inOppositeCustom = allCategories.some(
+      (c) => c.mode === oppositeMode && c.key === category
+    );
+    if (isOppositeBuiltIn || (!inCurrentCustom && inOppositeCustom)) {
+      setErrorMsg(
+        entryMode === 'business'
+          ? 'Selected category belongs to Personal mode. Switch Ledger Scope to Personal or choose a Business category.'
+          : 'Selected category belongs to Business mode. Switch Ledger Scope to Business or choose a Personal category.'
+      );
+      return;
+    }
+
     const parsed = expenseSchema.safeParse({
       mode: entryMode,
       title,
@@ -361,12 +392,18 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
   };
 
   const selectOptions = useMemo(() => {
-    const base = modeCategories.map((c) => ({ key: c.key, label: c.label }));
-    if (category && !base.some((o) => o.key === category)) {
+    const base =
+      modeCategories.length > 0
+        ? modeCategories.map((c) => ({ key: c.key, label: c.label }))
+        : getCategoriesForMode(entryMode).map(([key, label]) => ({ key, label }));
+    const oppositeBuiltIn =
+      entryMode === 'business' ? PERSONAL_EXPENSE_CATEGORIES : BUSINESS_EXPENSE_CATEGORIES;
+    const isOppositeBuiltIn = Object.prototype.hasOwnProperty.call(oppositeBuiltIn, category);
+    if (category && !isOppositeBuiltIn && !base.some((o) => o.key === category)) {
       base.push({ key: category, label: resolveCategoryLabel(category, categoryLabels) });
     }
     return base;
-  }, [modeCategories, category, categoryLabels]);
+  }, [modeCategories, entryMode, category, categoryLabels]);
 
   const selectedCategoryItem = categoryMap[category];
 

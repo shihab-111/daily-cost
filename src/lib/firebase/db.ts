@@ -8,6 +8,7 @@ import {
   CustomerReceipt,
   Expense,
   ExpenseCategoryItem,
+  PersonalLoan,
   Product,
   ProductPhoto,
   ReceiptAsset,
@@ -21,6 +22,7 @@ import {
   CustomerFormValues,
   CustomerReceiptFormValues,
   ExpenseFormValues,
+  PersonalLoanFormValues,
   ProductFormValues,
   ReceiptTemplateFormValues,
   SettingsFormValues,
@@ -31,6 +33,7 @@ import * as businessService from '../services/businessService';
 import * as categoryService from '../services/categoryService';
 import * as customerService from '../services/customerService';
 import * as expenseService from '../services/expenseService';
+import * as loanService from '../services/loanService';
 import * as partnerService from '../services/partnerService';
 import * as productService from '../services/productService';
 import * as profileService from '../services/profileService';
@@ -185,6 +188,21 @@ export interface BusinessDataAdapter {
     businessId?: string
   ): Promise<string[]>;
   deleteBusinessPartner(user: User, partner: BusinessPartner): Promise<void>;
+  subscribePersonalLoans(
+    user: User,
+    onData: (loans: PersonalLoan[]) => void,
+    onError: (err: Error) => void
+  ): () => void;
+  savePersonalLoan(
+    user: User,
+    values: PersonalLoanFormValues,
+    existing?: PersonalLoan
+  ): Promise<string>;
+  saveMultiplePersonalLoans(
+    user: User,
+    entries: PersonalLoanFormValues[]
+  ): Promise<string[]>;
+  deletePersonalLoan(user: User, loan: PersonalLoan): Promise<void>;
   saveSettings(user: User, values: SettingsFormValues, hasExisting: boolean): Promise<void>;
   subscribeReceiptTemplate(
     user: User,
@@ -266,6 +284,10 @@ class FirestoreBusinessAdapter implements BusinessDataAdapter {
   saveBusinessPartner = partnerService.saveBusinessPartner;
   saveMultipleBusinessPartners = partnerService.saveMultipleBusinessPartners;
   deleteBusinessPartner = partnerService.deleteBusinessPartner;
+  subscribePersonalLoans = loanService.subscribePersonalLoans;
+  savePersonalLoan = loanService.savePersonalLoan;
+  saveMultiplePersonalLoans = loanService.saveMultiplePersonalLoans;
+  deletePersonalLoan = loanService.deletePersonalLoan;
   saveSettings = settingsService.saveSettings;
   subscribeReceiptTemplate = receiptService.subscribeReceiptTemplate;
   saveReceiptTemplate = receiptService.saveReceiptTemplate;

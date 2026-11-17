@@ -165,10 +165,12 @@ export async function saveCustomerReceipt(
 
   const resolvedBusinessId = (
     activeMode === 'business'
-      ? businessId !== undefined
+      ? businessId !== undefined && businessId !== 'personal_mode'
         ? businessId
-        : existing?.businessId || ''
-      : ''
+        : existing?.businessId && existing.businessId !== 'personal_mode'
+        ? existing.businessId
+        : ''
+      : 'personal_mode'
   ).slice(0, 128);
 
   const payloadBase = {

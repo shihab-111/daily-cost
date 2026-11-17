@@ -1,4 +1,5 @@
 import {
+  ActivityLog,
   AppMode,
   BusinessExpenseCategory,
   BusinessPartner,
@@ -6,7 +7,9 @@ import {
   DateRangePreset,
   Expense,
   ExpenseCategory,
+  ExpenseCategoryItem,
   PersonalExpenseCategory,
+  PersonalLoan,
   Product,
   StockStatus,
 } from '../types';
@@ -58,6 +61,45 @@ export const EXPENSE_CATEGORY_LABELS: Record<string, string> = {
 export function getCategoriesForMode(mode: AppMode): Array<[ExpenseCategory, string]> {
   const source = mode === 'business' ? BUSINESS_EXPENSE_CATEGORIES : PERSONAL_EXPENSE_CATEGORIES;
   return Object.entries(source) as Array<[ExpenseCategory, string]>;
+}
+
+export function resolveExpenseMode(
+  expense: Pick<Expense, 'mode' | 'category'>,
+  allCategories: ExpenseCategoryItem[] = []
+): AppMode {
+  if (Object.prototype.hasOwnProperty.call(PERSONAL_EXPENSE_CATEGORIES, expense.category)) {
+    return 'personal';
+  }
+  if (Object.prototype.hasOwnProperty.call(BUSINESS_EXPENSE_CATEGORIES, expense.category)) {
+    return 'business';
+  }
+  if (allCategories.length > 0) {
+    const matching = allCategories.filter((c) => c.key === expense.category);
+    const hasPersonal = matching.some((c) => c.mode === 'personal');
+    const hasBusiness = matching.some((c) => c.mode === 'business');
+    if (hasPersonal && !hasBusiness) return 'personal';
+    if (hasBusiness && !hasPersonal) return 'business';
+  }
+  return expense.mode === 'personal' ? 'personal' : 'business';
+}
+
+export function resolveActivityLogMode(
+  log: Pick<ActivityLog, 'mode' | 'summary'>
+): AppMode {
+  if (log.mode === 'personal') return 'personal';
+  if (log.mode === 'business') {
+    const summaryLower = (log.summary || '').toLowerCase();
+    if (
+      summaryLower.startsWith('logged personal expense:') ||
+      summaryLower.startsWith('updated personal expense:')
+    ) {
+      return 'personal';
+    }
+    return 'business';
+  }
+  const summaryLower = (log.summary || '').toLowerCase();
+  if (summaryLower.includes('personal expense')) return 'personal';
+  return 'business';
 }
 
 export function generateCategoryKey(label: string): string {
@@ -420,6 +462,39 @@ export function exportBusinessPartnersCsv(partners: BusinessPartner[], businessN
     p.notes,
   ]);
   downloadCsv(`bd-partners-${getTodayDhakaDate()}.csv`, headers, rows);
+}
+
+export function exportPersonalLoansCsv(loans: PersonalLoan[]) {
+  const headers = [
+    'Type',
+    'Person Name',
+    'Phone',
+    'Loan Date',
+    'Due Date',
+    'Loan Amount',
+    'Repaid Amount',
+    'Remaining Due',
+    'Currency',
+    'Status',
+    'Notes',
+  ];
+  const rows = loans.map((l) => {
+    const remaining = Math.max(0, (l.amount || 0) - (l.paidAmount || 0));
+    return [
+      l.direction === 'given' ? 'Lent Out (They Owe Me)' : 'Borrowed (I Owe)',
+      l.personName,
+      l.phone || '',
+      l.date,
+      l.dueDate || '',
+      (l.amount || 0).toFixed(2),
+      (l.paidAmount || 0).toFixed(2),
+      remaining.toFixed(2),
+      l.currency,
+      remaining <= 0 ? 'Settled' : 'Pending',
+      l.notes || '',
+    ];
+  });
+  downloadCsv(`personal-loans-${getTodayDhakaDate()}.csv`, headers, rows);
 }
 
 

@@ -177,11 +177,12 @@
             "product_created", "product_updated", "product_deleted",
             "customer_created", "customer_updated", "customer_deleted",
             "partner_created", "partner_updated", "partner_deleted",
-            "receipt_created", "receipt_deleted"
+            "receipt_created", "receipt_deleted",
+            "loan_created", "loan_updated", "loan_deleted"
           ]
         },
         "summary": { "type": "string", "minLength": 1, "maxLength": 240 },
-        "entityType": { "type": "string", "enum": ["expense", "product", "customer", "partner", "receipt"] },
+        "entityType": { "type": "string", "enum": ["expense", "product", "customer", "partner", "receipt", "loan"] },
         "entityId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
         "amount": { "type": "number" },
         "currency": { "type": "string", "enum": ["BDT", "USD"] },
@@ -389,6 +390,29 @@
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["userId", "displayName", "photoUrl", "createdAt", "updatedAt"]
+    },
+    "PersonalLoan": {
+      "title": "PersonalLoan",
+      "description": "Tenant-isolated personal loan record tracking money lent to or borrowed from named individuals.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "direction": { "type": "string", "enum": ["given", "taken"] },
+        "personName": { "type": "string", "minLength": 1, "maxLength": 140 },
+        "phone": { "type": "string", "maxLength": 40 },
+        "amount": { "type": "number" },
+        "paidAmount": { "type": "number" },
+        "currency": { "type": "string", "enum": ["BDT", "USD"] },
+        "date": { "type": "string", "minLength": 10, "maxLength": 10 },
+        "dueDate": { "type": "string", "maxLength": 10 },
+        "notes": { "type": "string", "maxLength": 1000 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId", "direction", "personName", "phone", "amount", "paidAmount",
+        "currency", "date", "dueDate", "notes", "createdAt", "updatedAt"
+      ]
     }
   },
   "firestore": {
@@ -455,6 +479,10 @@
     "/userProfiles/{userId}": {
       "schema": { "$ref": "#/entities/UserProfile" },
       "description": "Per-user profile storing display name and profile photo."
+    },
+    "/personalLoans/{loanId}": {
+      "schema": { "$ref": "#/entities/PersonalLoan" },
+      "description": "Tenant-isolated personal loans given to and taken from named individuals."
     }
   }
 }

@@ -215,13 +215,34 @@ export interface ActivityLog {
     | 'partner_updated'
     | 'partner_deleted'
     | 'receipt_created'
-    | 'receipt_deleted';
+    | 'receipt_deleted'
+    | 'loan_created'
+    | 'loan_updated'
+    | 'loan_deleted';
   summary: string;
-  entityType: 'expense' | 'product' | 'customer' | 'partner' | 'receipt';
+  entityType: 'expense' | 'product' | 'customer' | 'partner' | 'receipt' | 'loan';
   entityId: string;
   amount: number;
   currency: CurrencyCode;
   createdAt?: Timestamp;
+}
+
+export type LoanDirection = 'given' | 'taken';
+
+export interface PersonalLoan {
+  id: string;
+  userId: string;
+  direction: LoanDirection;
+  personName: string;
+  phone: string;
+  amount: number;
+  paidAmount: number;
+  currency: CurrencyCode;
+  date: string; // YYYY-MM-DD (Asia/Dhaka)
+  dueDate: string; // YYYY-MM-DD or ''
+  notes: string;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
 }
 
 export type ReceiptLogoType = 'monogram' | 'uploaded' | 'minimal_text';

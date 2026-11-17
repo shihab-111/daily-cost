@@ -15,6 +15,7 @@ import { ExpensesPage } from './pages/ExpensesPage';
 import { ProductsPage } from './pages/ProductsPage';
 import { CustomersPage } from './pages/CustomersPage';
 import { PartnersPage } from './pages/PartnersPage';
+import { LoansPage } from './pages/LoansPage';
 import { ReceiptsPage } from './pages/ReceiptsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { ProfilePage } from './pages/ProfilePage';
@@ -89,6 +90,14 @@ export default function App() {
                 element={
                   <ProtectedRoute>
                     <PartnersPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/loans"
+                element={
+                  <ProtectedRoute>
+                    <LoansPage />
                   </ProtectedRoute>
                 }
               />

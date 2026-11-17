@@ -39,6 +39,7 @@ export interface TranslationStrings {
     productInventory: string;
     customersBd: string;
     partners: string;
+    personalLoans: string;
     receiptStudio: string;
     settingsData: string;
     settingsBudget: string;
@@ -264,6 +265,76 @@ export interface TranslationStrings {
     updatePartner: string;
     batchTotalLabel: string;
   };
+  loans: {
+    pageTitle: string;
+    addLoan: string;
+    addFirstLoan: string;
+    exportCsv: string;
+    lentOutTitle: string;
+    borrowedTitle: string;
+    netPositionTitle: string;
+    peopleTrackedTitle: string;
+    peopleWord: string;
+    personWord: string;
+    entriesWord: string;
+    principalWord: string;
+    theyOweYou: string;
+    youOweThem: string;
+    balancedLabel: string;
+    peopleSummaryTitle: string;
+    allPeopleChip: string;
+    searchPlaceholder: string;
+    filterAll: string;
+    filterGiven: string;
+    filterTaken: string;
+    filterPending: string;
+    filterSettled: string;
+    showingOf: string;
+    loansWord: string;
+    noLoansTitle: string;
+    noLoansDesc: string;
+    directionCol: string;
+    personCol: string;
+    dateCol: string;
+    amountCol: string;
+    paidCol: string;
+    remainingCol: string;
+    statusCol: string;
+    givenBadge: string;
+    takenBadge: string;
+    settledBadge: string;
+    pendingBadge: string;
+    markSettled: string;
+    addRepayment: string;
+    repaymentPromptLabel: string;
+    saveRepayment: string;
+    modalAddTitle: string;
+    modalEditTitle: string;
+    modalSubtitle: string;
+    directionLabel: string;
+    directionGivenOption: string;
+    directionTakenOption: string;
+    personNameLabel: string;
+    personNamePlaceholder: string;
+    phoneLabel: string;
+    loanAmountLabel: string;
+    paidAmountLabel: string;
+    currencyLabel: string;
+    dateLabel: string;
+    dueDateLabel: string;
+    notesLabel: string;
+    notesPlaceholder: string;
+    addAnotherRow: string;
+    removeRow: string;
+    rowPrefix: string;
+    saveLoan: string;
+    saveAllLoans: string;
+    updateLoan: string;
+    batchTotalLabel: string;
+    overviewCardTitle: string;
+    overviewCardDesc: string;
+    manageLoansBtn: string;
+  };
   receipts: {
     newBlankReceipt: string;
     saveBrandStyle: string;
@@ -437,6 +508,7 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       productInventory: 'Product Inventory',
       customersBd: 'Customers (BD)',
       partners: 'Partners & Invest',
+      personalLoans: 'Loans (Given & Taken)',
       receiptStudio: 'Receipt Studio',
       settingsData: 'Settings & Data',
       settingsBudget: 'Settings & Budget',
@@ -669,6 +741,78 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       updatePartner: 'Update Partner',
       batchTotalLabel: 'Batch Total',
     },
+    loans: {
+      pageTitle: 'Personal Loans (Given & Taken)',
+      addLoan: 'Add Loan Entry',
+      addFirstLoan: 'Add First Loan',
+      exportCsv: 'Loans CSV',
+      lentOutTitle: 'Loan Given (They Owe Me)',
+      borrowedTitle: 'Loan Taken (I Owe Others)',
+      netPositionTitle: 'Net Loan Balance',
+      peopleTrackedTitle: 'Total People Tracked',
+      peopleWord: 'people',
+      personWord: 'person',
+      entriesWord: 'entries',
+      principalWord: 'Total lent/borrowed',
+      theyOweYou: 'Net receivable to you',
+      youOweThem: 'Net payable by you',
+      balancedLabel: 'All balanced',
+      peopleSummaryTitle: 'Breakdown by Person Name',
+      allPeopleChip: 'All People',
+      searchPlaceholder: 'Search by person name, phone, or notes...',
+      filterAll: 'All',
+      filterGiven: 'Loan Given',
+      filterTaken: 'Loan Taken',
+      filterPending: 'Pending',
+      filterSettled: 'Settled',
+      showingOf: 'Showing',
+      loansWord: 'loans',
+      noLoansTitle: 'No Personal Loans Recorded Yet',
+      noLoansDesc:
+        'Add people by name to track how many people took loans from you and how much Tk you borrowed from others.',
+      directionCol: 'Type',
+      personCol: 'Person Name',
+      dateCol: 'Date',
+      amountCol: 'Loan Tk',
+      paidCol: 'Repaid',
+      remainingCol: 'Remaining',
+      statusCol: 'Status',
+      givenBadge: 'Given (Receivable)',
+      takenBadge: 'Taken (Payable)',
+      settledBadge: 'Settled',
+      pendingBadge: 'Pending',
+      markSettled: 'Mark Settled',
+      addRepayment: 'Repay',
+      repaymentPromptLabel: 'Add Tk paid',
+      saveRepayment: 'Apply',
+      modalAddTitle: 'Add Personal Loan(s)',
+      modalEditTitle: 'Edit Personal Loan',
+      modalSubtitle:
+        'Record money someone loaned from you or money you loaned from someone else, added by name.',
+      directionLabel: 'Loan Type *',
+      directionGivenOption: 'Person Loaned From Me (I Gave)',
+      directionTakenOption: 'I Loaned From Person (I Borrowed)',
+      personNameLabel: 'Person Name *',
+      personNamePlaceholder: 'e.g., Karim Mia',
+      phoneLabel: 'Phone (Optional)',
+      loanAmountLabel: 'Loan Amount (Tk) *',
+      paidAmountLabel: 'Already Repaid (Tk)',
+      currencyLabel: 'Currency',
+      dateLabel: 'Loan Date *',
+      dueDateLabel: 'Return Date (Optional)',
+      notesLabel: 'Notes / Reason',
+      notesPlaceholder: 'Hand loan, bKash TrxID, or return promise...',
+      addAnotherRow: 'Add Another Person',
+      removeRow: 'Remove',
+      rowPrefix: 'Person',
+      saveLoan: 'Save Loan',
+      saveAllLoans: 'Save Loans',
+      updateLoan: 'Update Loan',
+      batchTotalLabel: 'Batch Total',
+      overviewCardTitle: 'Personal Loans (Given & Taken)',
+      overviewCardDesc: 'Track who owes you and who you owe by name.',
+      manageLoansBtn: 'Manage Loans',
+    },
     receipts: {
       newBlankReceipt: 'New Blank Receipt',
       saveBrandStyle: 'Save Brand Style',
@@ -843,6 +987,7 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       productInventory: 'পণ্য ও স্টক',
       customersBd: 'কাস্টমার (BD)',
       partners: 'পার্টনার ও বিনিয়োগ',
+      personalLoans: 'ধার ও লোন হিসাব',
       receiptStudio: 'রসিদ / মেমো স্টুডিও',
       settingsData: 'সেটিংস ও ডেটা',
       settingsBudget: 'সেটিংস ও বাজেট',
@@ -1073,6 +1218,78 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       saveAllPartners: 'সব পার্টনার সংরক্ষণ',
       updatePartner: 'পার্টনার আপডেট',
       batchTotalLabel: 'মোট হিসাব',
+    },
+    loans: {
+      pageTitle: 'ব্যক্তিগত ধার ও লোন হিসাব',
+      addLoan: 'নতুন লোন যোগ করুন',
+      addFirstLoan: 'প্রথম লোন যোগ করুন',
+      exportCsv: 'লোন CSV',
+      lentOutTitle: 'ধার দেওয়া (মানুষের কাছে পাবো)',
+      borrowedTitle: 'ধার নেওয়া (মানুষকে দিবো)',
+      netPositionTitle: 'নিট লোন ব্যালেন্স',
+      peopleTrackedTitle: 'মোট মানুষ',
+      peopleWord: 'জন',
+      personWord: 'জন',
+      entriesWord: 'টি এন্ট্রি',
+      principalWord: 'মোট আসল',
+      theyOweYou: 'আপনি নিট পাবেন',
+      youOweThem: 'আপনাকে নিট দিতে হবে',
+      balancedLabel: 'সব সমান',
+      peopleSummaryTitle: 'নাম অনুযায়ী সারাংশ',
+      allPeopleChip: 'সব মানুষ',
+      searchPlaceholder: 'নাম, মোবাইল বা নোট দিয়ে খুঁজুন...',
+      filterAll: 'সবগুলো',
+      filterGiven: 'ধার দেওয়া',
+      filterTaken: 'ধার নেওয়া',
+      filterPending: 'বাকি আছে',
+      filterSettled: 'পরিশোধিত',
+      showingOf: 'দেখানো হচ্ছে',
+      loansWord: 'টি লোন',
+      noLoansTitle: 'এখনো কোনো ধার বা লোনের হিসাব নেই',
+      noLoansDesc:
+        'কতজন মানুষ আপনার থেকে টাকা নিয়েছে এবং আপনি অন্যদের থেকে কত টাকা ধার নিয়েছেন তা নামসহ সংরক্ষণ করুন।',
+      directionCol: 'ধরন',
+      personCol: 'ব্যক্তির নাম',
+      dateCol: 'তারিখ',
+      amountCol: 'মোট টাকা',
+      paidCol: 'পরিশোধ',
+      remainingCol: 'বাকি',
+      statusCol: 'অবস্থা',
+      givenBadge: 'ধার দেওয়া (পাবো)',
+      takenBadge: 'ধার নেওয়া (দিবো)',
+      settledBadge: 'পরিশোধিত',
+      pendingBadge: 'বাকি আছে',
+      markSettled: 'পরিশোধ সম্পন্ন',
+      addRepayment: 'জমা দিন',
+      repaymentPromptLabel: 'পরিশোধিত টাকা',
+      saveRepayment: 'জমা',
+      modalAddTitle: 'ব্যক্তিগত লোন / ধার যোগ করুন',
+      modalEditTitle: 'লোন তথ্য সম্পাদনা',
+      modalSubtitle:
+        'আপনার থেকে কে কত টাকা নিয়েছে অথবা আপনি কার থেকে কত টাকা নিয়েছেন তা নামসহ লিখুন।',
+      directionLabel: 'লোনের ধরন *',
+      directionGivenOption: 'আমার থেকে নিয়েছে (ধার দেওয়া)',
+      directionTakenOption: 'আমি অন্যের থেকে নিয়েছি (ধার নেওয়া)',
+      personNameLabel: 'ব্যক্তির নাম *',
+      personNamePlaceholder: 'যেমন: করিম মিয়া',
+      phoneLabel: 'মোবাইল নম্বর (ঐচ্ছিক)',
+      loanAmountLabel: 'টাকার পরিমাণ (৳) *',
+      paidAmountLabel: 'ইতোমধ্যে পরিশোধিত (৳)',
+      currencyLabel: 'মুদ্রা',
+      dateLabel: 'তারিখ *',
+      dueDateLabel: 'ফেরতের তারিখ (ঐচ্ছিক)',
+      notesLabel: 'নোট / কারণ',
+      notesPlaceholder: 'হাতে ধার, বিকাশ TrxID বা ফেরতের কথা...',
+      addAnotherRow: 'আরও ব্যক্তি যোগ করুন',
+      removeRow: 'বাদ দিন',
+      rowPrefix: 'ব্যক্তি',
+      saveLoan: 'লোন সংরক্ষণ',
+      saveAllLoans: 'সব লোন সংরক্ষণ',
+      updateLoan: 'লোন আপডেট',
+      batchTotalLabel: 'মোট হিসাব',
+      overviewCardTitle: 'ব্যক্তিগত ধার ও লোন (নামসহ)',
+      overviewCardDesc: 'কে আপনার কাছে ঋণী এবং আপনি কার কাছে ঋণী তা দেখুন।',
+      manageLoansBtn: 'লোন হিসাব দেখুন',
     },
     receipts: {
       newBlankReceipt: 'নতুন রসিদ',

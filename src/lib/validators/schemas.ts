@@ -151,6 +151,34 @@ export const businessPartnerSchema = z.object({
   notes: z.string().trim().max(1000).default(''),
 });
 
+export const personalLoanSchema = z
+  .object({
+    direction: z.enum(['given', 'taken']),
+    personName: z.string().trim().min(1, 'Person name is required.').max(140),
+    phone: z.string().trim().max(40).default(''),
+    amount: z.coerce
+      .number()
+      .min(0.01, 'Loan amount must be greater than 0.')
+      .max(999999999),
+    paidAmount: z.coerce
+      .number()
+      .min(0, 'Repaid amount cannot be negative.')
+      .max(999999999)
+      .default(0),
+    currency: z.enum(['BDT', 'USD']).default('BDT'),
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD date format.'),
+    dueDate: z
+      .string()
+      .trim()
+      .refine((v) => !v || /^\d{4}-\d{2}-\d{2}$/.test(v), 'Use YYYY-MM-DD due date format.')
+      .default(''),
+    notes: z.string().trim().max(1000).default(''),
+  })
+  .refine((data) => data.paidAmount <= data.amount, {
+    message: 'Repaid amount cannot exceed total loan amount.',
+    path: ['paidAmount'],
+  });
+
 export const receiptLineItemSchema = z.object({
   name: z.string().trim().min(1, 'Item name is required.').max(160),
   sku: z.string().trim().max(60).default(''),
@@ -259,6 +287,7 @@ export type ExpenseFormValues = z.infer<typeof expenseSchema>;
 export type ProductFormValues = z.infer<typeof productSchema>;
 export type CustomerFormValues = z.infer<typeof customerSchema>;
 export type BusinessPartnerFormValues = z.infer<typeof businessPartnerSchema>;
+export type PersonalLoanFormValues = z.infer<typeof personalLoanSchema>;
 export type SettingsFormValues = z.infer<typeof settingsSchema>;
 export type ReceiptTemplateFormValues = z.infer<typeof receiptTemplateSchema>;
 export type CustomerReceiptFormValues = z.infer<typeof customerReceiptSchema>;

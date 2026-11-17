@@ -185,7 +185,7 @@ export const ReceiptsPage: React.FC = () => {
     useCustomerReceipts(user, isAuthorized);
 
   const products = useMemo(
-    () => (mode === 'business' ? allProducts.filter((p) => matchesBusiness(p.businessId)) : allProducts),
+    () => (mode === 'business' ? allProducts.filter((p) => matchesBusiness(p.businessId)) : []),
     [allProducts, mode, matchesBusiness]
   );
 
@@ -193,15 +193,15 @@ export const ReceiptsPage: React.FC = () => {
     () =>
       mode === 'business'
         ? allCustomers.filter((c) => matchesBusiness(c.businessId))
-        : allCustomers,
+        : [],
     [allCustomers, mode, matchesBusiness]
   );
 
   const receipts = useMemo(
     () =>
       mode === 'business'
-        ? allReceipts.filter((r) => matchesBusiness(r.businessId))
-        : allReceipts,
+        ? allReceipts.filter((r) => r.businessId !== 'personal_mode' && matchesBusiness(r.businessId))
+        : allReceipts.filter((r) => r.businessId === 'personal_mode'),
     [allReceipts, mode, matchesBusiness]
   );
 
@@ -541,7 +541,11 @@ export const ReceiptsPage: React.FC = () => {
         parsed.data,
         editingReceipt,
         mode,
-        editingReceipt ? editingReceipt.businessId : activeBusinessId
+        mode === 'business'
+          ? editingReceipt && editingReceipt.businessId !== 'personal_mode'
+            ? editingReceipt.businessId
+            : activeBusinessId
+          : 'personal_mode'
       );
       if (!editingReceipt && selectedCustomerId) {
         const matchedCustomer = customers.find((c) => c.id === selectedCustomerId);

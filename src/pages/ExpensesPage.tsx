@@ -27,6 +27,7 @@ import {
   isDateInRange,
   PERSONAL_EXPENSE_CATEGORIES,
   resolveCategoryLabel,
+  resolveExpenseMode,
 } from '../lib/utils';
 import { expenseCategorySchema } from '../lib/validators/schemas';
 import { DateRangePreset, Expense, ExpenseCategory, ExpenseCategoryItem } from '../types';
@@ -40,7 +41,7 @@ export const ExpensesPage: React.FC = () => {
   const { t } = useLanguage();
   const { mode, activeBusiness, matchesBusiness } = useMode();
   const { expenses, loading } = useExpenses(user, Boolean(user));
-  const { modeCategories, categoryLabels, categoryMap } = useExpenseCategories(
+  const { allCategories, modeCategories, categoryLabels, categoryMap } = useExpenseCategories(
     user,
     Boolean(user),
     mode
@@ -263,10 +264,10 @@ export const ExpensesPage: React.FC = () => {
     () =>
       expenses.filter(
         (exp) =>
-          (exp.mode || 'business') === mode &&
+          resolveExpenseMode(exp, allCategories) === mode &&
           (mode === 'personal' || matchesBusiness(exp.businessId))
       ),
-    [expenses, mode, matchesBusiness]
+    [expenses, allCategories, mode, matchesBusiness]
   );
 
   const filteredExpenses = useMemo(() => {

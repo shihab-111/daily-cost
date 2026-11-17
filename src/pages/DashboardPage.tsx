@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { Download, Plus } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ArrowDownLeft, ArrowRight, ArrowUpRight, Download, HandCoins, Plus } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useLanguage } from '../context/LanguageContext';
 import { useMode } from '../context/ModeContext';
@@ -7,6 +8,7 @@ import {
   useActivityLogs,
   useExpenseCategories,
   useExpenses,
+  usePersonalLoans,
   useProducts,
   useSettings,
 } from '../hooks/useBusinessData';
@@ -19,12 +21,15 @@ import {
   getStockStatus,
   getTodayDhakaDate,
   isDateInRange,
+  resolveActivityLogMode,
+  resolveExpenseMode,
 } from '../lib/utils';
-import { DateRangePreset } from '../types';
+import { DateRangePreset, LoanDirection } from '../types';
 import { DashboardShell } from '../components/layout/DashboardShell';
 import { OverviewCharts } from '../components/dashboard/OverviewCharts';
 import { ExpenseModal } from '../components/expenses/ExpenseModal';
 import { ProductModal } from '../components/products/ProductModal';
+import { PersonalLoanModal } from '../components/loans/PersonalLoanModal';
 import { Button, Card } from '../components/ui';
 
 export const DashboardPage: React.FC = () => {
@@ -32,8 +37,16 @@ export const DashboardPage: React.FC = () => {
   const { t } = useLanguage();
   const { mode, activeBusiness, matchesBusiness } = useMode();
   const { expenses, loading: expLoading } = useExpenses(user, Boolean(user));
-  const { modeCategories, categoryLabels } = useExpenseCategories(user, Boolean(user), mode);
+  const { allCategories, modeCategories, categoryLabels } = useExpenseCategories(
+    user,
+    Boolean(user),
+    mode
+  );
   const { products, loading: prodLoading } = useProducts(user, Boolean(user));
+  const { loans, loading: loansLoading } = usePersonalLoans(
+    user,
+    Boolean(user) && mode === 'personal'
+  );
   const { settings } = useSettings(user, Boolean(user));
   const { logs } = useActivityLogs(user, Boolean(user));
 
@@ -42,6 +55,8 @@ export const DashboardPage: React.FC = () => {
   const [customEnd, setCustomEnd] = useState('');
   const [expenseModalOpen, setExpenseModalOpen] = useState(false);
   const [productModalOpen, setProductModalOpen] = useState(false);
+  const [loanModalOpen, setLoanModalOpen] = useState(false);
+  const [loanDirection, setLoanDirection] = useState<LoanDirection>('given');
 
   const businessName = activeBusiness?.name || settings?.businessName || 'EkTally';
   const defaultCurrency = settings?.currencyCode || 'BDT';
@@ -58,17 +73,17 @@ export const DashboardPage: React.FC = () => {
     () =>
       expenses.filter(
         (e) =>
-          (e.mode || 'business') === mode &&
+          resolveExpenseMode(e, allCategories) === mode &&
           (mode === 'personal' || matchesBusiness(e.businessId))
       ),
-    [expenses, mode, matchesBusiness]
+    [expenses, allCategories, mode, matchesBusiness]
   );
 
   const modeLogs = useMemo(
     () =>
       logs.filter(
         (l) =>
-          (l.mode || 'business') === mode &&
+          resolveActivityLogMode(l) === mode &&
           (mode === 'personal' || matchesBusiness(l.businessId))
       ),
     [logs, mode, matchesBusiness]
@@ -147,6 +162,46 @@ export const DashboardPage: React.FC = () => {
       dayOfMonth,
     };
   }, [filteredExpenses, modeExpenses, usdToBdtRate, monthlyBudgetBdt]);
+
+  const personalLoanSummary = useMemo(() => {
+    let givenRemainingBdt = 0;
+    let takenRemainingBdt = 0;
+    const givenPeoplePending = new Set<string>();
+    const takenPeoplePending = new Set<string>();
+    const nameMap = new Map<string, string>();
+
+    for (const loan of loans) {
+      const currency = loan.currency || 'BDT';
+      const amtBdt = convertToBdt(loan.amount || 0, currency, usdRateFallback(usdToBdtRate));
+      const paidBdt = convertToBdt(loan.paidAmount || 0, currency, usdRateFallback(usdToBdtRate));
+      const remBdt = Math.max(0, amtBdt - paidBdt);
+      const cleanName = loan.personName.trim();
+      const nameKey = cleanName.toLowerCase();
+      if (cleanName && !nameMap.has(nameKey)) {
+        nameMap.set(nameKey, cleanName);
+      }
+
+      if (loan.direction === 'given') {
+        givenRemainingBdt += remBdt;
+        if (remBdt > 0 && nameKey) givenPeoplePending.add(nameKey);
+      } else {
+        takenRemainingBdt += remBdt;
+        if (remBdt > 0 && nameKey) takenPeoplePending.add(nameKey);
+      }
+    }
+
+    return {
+      givenRemainingBdt,
+      takenRemainingBdt,
+      givenPeopleCount: givenPeoplePending.size,
+      takenPeopleCount: takenPeoplePending.size,
+      knownNames: Array.from(nameMap.values()).sort((a, b) => a.localeCompare(b)),
+    };
+  }, [loans, usdToBdtRate]);
+
+  function usdRateFallback(rate: number) {
+    return rate > 0 ? rate : 120;
+  }
 
   return (
     <DashboardShell
@@ -357,6 +412,107 @@ export const DashboardPage: React.FC = () => {
           </section>
         )}
 
+        {/* Personal Loans Snapshot (Personal Mode Only) */}
+        {mode === 'personal' && (
+          <Card className="p-4 sm:p-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-lg bg-[#22c55e]/15 border border-[#22c55e]/30 flex items-center justify-center shrink-0">
+                  <HandCoins className="w-4 h-4 text-[#4ade80]" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-semibold text-zinc-100">
+                    {t.loans.overviewCardTitle}
+                  </h2>
+                  <p className="text-xs text-zinc-400 mt-0.5">{t.loans.overviewCardDesc}</p>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => {
+                    setLoanDirection('given');
+                    setLoanModalOpen(true);
+                  }}
+                >
+                  <Plus className="w-3.5 h-3.5 text-[#4ade80]" />
+                  {t.loans.addLoan}
+                </Button>
+                <Link
+                  to="/loans"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#22c55e]/15 hover:bg-[#22c55e]/25 text-[#4ade80] border border-[#22c55e]/30 rounded-lg transition-colors whitespace-nowrap"
+                >
+                  <span>{t.loans.manageLoansBtn}</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="p-3.5 rounded-xl bg-[#09090b] border border-[#27272a] flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-400">
+                    <ArrowUpRight className="w-3.5 h-3.5 text-[#4ade80] shrink-0" />
+                    <span className="truncate">{t.loans.lentOutTitle}</span>
+                  </div>
+                  <p className="text-xl font-semibold font-mono tabular-nums text-[#4ade80] mt-1.5">
+                    {loansLoading ? '—' : formatMoney(personalLoanSummary.givenRemainingBdt, 'BDT')}
+                  </p>
+                  <p className="text-xs font-mono tabular-nums text-zinc-500 mt-1">
+                    {personalLoanSummary.givenPeopleCount}{' '}
+                    {personalLoanSummary.givenPeopleCount === 1
+                      ? t.loans.personWord
+                      : t.loans.peopleWord}
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="shrink-0"
+                  onClick={() => {
+                    setLoanDirection('given');
+                    setLoanModalOpen(true);
+                  }}
+                >
+                  <Plus className="w-3.5 h-3.5 text-[#4ade80]" />
+                  <span>{t.loans.filterGiven}</span>
+                </Button>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-[#09090b] border border-[#27272a] flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-400">
+                    <ArrowDownLeft className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <span className="truncate">{t.loans.borrowedTitle}</span>
+                  </div>
+                  <p className="text-xl font-semibold font-mono tabular-nums text-amber-400 mt-1.5">
+                    {loansLoading ? '—' : formatMoney(personalLoanSummary.takenRemainingBdt, 'BDT')}
+                  </p>
+                  <p className="text-xs font-mono tabular-nums text-zinc-500 mt-1">
+                    {personalLoanSummary.takenPeopleCount}{' '}
+                    {personalLoanSummary.takenPeopleCount === 1
+                      ? t.loans.personWord
+                      : t.loans.peopleWord}
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="shrink-0"
+                  onClick={() => {
+                    setLoanDirection('taken');
+                    setLoanModalOpen(true);
+                  }}
+                >
+                  <Plus className="w-3.5 h-3.5 text-amber-400" />
+                  <span>{t.loans.filterTaken}</span>
+                </Button>
+              </div>
+            </div>
+          </Card>
+        )}
+
         {/* Breakdown Charts & Activity Feed */}
         <OverviewCharts
           mode={mode}
@@ -388,6 +544,16 @@ export const DashboardPage: React.FC = () => {
               defaultThreshold={defaultThreshold}
               editingProduct={null}
               onClose={() => setProductModalOpen(false)}
+            />
+          )}
+          {mode === 'personal' && (
+            <PersonalLoanModal
+              open={loanModalOpen}
+              user={user}
+              editingLoan={null}
+              defaultDirection={loanDirection}
+              knownNames={personalLoanSummary.knownNames}
+              onClose={() => setLoanModalOpen(false)}
             />
           )}
         </>

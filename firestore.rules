@@ -218,10 +218,11 @@ service cloud.firestore {
           'product_created', 'product_updated', 'product_deleted',
           'customer_created', 'customer_updated', 'customer_deleted',
           'partner_created', 'partner_updated', 'partner_deleted',
-          'receipt_created', 'receipt_deleted'
+          'receipt_created', 'receipt_deleted',
+          'loan_created', 'loan_updated', 'loan_deleted'
         ]
         && data.summary is string && data.summary.size() >= 1 && data.summary.size() <= 240
-        && data.entityType in ['expense', 'product', 'customer', 'partner', 'receipt']
+        && data.entityType in ['expense', 'product', 'customer', 'partner', 'receipt', 'loan']
         && isValidId(data.entityId)
         && (data.amount is int || data.amount is float) && data.amount >= 0 && data.amount <= 999999999
         && data.currency in ['BDT', 'USD']
@@ -423,6 +424,29 @@ service cloud.firestore {
         && isValidId(data.userId)
         && data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 120
         && data.photoUrl is string && data.photoUrl.size() <= 80000
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidPersonalLoan(data) {
+      return data.keys().hasAll([
+          'userId', 'direction', 'personName', 'phone', 'amount', 'paidAmount',
+          'currency', 'date', 'dueDate', 'notes', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'userId', 'direction', 'personName', 'phone', 'amount', 'paidAmount',
+          'currency', 'date', 'dueDate', 'notes', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.userId)
+        && data.direction in ['given', 'taken']
+        && data.personName is string && data.personName.size() >= 1 && data.personName.size() <= 140
+        && data.phone is string && data.phone.size() <= 40
+        && (data.amount is int || data.amount is float) && data.amount >= 0 && data.amount <= 999999999
+        && (data.paidAmount is int || data.paidAmount is float) && data.paidAmount >= 0 && data.paidAmount <= 999999999 && data.paidAmount <= data.amount
+        && data.currency in ['BDT', 'USD']
+        && data.date is string && data.date.size() == 10 && data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && data.dueDate is string && (data.dueDate.size() == 0 || (data.dueDate.size() == 10 && data.dueDate.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')))
+        && data.notes is string && data.notes.size() <= 1000
         && data.createdAt is timestamp
         && data.updatedAt is timestamp;
     }
@@ -827,6 +851,30 @@ service cloud.firestore {
         && incoming().updatedAt == request.time
         && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoUrl', 'updatedAt']);
       allow delete: if false;
+    }
+
+    // 13. Personal Loans (Given & Taken by Person Name, strictly owned by userId)
+    match /personalLoans/{loanId} {
+      allow get: if isVerified() && isValidId(loanId) && existing().userId == request.auth.uid;
+      allow list: if isVerified() && resource.data.userId == request.auth.uid;
+      allow create: if isVerified()
+        && isValidId(loanId)
+        && isValidPersonalLoan(incoming())
+        && incoming().userId == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isVerified()
+        && isValidId(loanId)
+        && isValidPersonalLoan(incoming())
+        && existing().userId == request.auth.uid
+        && incoming().userId == existing().userId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'direction', 'personName', 'phone', 'amount', 'paidAmount',
+          'currency', 'date', 'dueDate', 'notes', 'updatedAt'
+        ]);
+      allow delete: if isVerified() && isValidId(loanId) && existing().userId == request.auth.uid;
     }
   }
 }

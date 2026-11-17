@@ -7,6 +7,7 @@ import {
   ChevronDown,
   ChevronRight,
   FileText,
+  HandCoins,
   Handshake,
   LayoutDashboard,
   LogOut,
@@ -88,6 +89,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
           { to: '/profile', label: t.nav.myProfile, icon: UserCircle },
           { to: '/', label: t.nav.personalOverview, icon: LayoutDashboard },
           { to: '/expenses', label: t.nav.dailyExpenses, icon: Receipt },
+          { to: '/loans', label: t.nav.personalLoans, icon: HandCoins },
           { to: '/receipts', label: t.nav.receiptStudio, icon: FileText },
           { to: '/settings', label: t.nav.settingsBudget, icon: Settings },
         ];
@@ -99,6 +101,8 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
         location.pathname.startsWith('/customers') ||
         location.pathname.startsWith('/partners'))
     ) {
+      navigate('/', { replace: true });
+    } else if (mode === 'business' && location.pathname.startsWith('/loans')) {
       navigate('/', { replace: true });
     }
   }, [mode, location.pathname, navigate]);
