@@ -90,7 +90,6 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
           { to: '/', label: t.nav.personalOverview, icon: LayoutDashboard },
           { to: '/expenses', label: t.nav.dailyExpenses, icon: Receipt },
           { to: '/loans', label: t.nav.personalLoans, icon: HandCoins },
-          { to: '/receipts', label: t.nav.receiptStudio, icon: FileText },
           { to: '/settings', label: t.nav.settingsBudget, icon: Settings },
         ];
 
@@ -99,7 +98,8 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
       mode === 'personal' &&
       (location.pathname.startsWith('/products') ||
         location.pathname.startsWith('/customers') ||
-        location.pathname.startsWith('/partners'))
+        location.pathname.startsWith('/partners') ||
+        location.pathname.startsWith('/receipts'))
     ) {
       navigate('/', { replace: true });
     } else if (mode === 'business' && location.pathname.startsWith('/loans')) {

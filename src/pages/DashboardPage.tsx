@@ -1,11 +1,25 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowDownLeft, ArrowRight, ArrowUpRight, Download, HandCoins, Plus } from 'lucide-react';
+import {
+  ArrowDownLeft,
+  ArrowRight,
+  ArrowUpRight,
+  Download,
+  HandCoins,
+  Handshake,
+  Plus,
+  Receipt,
+  TrendingDown,
+  TrendingUp,
+  Users,
+} from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useLanguage } from '../context/LanguageContext';
 import { useMode } from '../context/ModeContext';
 import {
   useActivityLogs,
+  useBusinessPartners,
+  useCustomers,
   useExpenseCategories,
   useExpenses,
   usePersonalLoans,
@@ -42,7 +56,18 @@ export const DashboardPage: React.FC = () => {
     Boolean(user),
     mode
   );
-  const { products, loading: prodLoading } = useProducts(user, Boolean(user));
+  const { products, loading: prodLoading } = useProducts(
+    user,
+    Boolean(user) && mode === 'business'
+  );
+  const { partners, loading: partnersLoading } = useBusinessPartners(
+    user,
+    Boolean(user) && mode === 'business'
+  );
+  const { customers, loading: customersLoading } = useCustomers(
+    user,
+    Boolean(user) && mode === 'business'
+  );
   const { loans, loading: loansLoading } = usePersonalLoans(
     user,
     Boolean(user) && mode === 'personal'
@@ -67,6 +92,16 @@ export const DashboardPage: React.FC = () => {
   const businessProducts = useMemo(
     () => products.filter((p) => matchesBusiness(p.businessId)),
     [products, matchesBusiness]
+  );
+
+  const businessPartners = useMemo(
+    () => partners.filter((p) => matchesBusiness(p.businessId)),
+    [partners, matchesBusiness]
+  );
+
+  const businessCustomers = useMemo(
+    () => customers.filter((c) => matchesBusiness(c.businessId)),
+    [customers, matchesBusiness]
   );
 
   const modeExpenses = useMemo(
@@ -119,6 +154,36 @@ export const DashboardPage: React.FC = () => {
     const totalUnits = businessProducts.reduce((sum, p) => sum + p.stockQty, 0);
     const lowOrOutCount = businessProducts.filter((p) => getStockStatus(p) !== 'in_stock').length;
 
+    const totalInvestedBdt = businessPartners.reduce(
+      (sum, p) => sum + convertToBdt(p.investedAmount || 0, p.currency || 'BDT', usdToBdtRate),
+      0
+    );
+    const totalPartnerDueBdt = businessPartners.reduce(
+      (sum, p) => sum + convertToBdt(p.dueAmount || 0, p.currency || 'BDT', usdToBdtRate),
+      0
+    );
+
+    const totalCustomerSalesBdt = businessCustomers.reduce((sum, c) => {
+      const fallbackOrderAmt = Math.round(((c.quantity || 0) * (c.unitPrice || 0)) * 100) / 100;
+      const spent = (c.totalSpent || 0) > 0 ? c.totalSpent : fallbackOrderAmt;
+      return sum + spent;
+    }, 0);
+    const totalCustomerOrders = businessCustomers.reduce((sum, c) => {
+      const fallbackOrder = (c.quantity || 0) * (c.unitPrice || 0) > 0 ? 1 : 0;
+      return sum + ((c.totalOrders || 0) > 0 ? c.totalOrders : fallbackOrder);
+    }, 0);
+
+    const totalBusinessCostBdt = modeExpenses.reduce(
+      (sum, e) => sum + convertToBdt(e.amount || 0, e.currency, usdToBdtRate),
+      0
+    );
+
+    const netProfitLossBdt = Math.round((totalCustomerSalesBdt - totalBusinessCostBdt) * 100) / 100;
+    const capitalBalanceBdt =
+      Math.round((totalInvestedBdt + totalCustomerSalesBdt - totalBusinessCostBdt) * 100) / 100;
+    const roiPercent =
+      totalInvestedBdt > 0 ? Math.round((netProfitLossBdt / totalInvestedBdt) * 100) : null;
+
     return {
       totalExpensesBdt,
       marketingSpendBdt,
@@ -128,8 +193,25 @@ export const DashboardPage: React.FC = () => {
       inventoryRetailValueBdt,
       totalUnits,
       lowOrOutCount,
+      totalInvestedBdt,
+      totalPartnerDueBdt,
+      partnerCount: businessPartners.length,
+      totalCustomerSalesBdt,
+      totalCustomerOrders,
+      customerCount: businessCustomers.length,
+      totalBusinessCostBdt,
+      netProfitLossBdt,
+      capitalBalanceBdt,
+      roiPercent,
     };
-  }, [filteredExpenses, businessProducts, usdToBdtRate]);
+  }, [
+    filteredExpenses,
+    modeExpenses,
+    businessProducts,
+    businessPartners,
+    businessCustomers,
+    usdToBdtRate,
+  ]);
 
   const personalKpis = useMemo(() => {
     const todayDhaka = getTodayDhakaDate();
@@ -410,6 +492,189 @@ export const DashboardPage: React.FC = () => {
               </p>
             </Card>
           </section>
+        )}
+
+        {/* Business Profit, Loss & Investment Summary (Business Mode Only) */}
+        {mode === 'business' && (
+          <Card className="p-4 sm:p-5 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-start gap-3 min-w-0">
+                <div
+                  className={`w-9 h-9 rounded-lg border flex items-center justify-center shrink-0 ${
+                    businessKpis.netProfitLossBdt >= 0
+                      ? 'bg-[#22c55e]/15 border-[#22c55e]/30 text-[#4ade80]'
+                      : 'bg-red-500/15 border-red-500/30 text-red-400'
+                  }`}
+                >
+                  {businessKpis.netProfitLossBdt >= 0 ? (
+                    <TrendingUp className="w-4 h-4" />
+                  ) : (
+                    <TrendingDown className="w-4 h-4" />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-sm font-semibold text-zinc-100">
+                      {t.dashboard.pnlCardTitle}
+                    </h2>
+                    <span
+                      className={`px-2 py-0.5 text-[10px] font-mono font-semibold uppercase rounded border ${
+                        businessKpis.netProfitLossBdt > 0
+                          ? 'bg-[#22c55e]/15 text-[#4ade80] border-[#22c55e]/30'
+                          : businessKpis.netProfitLossBdt < 0
+                          ? 'bg-red-500/15 text-red-400 border-red-500/30'
+                          : 'bg-zinc-800 text-zinc-300 border-zinc-700'
+                      }`}
+                    >
+                      {businessKpis.netProfitLossBdt > 0
+                        ? t.dashboard.profitBadge
+                        : businessKpis.netProfitLossBdt < 0
+                        ? t.dashboard.lossBadge
+                        : t.dashboard.breakEvenBadge}
+                    </span>
+                  </div>
+                  <p className="text-xs text-zinc-400 mt-0.5">{t.dashboard.pnlCardDesc}</p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                <Link
+                  to="/partners"
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium bg-[#09090b] hover:bg-[#18181b] text-zinc-200 border border-[#27272a] rounded-lg transition-colors whitespace-nowrap"
+                >
+                  <Handshake className="w-3.5 h-3.5 text-[#4ade80]" />
+                  <span>{t.nav.partners}</span>
+                </Link>
+                <Link
+                  to="/customers"
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium bg-[#09090b] hover:bg-[#18181b] text-zinc-200 border border-[#27272a] rounded-lg transition-colors whitespace-nowrap"
+                >
+                  <Users className="w-3.5 h-3.5 text-[#4ade80]" />
+                  <span>{t.nav.customersBd}</span>
+                </Link>
+                <Link
+                  to="/expenses"
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium bg-[#09090b] hover:bg-[#18181b] text-zinc-200 border border-[#27272a] rounded-lg transition-colors whitespace-nowrap"
+                >
+                  <Receipt className="w-3.5 h-3.5 text-[#4ade80]" />
+                  <span>{t.nav.businessExpenses}</span>
+                </Link>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {/* Total Invested from Partners & Invest */}
+              <div className="p-3.5 rounded-xl bg-[#09090b] border border-[#27272a]">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-medium text-zinc-400 truncate">
+                    {t.dashboard.totalInvestedLabel}
+                  </p>
+                  <Handshake className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                </div>
+                <p className="text-xl font-semibold font-mono tabular-nums text-sky-400 mt-1.5">
+                  {partnersLoading ? '—' : formatMoney(businessKpis.totalInvestedBdt, 'BDT')}
+                </p>
+                <p className="text-xs font-mono tabular-nums text-zinc-500 mt-1">
+                  {businessKpis.partnerCount} {t.dashboard.partnersWord} ·{' '}
+                  {t.dashboard.partnerDueLabel}: {formatMoney(businessKpis.totalPartnerDueBdt, 'BDT')}
+                </p>
+              </div>
+
+              {/* Customer Sales Revenue */}
+              <div className="p-3.5 rounded-xl bg-[#09090b] border border-[#27272a]">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-medium text-zinc-400 truncate">
+                    {t.dashboard.customerSalesLabel}
+                  </p>
+                  <Users className="w-3.5 h-3.5 text-[#4ade80] shrink-0" />
+                </div>
+                <p className="text-xl font-semibold font-mono tabular-nums text-[#4ade80] mt-1.5">
+                  {customersLoading ? '—' : formatMoney(businessKpis.totalCustomerSalesBdt, 'BDT')}
+                </p>
+                <p className="text-xs font-mono tabular-nums text-zinc-500 mt-1">
+                  {businessKpis.customerCount} {t.dashboard.customersWord} ·{' '}
+                  {businessKpis.totalCustomerOrders} {t.dashboard.ordersWord}
+                </p>
+              </div>
+
+              {/* Total Cost Items from Business Expenses */}
+              <div className="p-3.5 rounded-xl bg-[#09090b] border border-[#27272a]">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-medium text-zinc-400 truncate">
+                    {t.dashboard.totalBusinessCostLabel}
+                  </p>
+                  <Receipt className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                </div>
+                <p className="text-xl font-semibold font-mono tabular-nums text-amber-400 mt-1.5">
+                  {expLoading ? '—' : formatMoney(businessKpis.totalBusinessCostBdt, 'BDT')}
+                </p>
+                <p className="text-xs font-mono tabular-nums text-zinc-500 mt-1">
+                  {t.dashboard.selectedPeriodLabel}:{' '}
+                  {formatMoney(businessKpis.totalExpensesBdt, 'BDT')}
+                </p>
+              </div>
+
+              {/* Net Profit / Loss */}
+              <div
+                className={`p-3.5 rounded-xl border ${
+                  businessKpis.netProfitLossBdt > 0
+                    ? 'bg-[#22c55e]/10 border-[#22c55e]/30'
+                    : businessKpis.netProfitLossBdt < 0
+                    ? 'bg-red-500/10 border-red-500/30'
+                    : 'bg-[#09090b] border-[#27272a]'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-medium text-zinc-300 truncate">
+                    {t.dashboard.netProfitLossLabel}
+                  </p>
+                  {businessKpis.netProfitLossBdt >= 0 ? (
+                    <TrendingUp className="w-3.5 h-3.5 text-[#4ade80] shrink-0" />
+                  ) : (
+                    <TrendingDown className="w-3.5 h-3.5 text-red-400 shrink-0" />
+                  )}
+                </div>
+                <p
+                  className={`text-xl font-semibold font-mono tabular-nums mt-1.5 ${
+                    businessKpis.netProfitLossBdt > 0
+                      ? 'text-[#4ade80]'
+                      : businessKpis.netProfitLossBdt < 0
+                      ? 'text-red-400'
+                      : 'text-zinc-100'
+                  }`}
+                >
+                  {expLoading || customersLoading
+                    ? '—'
+                    : `${businessKpis.netProfitLossBdt > 0 ? '+' : businessKpis.netProfitLossBdt < 0 ? '-' : ''}${formatMoney(
+                        Math.abs(businessKpis.netProfitLossBdt),
+                        'BDT'
+                      )}`}
+                </p>
+                <p className="text-xs font-mono tabular-nums text-zinc-400 mt-1">
+                  {businessKpis.roiPercent !== null
+                    ? `${t.dashboard.roiLabel}: ${businessKpis.roiPercent > 0 ? '+' : ''}${
+                        businessKpis.roiPercent
+                      }%`
+                    : `${t.dashboard.capitalBalanceLabel}: ${formatMoney(
+                        businessKpis.capitalBalanceBdt,
+                        'BDT'
+                      )}`}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#27272a] text-xs font-mono tabular-nums text-zinc-400">
+              <span>{t.dashboard.capitalBalanceLabel}</span>
+              <span
+                className={`font-semibold ${
+                  businessKpis.capitalBalanceBdt >= 0 ? 'text-zinc-100' : 'text-red-400'
+                }`}
+              >
+                {businessKpis.capitalBalanceBdt < 0 ? '-' : ''}
+                {formatMoney(Math.abs(businessKpis.capitalBalanceBdt), 'BDT')}
+              </span>
+            </div>
+          </Card>
         )}
 
         {/* Personal Loans Snapshot (Personal Mode Only) */}

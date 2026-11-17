@@ -135,6 +135,22 @@ export interface TranslationStrings {
     acrossDaysSuffix: string;
     todaysSpendDhaka: string;
     periodTotal: string;
+    pnlCardTitle: string;
+    pnlCardDesc: string;
+    totalInvestedLabel: string;
+    partnersWord: string;
+    partnerDueLabel: string;
+    customerSalesLabel: string;
+    customersWord: string;
+    ordersWord: string;
+    totalBusinessCostLabel: string;
+    selectedPeriodLabel: string;
+    netProfitLossLabel: string;
+    profitBadge: string;
+    lossBadge: string;
+    breakEvenBadge: string;
+    capitalBalanceLabel: string;
+    roiLabel: string;
   };
   expenses: {
     logBusinessExpense: string;
@@ -350,6 +366,10 @@ export interface TranslationStrings {
   settings: {
     sectionTitle: string;
     sectionDesc: string;
+    businessSectionTitle: string;
+    businessSectionDesc: string;
+    personalSectionTitle: string;
+    personalSectionDesc: string;
     businessNameLabel: string;
     ownerNameLabel: string;
     defaultCurrencyLabel: string;
@@ -358,12 +378,23 @@ export interface TranslationStrings {
     lowStockLabel: string;
     bdPhoneLabel: string;
     addressLabel: string;
+    businessAddressLabel: string;
+    homeAddressLabel: string;
     saveSettings: string;
+    saveBusinessSettings: string;
+    savePersonalSettings: string;
+    savedBusinessMsg: string;
+    savedPersonalMsg: string;
     privacyTitle: string;
     privacyDesc: string;
+    businessPrivacyDesc: string;
+    personalPrivacyDesc: string;
     verifiedAccount: string;
     downloadBackups: string;
     allExpensesCsv: string;
+    businessExpensesCsv: string;
+    personalExpensesCsv: string;
+    personalLoansCsv: string;
     inventoryCsv: string;
   };
   profile: {
@@ -506,7 +537,7 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       businessExpenses: 'Business Expenses',
       dailyExpenses: 'Daily Expenses',
       productInventory: 'Product Inventory',
-      customersBd: 'Customers (BD)',
+      customersBd: 'Customer (Order)',
       partners: 'Partners & Invest',
       personalLoans: 'Loans (Given & Taken)',
       receiptStudio: 'Receipt Studio',
@@ -607,6 +638,23 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       acrossDaysSuffix: 'days this month',
       todaysSpendDhaka: "Today's Spend (Dhaka)",
       periodTotal: 'Period total',
+      pnlCardTitle: 'Business Profit, Loss & Investment Summary',
+      pnlCardDesc:
+        'Live calculation from Partners & Invest, Business Expenses (costs), and Customers (sales revenue).',
+      totalInvestedLabel: 'Total Invested (Partners)',
+      partnersWord: 'partners',
+      partnerDueLabel: 'Due',
+      customerSalesLabel: 'Customer Sales (Revenue)',
+      customersWord: 'customers',
+      ordersWord: 'orders',
+      totalBusinessCostLabel: 'Total Cost (Business Expenses)',
+      selectedPeriodLabel: 'Selected period',
+      netProfitLossLabel: 'Net Profit / Loss',
+      profitBadge: 'PROFIT',
+      lossBadge: 'LOSS',
+      breakEvenBadge: 'BREAK-EVEN',
+      capitalBalanceLabel: 'Capital Balance (Invest + Sales − Cost)',
+      roiLabel: 'ROI on Invest',
     },
     expenses: {
       logBusinessExpense: 'Log Business Expense',
@@ -829,6 +877,12 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       sectionTitle: 'Bangladesh Workspace, Currency & Personal Budget Settings',
       sectionDesc:
         'Configure your business profile, BDT/USD conversion, low-stock threshold, and monthly personal budget cap.',
+      businessSectionTitle: 'Business Workspace, Currency & Inventory Settings',
+      businessSectionDesc:
+        'Configure your business profile, BDT/USD conversion rate, and low-stock alert threshold.',
+      personalSectionTitle: 'Personal Budget & Currency Settings',
+      personalSectionDesc:
+        'Configure your monthly personal spending cap, default currency, and contact details.',
       businessNameLabel: 'Business / Brand Name *',
       ownerNameLabel: 'Account Owner Name *',
       defaultCurrencyLabel: 'Default Currency',
@@ -837,13 +891,26 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       lowStockLabel: 'Default Low-Stock Alert Threshold',
       bdPhoneLabel: 'BD Contact Phone (+8801XXXXXXXXX)',
       addressLabel: 'Office / Home Address',
+      businessAddressLabel: 'Business / Office Address',
+      homeAddressLabel: 'Home Address',
       saveSettings: 'Save Workspace Settings',
+      saveBusinessSettings: 'Save Business Settings',
+      savePersonalSettings: 'Save Personal Settings',
+      savedBusinessMsg: 'Business workspace settings saved.',
+      savedPersonalMsg: 'Personal budget settings saved.',
       privacyTitle: 'Multi-Tenant Privacy & Data Export',
       privacyDesc:
         'All expenses, inventory SKUs, customers, receipts, and uploaded photos are strictly isolated to your User UID.',
+      businessPrivacyDesc:
+        'All business expenses, inventory SKUs, customers, partners, and receipts are strictly isolated to your User UID.',
+      personalPrivacyDesc:
+        'All personal daily expenses and personal loans are strictly isolated to your User UID.',
       verifiedAccount: 'Verified Account',
       downloadBackups: 'Download Private Ledger Backups',
       allExpensesCsv: 'All Expenses CSV',
+      businessExpensesCsv: 'Business Expenses CSV',
+      personalExpensesCsv: 'Personal Expenses CSV',
+      personalLoansCsv: 'Personal Loans CSV',
       inventoryCsv: 'Inventory CSV',
     },
     profile: {
@@ -985,7 +1052,7 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       businessExpenses: 'ব্যবসায়িক খরচ',
       dailyExpenses: 'দৈনন্দিন খরচ',
       productInventory: 'পণ্য ও স্টক',
-      customersBd: 'কাস্টমার (BD)',
+      customersBd: 'কাস্টমার (অর্ডার)',
       partners: 'পার্টনার ও বিনিয়োগ',
       personalLoans: 'ধার ও লোন হিসাব',
       receiptStudio: 'রসিদ / মেমো স্টুডিও',
@@ -1086,6 +1153,23 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       acrossDaysSuffix: 'দিনের হিসাবে',
       todaysSpendDhaka: 'আজকের খরচ (ঢাকা)',
       periodTotal: 'মোট সময়কালের খরচ',
+      pnlCardTitle: 'ব্যবসার লাভ, ক্ষতি ও বিনিয়োগ হিসাব',
+      pnlCardDesc:
+        'পার্টনার ও বিনিয়োগ, ব্যবসায়িক খরচ এবং কাস্টমার বিক্রয় থেকে সরাসরি লাভ-ক্ষতির হিসাব।',
+      totalInvestedLabel: 'মোট বিনিয়োগ (পার্টনার ও ইনভেস্ট)',
+      partnersWord: 'জন পার্টনার',
+      partnerDueLabel: 'বকেয়া',
+      customerSalesLabel: 'কাস্টমার বিক্রয় (আয়)',
+      customersWord: 'জন কাস্টমার',
+      ordersWord: 'টি অর্ডার',
+      totalBusinessCostLabel: 'মোট খরচ (ব্যবসায়িক ব্যয়)',
+      selectedPeriodLabel: 'নির্বাচিত সময়',
+      netProfitLossLabel: 'নিট লাভ / ক্ষতি',
+      profitBadge: 'লাভ',
+      lossBadge: 'ক্ষতি',
+      breakEvenBadge: 'সমান সমান',
+      capitalBalanceLabel: 'মোট মূলধন ব্যালেন্স (বিনিয়োগ + বিক্রয় − খরচ)',
+      roiLabel: 'বিনিয়োগে ROI',
     },
     expenses: {
       logBusinessExpense: 'ব্যবসায়িক খরচ যোগ করুন',
@@ -1307,6 +1391,12 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       sectionTitle: 'ওয়ার্কস্পেস, মুদ্রা ও ব্যক্তিগত বাজেট সেটিংস',
       sectionDesc:
         'আপনার ব্যবসার তথ্য, BDT/USD রেট, লো-স্টক সতর্কতা এবং মাসিক ব্যক্তিগত বাজেট সীমা নির্ধারণ করুন।',
+      businessSectionTitle: 'ব্যবসার সেটিংস, মুদ্রা ও স্টক সতর্কতা',
+      businessSectionDesc:
+        'আপনার ব্যবসার তথ্য, BDT/USD বিনিময় হার এবং লো-স্টক সতর্কতা সীমা নির্ধারণ করুন।',
+      personalSectionTitle: 'ব্যক্তিগত বাজেট ও মুদ্রা সেটিংস',
+      personalSectionDesc:
+        'আপনার মাসিক ব্যক্তিগত খরচের বাজেট সীমা, ডিফল্ট মুদ্রা এবং ব্যক্তিগত তথ্য নির্ধারণ করুন।',
       businessNameLabel: 'ব্যবসা / ব্র্যান্ডের নাম *',
       ownerNameLabel: 'অ্যাকাউন্ট মালিকের নাম *',
       defaultCurrencyLabel: 'ডিফল্ট মুদ্রা',
@@ -1315,13 +1405,26 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       lowStockLabel: 'লো-স্টক সতর্কতা সীমা',
       bdPhoneLabel: 'যোগাযোগের নম্বর (+8801XXXXXXXXX)',
       addressLabel: 'অফিস / বাসার ঠিকানা',
+      businessAddressLabel: 'ব্যবসা / অফিসের ঠিকানা',
+      homeAddressLabel: 'বাসার ঠিকানা',
       saveSettings: 'সেটিংস সংরক্ষণ করুন',
+      saveBusinessSettings: 'ব্যবসার সেটিংস সংরক্ষণ করুন',
+      savePersonalSettings: 'ব্যক্তিগত সেটিংস সংরক্ষণ করুন',
+      savedBusinessMsg: 'ব্যবসার সেটিংস সংরক্ষণ হয়েছে।',
+      savedPersonalMsg: 'ব্যক্তিগত বাজেট সেটিংস সংরক্ষণ হয়েছে।',
       privacyTitle: 'ডেটা প্রাইভেসি ও ব্যাকআপ ডাউনলোড',
       privacyDesc:
         'আপনার সকল খরচ, স্টক, কাস্টমার, রসিদ এবং ছবি শুধুমাত্র আপনার User UID-তে সম্পূর্ণ সুরক্ষিত।',
+      businessPrivacyDesc:
+        'আপনার ব্যবসার সকল খরচ, স্টক, কাস্টমার, পার্টনার এবং রসিদ শুধুমাত্র আপনার User UID-তে সুরক্ষিত।',
+      personalPrivacyDesc:
+        'আপনার সকল ব্যক্তিগত খরচ এবং লোন/ধার হিসাব শুধুমাত্র আপনার User UID-তে সুরক্ষিত।',
       verifiedAccount: 'ভেরিফায়েড অ্যাকাউন্ট',
       downloadBackups: 'প্রাইভেট হিসাবের ব্যাকআপ ডাউনলোড করুন',
       allExpensesCsv: 'সব খরচের CSV',
+      businessExpensesCsv: 'ব্যবসার খরচের CSV',
+      personalExpensesCsv: 'ব্যক্তিগত খরচের CSV',
+      personalLoansCsv: 'ব্যক্তিগত লোন CSV',
       inventoryCsv: 'স্টক CSV',
     },
     profile: {

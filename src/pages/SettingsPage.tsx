@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Building2,
@@ -8,15 +8,27 @@ import {
   Plus,
   ShieldCheck,
   Trash2,
+  User as UserIcon,
   UserCircle,
   Wallet,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useLanguage } from '../context/LanguageContext';
 import { useMode } from '../context/ModeContext';
-import { useExpenseCategories, useExpenses, useProducts, useSettings } from '../hooks/useBusinessData';
+import {
+  useExpenseCategories,
+  useExpenses,
+  usePersonalLoans,
+  useProducts,
+  useSettings,
+} from '../hooks/useBusinessData';
 import { dbService } from '../lib/firebase/db';
-import { exportExpensesCsv, exportProductsCsv } from '../lib/utils';
+import {
+  exportExpensesCsv,
+  exportPersonalLoansCsv,
+  exportProductsCsv,
+  resolveExpenseMode,
+} from '../lib/utils';
 import { settingsSchema } from '../lib/validators/schemas';
 import { BusinessProfile, CurrencyCode } from '../types';
 import { DashboardShell } from '../components/layout/DashboardShell';
@@ -26,6 +38,7 @@ export const SettingsPage: React.FC = () => {
   const { user } = useAuth();
   const { t } = useLanguage();
   const {
+    mode,
     businesses,
     activeBusiness,
     activeBusinessId,
@@ -33,11 +46,28 @@ export const SettingsPage: React.FC = () => {
     addBusiness,
     renameBusiness,
     deleteBusiness,
+    matchesBusiness,
   } = useMode();
   const { settings } = useSettings(user, Boolean(user));
   const { expenses } = useExpenses(user, Boolean(user));
-  const { categoryLabels } = useExpenseCategories(user, Boolean(user));
-  const { products } = useProducts(user, Boolean(user));
+  const { allCategories, categoryLabels } = useExpenseCategories(user, Boolean(user), mode);
+  const { products } = useProducts(user, Boolean(user) && mode === 'business');
+  const { loans } = usePersonalLoans(user, Boolean(user) && mode === 'personal');
+
+  const modeExpenses = useMemo(
+    () =>
+      expenses.filter(
+        (e) =>
+          resolveExpenseMode(e, allCategories) === mode &&
+          (mode === 'personal' || matchesBusiness(e.businessId))
+      ),
+    [expenses, allCategories, mode, matchesBusiness]
+  );
+
+  const businessProducts = useMemo(
+    () => products.filter((p) => matchesBusiness(p.businessId)),
+    [products, matchesBusiness]
+  );
 
   const [newBusinessName, setNewBusinessName] = useState('');
   const [bizSaving, setBizSaving] = useState(false);
@@ -161,13 +191,15 @@ export const SettingsPage: React.FC = () => {
     setSavingSettings(true);
     try {
       await dbService.saveSettings(user, parsed.data, Boolean(settings));
-      const defaultBiz = businesses.find((b) => b.isDefault) || businesses[0];
-      if (defaultBiz && defaultBiz.name !== parsed.data.businessName) {
-        await renameBusiness(defaultBiz, parsed.data.businessName);
+      if (mode === 'business') {
+        const defaultBiz = businesses.find((b) => b.isDefault) || businesses[0];
+        if (defaultBiz && defaultBiz.name !== parsed.data.businessName) {
+          await renameBusiness(defaultBiz, parsed.data.businessName);
+        }
       }
       setSettingsMsg({
         type: 'ok',
-        text: 'Workspace configuration & personal budget cap saved.',
+        text: mode === 'business' ? t.settings.savedBusinessMsg : t.settings.savedPersonalMsg,
       });
     } catch (err) {
       setSettingsMsg({
@@ -182,7 +214,8 @@ export const SettingsPage: React.FC = () => {
   return (
     <DashboardShell businessName={activeBusiness?.name || businessName}>
       <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
-        {/* Multi-Business Manager */}
+        {/* Multi-Business Manager (Business Mode Only) */}
+        {mode === 'business' && (
         <Card className="p-4 sm:p-6 space-y-5">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#27272a] pb-3">
             <div className="flex items-center gap-2 min-w-0">
@@ -365,18 +398,27 @@ export const SettingsPage: React.FC = () => {
             )}
           </div>
         </Card>
+        )}
 
         <Card className="p-4 sm:p-6">
           <form onSubmit={handleSaveSettings} className="space-y-5">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#27272a] pb-3">
               <div className="flex items-center gap-2 min-w-0">
-                <Building2 className="w-4 h-4 text-[#4ade80] shrink-0" />
+                {mode === 'business' ? (
+                  <Building2 className="w-4 h-4 text-[#4ade80] shrink-0" />
+                ) : (
+                  <UserIcon className="w-4 h-4 text-[#4ade80] shrink-0" />
+                )}
                 <div className="min-w-0">
                   <h2 className="text-sm font-semibold text-zinc-100">
-                    {t.settings.sectionTitle}
+                    {mode === 'business'
+                      ? t.settings.businessSectionTitle
+                      : t.settings.personalSectionTitle}
                   </h2>
                   <p className="text-xs text-zinc-400">
-                    {t.settings.sectionDesc}
+                    {mode === 'business'
+                      ? t.settings.businessSectionDesc
+                      : t.settings.personalSectionDesc}
                   </p>
                 </div>
               </div>
@@ -395,18 +437,31 @@ export const SettingsPage: React.FC = () => {
             )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input
-                label={t.settings.businessNameLabel}
-                required
-                value={businessName}
-                onChange={(e) => setBusinessName(e.target.value)}
-              />
+              {mode === 'business' && (
+                <Input
+                  label={t.settings.businessNameLabel}
+                  required
+                  value={businessName}
+                  onChange={(e) => setBusinessName(e.target.value)}
+                />
+              )}
               <Input
                 label={t.settings.ownerNameLabel}
                 required
                 value={ownerName}
                 onChange={(e) => setOwnerName(e.target.value)}
               />
+              {mode === 'personal' && (
+                <Input
+                  label={t.settings.monthlyBudgetLabel}
+                  type="number"
+                  min="0"
+                  step="100"
+                  value={personalMonthlyBudget}
+                  onChange={(e) => setPersonalMonthlyBudget(e.target.value)}
+                  className="font-mono tabular-nums"
+                />
+              )}
               <Select
                 label={t.settings.defaultCurrencyLabel}
                 value={currencyCode}
@@ -424,23 +479,16 @@ export const SettingsPage: React.FC = () => {
                 onChange={(e) => setUsdToBdtRate(e.target.value)}
                 className="font-mono tabular-nums"
               />
-              <Input
-                label={t.settings.monthlyBudgetLabel}
-                type="number"
-                min="0"
-                step="100"
-                value={personalMonthlyBudget}
-                onChange={(e) => setPersonalMonthlyBudget(e.target.value)}
-                className="font-mono tabular-nums"
-              />
-              <Input
-                label={t.settings.lowStockLabel}
-                type="number"
-                min="0"
-                value={lowStockThreshold}
-                onChange={(e) => setLowStockThreshold(e.target.value)}
-                className="font-mono tabular-nums"
-              />
+              {mode === 'business' && (
+                <Input
+                  label={t.settings.lowStockLabel}
+                  type="number"
+                  min="0"
+                  value={lowStockThreshold}
+                  onChange={(e) => setLowStockThreshold(e.target.value)}
+                  className="font-mono tabular-nums"
+                />
+              )}
               <Input
                 label={t.settings.bdPhoneLabel}
                 value={phone}
@@ -449,7 +497,11 @@ export const SettingsPage: React.FC = () => {
                 className="font-mono"
               />
               <Input
-                label={t.settings.addressLabel}
+                label={
+                  mode === 'business'
+                    ? t.settings.businessAddressLabel
+                    : t.settings.homeAddressLabel
+                }
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 placeholder="Banani, Dhaka, Bangladesh"
@@ -462,7 +514,11 @@ export const SettingsPage: React.FC = () => {
                 className="w-full sm:w-auto min-h-[44px] sm:min-h-0"
                 disabled={savingSettings}
               >
-                {savingSettings ? t.common.saving : t.settings.saveSettings}
+                {savingSettings
+                  ? t.common.saving
+                  : mode === 'business'
+                  ? t.settings.saveBusinessSettings
+                  : t.settings.savePersonalSettings}
               </Button>
             </div>
           </form>
@@ -477,7 +533,9 @@ export const SettingsPage: React.FC = () => {
                 {t.settings.privacyTitle}
               </h2>
               <p className="text-xs text-zinc-400">
-                {t.settings.privacyDesc}
+                {mode === 'business'
+                  ? t.settings.businessPrivacyDesc
+                  : t.settings.personalPrivacyDesc}
               </p>
             </div>
           </div>
@@ -515,23 +573,39 @@ export const SettingsPage: React.FC = () => {
                   variant="secondary"
                   size="sm"
                   className="w-full sm:w-auto min-h-[40px] sm:min-h-0"
-                  disabled={expenses.length === 0}
-                  onClick={() => exportExpensesCsv(expenses, categoryLabels)}
+                  disabled={modeExpenses.length === 0}
+                  onClick={() => exportExpensesCsv(modeExpenses, categoryLabels)}
                 >
                   <Download className="w-3.5 h-3.5 text-[#4ade80]" />
-                  {t.settings.allExpensesCsv}
+                  {mode === 'business'
+                    ? t.settings.businessExpensesCsv
+                    : t.settings.personalExpensesCsv}
                 </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  className="w-full sm:w-auto min-h-[40px] sm:min-h-0"
-                  disabled={products.length === 0}
-                  onClick={() => exportProductsCsv(products)}
-                >
-                  <Download className="w-3.5 h-3.5 text-[#4ade80]" />
-                  {t.settings.inventoryCsv}
-                </Button>
+                {mode === 'business' ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="w-full sm:w-auto min-h-[40px] sm:min-h-0"
+                    disabled={businessProducts.length === 0}
+                    onClick={() => exportProductsCsv(businessProducts)}
+                  >
+                    <Download className="w-3.5 h-3.5 text-[#4ade80]" />
+                    {t.settings.inventoryCsv}
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="w-full sm:w-auto min-h-[40px] sm:min-h-0"
+                    disabled={loans.length === 0}
+                    onClick={() => exportPersonalLoansCsv(loans)}
+                  >
+                    <Download className="w-3.5 h-3.5 text-[#4ade80]" />
+                    {t.settings.personalLoansCsv}
+                  </Button>
+                )}
               </div>
             </div>
           </div>
