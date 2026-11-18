@@ -1,8 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import {
-  doc,
-  getDocFromServer,
   getFirestore,
   initializeFirestore,
   persistentLocalCache,
@@ -127,18 +125,3 @@ export async function commitOfflineSafe(
     handleFirestoreError(error, operationType, path);
   }
 }
-
-async function testConnection() {
-  if (typeof navigator !== 'undefined' && !navigator.onLine) {
-    return;
-  }
-  try {
-    await getDocFromServer(doc(db, 'test', 'connection'));
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.warn('Firestore operating in offline cache mode until connection returns.');
-    }
-  }
-}
-
-testConnection();

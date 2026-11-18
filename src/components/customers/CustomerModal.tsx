@@ -375,7 +375,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                       key={sz}
                       type="button"
                       onClick={() => setProductSize(active ? '' : sz)}
-                      className={`px-2.5 py-1 text-[11px] font-medium rounded-md border transition-colors cursor-pointer ${
+                      className={`px-2.5 py-1 min-h-[36px] sm:min-h-0 text-[11px] font-medium rounded-md border transition-colors cursor-pointer ${
                         active
                           ? 'bg-[#22c55e] text-zinc-950 border-[#22c55e] font-semibold'
                           : 'bg-[#09090b] text-zinc-300 border-[#27272a] hover:border-zinc-500'

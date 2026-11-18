@@ -416,14 +416,14 @@ export const ExpensesPage: React.FC = () => {
                     type="date"
                     value={customStart}
                     onChange={(e) => setCustomStart(e.target.value)}
-                    className="w-full sm:w-auto px-2.5 py-2 sm:py-1 text-sm sm:text-xs font-mono bg-[#09090b] border border-[#27272a] rounded-md text-zinc-100"
+                    className="w-full sm:w-auto px-2.5 py-2 sm:py-1 text-base sm:text-xs font-mono bg-[#09090b] border border-[#27272a] rounded-md text-zinc-100"
                   />
                   <span className="text-xs text-zinc-500 text-center sm:text-left">-</span>
                   <input
                     type="date"
                     value={customEnd}
                     onChange={(e) => setCustomEnd(e.target.value)}
-                    className="w-full sm:w-auto px-2.5 py-2 sm:py-1 text-sm sm:text-xs font-mono bg-[#09090b] border border-[#27272a] rounded-md text-zinc-100"
+                    className="w-full sm:w-auto px-2.5 py-2 sm:py-1 text-base sm:text-xs font-mono bg-[#09090b] border border-[#27272a] rounded-md text-zinc-100"
                   />
                 </div>
               )}
@@ -525,7 +525,7 @@ export const ExpensesPage: React.FC = () => {
                         onChange={(e) => handleNewCatPhoto(e.target.files)}
                       />
                       {newCategoryPhoto ? (
-                        <div className="relative w-11 h-11 sm:w-10 sm:h-10 rounded-lg overflow-hidden border border-[#27272a] group">
+                        <div className="relative w-11 h-11 sm:w-10 sm:h-10 rounded-lg overflow-hidden border border-[#27272a]">
                           <img
                             src={newCategoryPhoto}
                             alt="Category preview"
@@ -536,9 +536,9 @@ export const ExpensesPage: React.FC = () => {
                             type="button"
                             onClick={() => setNewCategoryPhoto('')}
                             aria-label={t.expenses.removePhoto}
-                            className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 flex items-center justify-center text-red-400 transition-opacity cursor-pointer"
+                            className="absolute top-0.5 right-0.5 p-0.5 bg-black/80 text-red-400 rounded cursor-pointer"
                           >
-                            <X className="w-3.5 h-3.5" />
+                            <X className="w-3 h-3" />
                           </button>
                         </div>
                       ) : (
@@ -783,6 +783,8 @@ export const ExpensesPage: React.FC = () => {
                               src={cat.photoUrl}
                               alt={cat.label}
                               referrerPolicy="no-referrer"
+                              loading="lazy"
+                              decoding="async"
                               className="w-full h-full object-cover"
                             />
                           </button>
@@ -929,6 +931,8 @@ export const ExpensesPage: React.FC = () => {
                               src={catItem.photoUrl}
                               alt={catItem.label}
                               referrerPolicy="no-referrer"
+                              loading="lazy"
+                              decoding="async"
                               className="w-full h-full object-cover"
                             />
                           </button>
@@ -959,7 +963,7 @@ export const ExpensesPage: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#27272a]/70">
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#27272a]/70">
                         <div>
                           {exp.receiptCount > 0 && exp.receiptThumb ? (
                             <button

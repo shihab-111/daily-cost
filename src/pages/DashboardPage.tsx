@@ -347,14 +347,14 @@ export const DashboardPage: React.FC = () => {
                   type="date"
                   value={customStart}
                   onChange={(e) => setCustomStart(e.target.value)}
-                  className="w-full sm:w-auto px-2.5 py-2 sm:py-1.5 text-sm sm:text-xs font-mono bg-[#09090b] border border-[#27272a] rounded-lg text-zinc-100"
+                  className="w-full sm:w-auto px-2.5 py-2 sm:py-1.5 text-base sm:text-xs font-mono bg-[#09090b] border border-[#27272a] rounded-lg text-zinc-100"
                 />
                 <span className="text-xs text-zinc-500 text-center sm:text-left">{t.common.to}</span>
                 <input
                   type="date"
                   value={customEnd}
                   onChange={(e) => setCustomEnd(e.target.value)}
-                  className="w-full sm:w-auto px-2.5 py-2 sm:py-1.5 text-sm sm:text-xs font-mono bg-[#09090b] border border-[#27272a] rounded-lg text-zinc-100"
+                  className="w-full sm:w-auto px-2.5 py-2 sm:py-1.5 text-base sm:text-xs font-mono bg-[#09090b] border border-[#27272a] rounded-lg text-zinc-100"
                 />
               </div>
             )}
@@ -537,24 +537,24 @@ export const DashboardPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
                 <Link
                   to="/partners"
-                  className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium bg-[#09090b] hover:bg-[#18181b] text-zinc-200 border border-[#27272a] rounded-lg transition-colors whitespace-nowrap"
+                  className="inline-flex items-center gap-1.5 px-3 min-h-[40px] sm:min-h-0 py-1.5 text-xs font-medium bg-[#09090b] hover:bg-[#18181b] text-zinc-200 border border-[#27272a] rounded-lg transition-colors whitespace-nowrap"
                 >
                   <Handshake className="w-3.5 h-3.5 text-[#4ade80]" />
                   <span>{t.nav.partners}</span>
                 </Link>
                 <Link
                   to="/customers"
-                  className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium bg-[#09090b] hover:bg-[#18181b] text-zinc-200 border border-[#27272a] rounded-lg transition-colors whitespace-nowrap"
+                  className="inline-flex items-center gap-1.5 px-3 min-h-[40px] sm:min-h-0 py-1.5 text-xs font-medium bg-[#09090b] hover:bg-[#18181b] text-zinc-200 border border-[#27272a] rounded-lg transition-colors whitespace-nowrap"
                 >
                   <Users className="w-3.5 h-3.5 text-[#4ade80]" />
                   <span>{t.nav.customersBd}</span>
                 </Link>
                 <Link
                   to="/expenses"
-                  className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium bg-[#09090b] hover:bg-[#18181b] text-zinc-200 border border-[#27272a] rounded-lg transition-colors whitespace-nowrap"
+                  className="inline-flex items-center gap-1.5 px-3 min-h-[40px] sm:min-h-0 py-1.5 text-xs font-medium bg-[#09090b] hover:bg-[#18181b] text-zinc-200 border border-[#27272a] rounded-lg transition-colors whitespace-nowrap"
                 >
                   <Receipt className="w-3.5 h-3.5 text-[#4ade80]" />
                   <span>{t.nav.businessExpenses}</span>
@@ -696,6 +696,7 @@ export const DashboardPage: React.FC = () => {
                 <Button
                   size="sm"
                   variant="secondary"
+                  className="min-h-[40px] sm:min-h-0"
                   onClick={() => {
                     setLoanDirection('given');
                     setLoanModalOpen(true);
@@ -706,7 +707,7 @@ export const DashboardPage: React.FC = () => {
                 </Button>
                 <Link
                   to="/loans"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#22c55e]/15 hover:bg-[#22c55e]/25 text-[#4ade80] border border-[#22c55e]/30 rounded-lg transition-colors whitespace-nowrap"
+                  className="inline-flex items-center gap-1.5 px-3 min-h-[40px] sm:min-h-0 py-1.5 text-xs font-medium bg-[#22c55e]/15 hover:bg-[#22c55e]/25 text-[#4ade80] border border-[#22c55e]/30 rounded-lg transition-colors whitespace-nowrap"
                 >
                   <span>{t.loans.manageLoansBtn}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
@@ -715,8 +716,8 @@ export const DashboardPage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="p-3.5 rounded-xl bg-[#09090b] border border-[#27272a] flex items-center justify-between gap-3">
-                <div className="min-w-0">
+              <div className="p-3.5 rounded-xl bg-[#09090b] border border-[#27272a] flex flex-wrap sm:flex-nowrap items-center justify-between gap-3">
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-400">
                     <ArrowUpRight className="w-3.5 h-3.5 text-[#4ade80] shrink-0" />
                     <span className="truncate">{t.loans.lentOutTitle}</span>
@@ -734,7 +735,7 @@ export const DashboardPage: React.FC = () => {
                 <Button
                   size="sm"
                   variant="secondary"
-                  className="shrink-0"
+                  className="shrink-0 min-h-[40px] sm:min-h-0"
                   onClick={() => {
                     setLoanDirection('given');
                     setLoanModalOpen(true);
@@ -745,8 +746,8 @@ export const DashboardPage: React.FC = () => {
                 </Button>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-[#09090b] border border-[#27272a] flex items-center justify-between gap-3">
-                <div className="min-w-0">
+              <div className="p-3.5 rounded-xl bg-[#09090b] border border-[#27272a] flex flex-wrap sm:flex-nowrap items-center justify-between gap-3">
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-400">
                     <ArrowDownLeft className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                     <span className="truncate">{t.loans.borrowedTitle}</span>
@@ -764,7 +765,7 @@ export const DashboardPage: React.FC = () => {
                 <Button
                   size="sm"
                   variant="secondary"
-                  className="shrink-0"
+                  className="shrink-0 min-h-[40px] sm:min-h-0"
                   onClick={() => {
                     setLoanDirection('taken');
                     setLoanModalOpen(true);

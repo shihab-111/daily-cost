@@ -757,11 +757,11 @@ export const ReceiptsPage: React.FC = () => {
     <DashboardShell
       businessName={activeBusiness?.name || settings?.businessName || 'EkTally'}
       headerAction={
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="secondary"
             size="sm"
-            className="flex-1 md:flex-none min-h-[40px] md:min-h-0"
+            className="flex-1 min-w-[90px] md:flex-none min-h-[40px] md:min-h-0"
             onClick={handlePrint}
             disabled={downloadingPng || downloadingPdf}
           >
@@ -771,7 +771,7 @@ export const ReceiptsPage: React.FC = () => {
           <Button
             variant="secondary"
             size="sm"
-            className="flex-1 md:flex-none min-h-[40px] md:min-h-0"
+            className="flex-1 min-w-[82px] md:flex-none min-h-[40px] md:min-h-0"
             onClick={handleDownloadPng}
             disabled={downloadingPng || downloadingPdf}
           >
@@ -784,7 +784,7 @@ export const ReceiptsPage: React.FC = () => {
           </Button>
           <Button
             size="sm"
-            className="flex-1 md:flex-none min-h-[40px] md:min-h-0"
+            className="flex-1 min-w-[130px] md:flex-none min-h-[40px] md:min-h-0"
             onClick={handleDownloadPdf}
             disabled={downloadingPdf || downloadingPng}
           >
@@ -860,7 +860,7 @@ export const ReceiptsPage: React.FC = () => {
           {/* Editor Column */}
           <Card className="xl:col-span-5 p-4 sm:p-5 space-y-5 no-print">
             {/* Segmented Tab Bar */}
-            <div className="flex sm:grid sm:grid-cols-3 gap-1.5 p-1 bg-[#09090b] border border-[#27272a] rounded-lg overflow-x-auto no-scrollbar max-w-full">
+            <div className="grid grid-cols-3 gap-1.5 p-1 bg-[#09090b] border border-[#27272a] rounded-lg">
               {(
                 [
                   { id: 'brand', label: t.receipts.brandStyleTab },
@@ -873,7 +873,7 @@ export const ReceiptsPage: React.FC = () => {
                   type="button"
                   onClick={() => setActiveTab(tab.id)}
                   className={cn(
-                    'flex-1 min-h-[40px] sm:min-h-0 py-2 px-2.5 rounded-md text-xs font-medium transition-colors cursor-pointer whitespace-nowrap shrink-0',
+                    'min-h-[40px] sm:min-h-0 py-2 px-1.5 sm:px-2.5 rounded-md text-[11px] sm:text-xs font-medium transition-colors cursor-pointer text-center leading-tight',
                     activeTab === tab.id
                       ? 'bg-[#22c55e]/15 text-[#4ade80] border border-[#22c55e]/30'
                       : 'text-zinc-400 hover:text-zinc-100 border border-transparent'
@@ -998,6 +998,7 @@ export const ReceiptsPage: React.FC = () => {
                           type="button"
                           variant="secondary"
                           size="sm"
+                          className="min-h-[40px] sm:min-h-0"
                           onClick={() => logoInputRef.current?.click()}
                           disabled={uploadingLogo}
                         >
@@ -1013,6 +1014,7 @@ export const ReceiptsPage: React.FC = () => {
                             type="button"
                             variant="secondary"
                             size="sm"
+                            className="min-h-[40px] sm:min-h-0"
                             onClick={() =>
                               setDraft((prev) => ({
                                 ...prev,
@@ -1029,6 +1031,7 @@ export const ReceiptsPage: React.FC = () => {
                             type="button"
                             variant="ghost"
                             size="sm"
+                            className="min-h-[40px] sm:min-h-0"
                             onClick={() =>
                               setDraft((prev) => ({ ...prev, logoDataUrl: '' }))
                             }

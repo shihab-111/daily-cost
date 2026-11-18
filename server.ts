@@ -250,7 +250,12 @@ async function pathaoFetch(
 
 async function startServer() {
   const app = express();
+  app.disable('x-powered-by');
   app.use(express.json({ limit: '1mb' }));
+
+  app.get('/api/health', (_req, res) => {
+    res.json({ ok: true, uptime: Math.round(process.uptime()) });
+  });
 
   app.get('/api/pathao/status', (req, res) => {
     const cfg = resolvePathaoConfig(req);
@@ -477,10 +482,38 @@ async function startServer() {
 
   if (process.env.NODE_ENV === 'production') {
     const distDir = path.resolve(__dirname, 'dist');
-    app.use(express.static(distDir));
+    const assetsDir = path.join(distDir, 'assets');
+    if (fs.existsSync(assetsDir)) {
+      app.use(
+        '/assets',
+        express.static(assetsDir, {
+          maxAge: '1y',
+          immutable: true,
+        })
+      );
+    }
+
+    app.use(
+      express.static(distDir, {
+        index: false,
+        setHeaders: (res, filePath) => {
+          const base = path.basename(filePath);
+          if (
+            base === 'index.html' ||
+            base === 'sw.js' ||
+            base === 'registerSW.js' ||
+            base === 'manifest.webmanifest'
+          ) {
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+          }
+        },
+      })
+    );
+
     app.get('*', (_req, res) => {
       const indexFile = path.join(distDir, 'index.html');
       if (fs.existsSync(indexFile)) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.sendFile(indexFile);
       } else {
         res.status(404).send('Build output not found. Run npm run build first.');
@@ -495,9 +528,17 @@ async function startServer() {
     app.use(vite.middlewares);
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
+  const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on http://0.0.0.0:${PORT}`);
   });
+
+  const shutdown = () => {
+    server.close(() => {
+      process.exit(0);
+    });
+  };
+  process.once('SIGTERM', shutdown);
+  process.once('SIGINT', shutdown);
 }
 
 startServer().catch((err) => {

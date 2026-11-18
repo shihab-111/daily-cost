@@ -122,7 +122,7 @@ export const CustomersPage: React.FC = () => {
               type="button"
               variant="secondary"
               size="sm"
-              className="min-h-[40px] md:min-h-0"
+              className="flex-1 sm:flex-none min-h-[40px] md:min-h-0"
               onClick={() => exportCustomersOrdersCsv(selectedCustomers, latestParcelByCustomer)}
             >
               <Download className="w-3.5 h-3.5 text-[#4ade80]" />
@@ -135,7 +135,7 @@ export const CustomersPage: React.FC = () => {
             type="button"
             variant="secondary"
             size="sm"
-            className="min-h-[40px] md:min-h-0"
+            className="flex-1 sm:flex-none min-h-[40px] md:min-h-0"
             disabled={filteredCustomers.length === 0}
             onClick={() => exportCustomersOrdersCsv(filteredCustomers, latestParcelByCustomer)}
           >
@@ -371,8 +371,14 @@ export const CustomersPage: React.FC = () => {
                               </>
                             )}
                           </div>
+                          <p className="text-[11px] text-zinc-400 font-mono">
+                            {c.itemType === 'document' ? 'document' : 'parcel'} ·{' '}
+                            {c.itemWeight && c.itemWeight > 0 ? c.itemWeight : 0.5} kg
+                            {c.merchantOrderId ? ` · #${c.merchantOrderId}` : ''}
+                            {c.storeName ? ` · ${c.storeName}` : ''}
+                          </p>
                           {c.orderDetails && (
-                            <p className="text-[11px] text-zinc-300 leading-relaxed pt-0.5">
+                            <p className="text-[11px] text-zinc-300 leading-relaxed pt-0.5 break-words">
                               {c.orderDetails}
                             </p>
                           )}
@@ -396,19 +402,19 @@ export const CustomersPage: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 pt-1">
+                      <div className="flex flex-wrap items-center gap-2 pt-1">
                         <Button
                           type="button"
                           variant="secondary"
                           size="sm"
-                          className="flex-1 min-h-[40px]"
+                          className="flex-1 min-w-[130px] min-h-[40px] overflow-hidden"
                           onClick={() => {
                             setPathaoCustomer(c);
                             setPathaoModalOpen(true);
                           }}
                         >
-                          <Truck className="w-3.5 h-3.5 text-[#4ade80]" />
-                          <span>
+                          <Truck className="w-3.5 h-3.5 text-[#4ade80] shrink-0" />
+                          <span className="truncate">
                             {latestParcelByCustomer[c.id]?.consignmentId
                               ? latestParcelByCustomer[c.id].consignmentId
                               : t.customers.sendToPathaoBtn}
@@ -418,53 +424,55 @@ export const CustomersPage: React.FC = () => {
                           type="button"
                           variant="secondary"
                           size="sm"
-                          className="flex-1 min-h-[40px]"
+                          className="flex-1 min-w-[110px] min-h-[40px]"
                           onClick={() => navigate('/receipts', { state: { customer: c } })}
                         >
-                          <FileText className="w-3.5 h-3.5 text-[#4ade80]" />
+                          <FileText className="w-3.5 h-3.5 text-[#4ade80] shrink-0" />
                           <span>{t.customers.receiptBtn}</span>
                         </Button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEditingCustomer(c);
-                            setModalOpen(true);
-                          }}
-                          aria-label={`Edit ${c.name}`}
-                          className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center bg-[#09090b] border border-[#27272a] text-zinc-300 hover:text-[#4ade80] rounded-lg cursor-pointer"
-                        >
-                          <Edit3 className="w-4 h-4" />
-                        </button>
-                        {confirmDeleteId === c.id ? (
-                          <div className="inline-flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-lg px-2.5 min-h-[40px]">
-                            <button
-                              type="button"
-                              onClick={async () => {
-                                if (user) await dbService.deleteCustomer(user, c);
-                                setConfirmDeleteId(null);
-                              }}
-                              className="text-xs font-semibold text-red-400 hover:text-red-300 cursor-pointer"
-                            >
-                              {t.common.delete}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setConfirmDeleteId(null)}
-                              className="text-xs text-zinc-400 hover:text-zinc-200 cursor-pointer"
-                            >
-                              {t.common.no}
-                            </button>
-                          </div>
-                        ) : (
+                        <div className="flex items-center gap-2 ml-auto shrink-0">
                           <button
                             type="button"
-                            onClick={() => setConfirmDeleteId(c.id)}
-                            aria-label={`Delete ${c.name}`}
-                            className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center bg-[#09090b] border border-[#27272a] text-zinc-300 hover:text-red-400 rounded-lg cursor-pointer"
+                            onClick={() => {
+                              setEditingCustomer(c);
+                              setModalOpen(true);
+                            }}
+                            aria-label={`Edit ${c.name}`}
+                            className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center bg-[#09090b] border border-[#27272a] text-zinc-300 hover:text-[#4ade80] rounded-lg cursor-pointer"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Edit3 className="w-4 h-4" />
                           </button>
-                        )}
+                          {confirmDeleteId === c.id ? (
+                            <div className="inline-flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-lg px-2.5 min-h-[40px]">
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  if (user) await dbService.deleteCustomer(user, c);
+                                  setConfirmDeleteId(null);
+                                }}
+                                className="text-xs font-semibold text-red-400 hover:text-red-300 cursor-pointer"
+                              >
+                                {t.common.delete}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setConfirmDeleteId(null)}
+                                className="text-xs text-zinc-400 hover:text-zinc-200 cursor-pointer"
+                              >
+                                {t.common.no}
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setConfirmDeleteId(c.id)}
+                              aria-label={`Delete ${c.name}`}
+                              className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center bg-[#09090b] border border-[#27272a] text-zinc-300 hover:text-red-400 rounded-lg cursor-pointer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );

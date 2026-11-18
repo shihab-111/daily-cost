@@ -217,6 +217,8 @@ export const OverviewCharts: React.FC<OverviewChartsProps> = ({
                         <img
                           src={cat.photoUrl}
                           alt={cat.label}
+                          loading="lazy"
+                          decoding="async"
                           referrerPolicy="no-referrer"
                           className="w-4 h-4 rounded-sm object-cover border border-[#27272a] shrink-0"
                         />

@@ -131,7 +131,7 @@ export const Modal: React.FC<{
     >
       <div
         className={cn(
-          'bg-[#121214] border border-[#27272a] w-full sm:rounded-xl flex flex-col h-[100dvh] sm:h-auto sm:max-h-[92vh] overflow-hidden',
+          'bg-[#121214] border border-[#27272a] w-full sm:rounded-xl flex flex-col h-[100dvh] sm:h-auto sm:max-h-[92vh] overflow-hidden pb-[env(safe-area-inset-bottom)] sm:pb-0',
           maxWidthClass
         )}
       >

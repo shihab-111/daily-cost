@@ -433,7 +433,7 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
 
         {/* Ledger Scope Switch */}
         <div className="p-3 bg-[#09090b] border border-[#27272a] rounded-lg space-y-3">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="text-xs font-medium text-zinc-300">Ledger Scope</span>
             <div className="inline-flex p-0.5 bg-[#18181b] border border-[#27272a] rounded-lg">
               {(['business', 'personal'] as const).map((m) => (
@@ -498,7 +498,7 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
               <button
                 type="button"
                 onClick={() => setAddingCat((v) => !v)}
-                className="inline-flex items-center gap-1 text-[11px] font-medium text-[#4ade80] hover:text-[#86efac] cursor-pointer"
+                className="inline-flex items-center gap-1 text-[11px] font-medium text-[#4ade80] hover:text-[#86efac] min-h-[34px] sm:min-h-0 py-1 px-1 cursor-pointer"
               >
                 <Plus className="w-3 h-3" />
                 {addingCat ? 'Close' : t.expenses.addCategoryBtn}
@@ -788,7 +788,7 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
 
         {/* Receipt / Invoice Upload */}
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <label className="text-xs font-medium text-zinc-300">
               Receipt / Voucher Photos ({receipts.length}/10)
             </label>
@@ -804,6 +804,7 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
               type="button"
               variant="secondary"
               size="sm"
+              className="min-h-[40px] sm:min-h-0"
               disabled={processingFile || receipts.length >= 10}
               onClick={() => fileInputRef.current?.click()}
             >

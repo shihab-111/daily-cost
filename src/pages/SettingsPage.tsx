@@ -363,7 +363,7 @@ export const SettingsPage: React.FC = () => {
                           <Edit3 className="w-4 h-4" />
                         </button>
                         {confirmDeleteBizId === biz.id ? (
-                          <div className="inline-flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded px-2.5 py-1.5 sm:py-0.5">
+                          <div className="inline-flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded px-2.5 min-h-[38px] sm:min-h-0 py-1 sm:py-0.5">
                             <button
                               type="button"
                               disabled={bizSaving}
@@ -554,7 +554,7 @@ export const SettingsPage: React.FC = () => {
               <div>
                 <Link
                   to="/profile"
-                  className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#18181b] text-zinc-100 border border-[#27272a] hover:bg-zinc-800 rounded-lg transition-colors whitespace-nowrap"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 min-h-[40px] sm:min-h-0 py-1.5 text-xs font-medium bg-[#18181b] text-zinc-100 border border-[#27272a] hover:bg-zinc-800 rounded-lg transition-colors whitespace-nowrap"
                 >
                   <UserCircle className="w-3.5 h-3.5 text-[#4ade80]" />
                   {t.profile.manageProfileBtn}

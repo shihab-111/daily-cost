@@ -252,7 +252,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
             <button
               type="button"
               onClick={handleOpenMobileAuth}
-              className="lg:hidden inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 min-h-[34px] text-xs font-semibold rounded-lg bg-[#22c55e] text-zinc-950 hover:bg-[#4ade80] active:scale-[0.97] transition-all duration-200 shadow-[0_0_20px_-4px_rgba(34,197,94,0.5)] cursor-pointer whitespace-nowrap shrink-0"
+              className="lg:hidden inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[40px] text-xs font-semibold rounded-lg bg-[#22c55e] text-zinc-950 hover:bg-[#4ade80] active:scale-[0.97] transition-all duration-200 shadow-[0_0_20px_-4px_rgba(34,197,94,0.5)] cursor-pointer whitespace-nowrap shrink-0"
             >
               <LogIn className="w-3.5 h-3.5" aria-hidden="true" />
               <span>{language === 'bn' ? 'লগ ইন' : 'Log In'}</span>
@@ -260,7 +260,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
           </div>
         </div>
 
-        <div className="mt-28 sm:mt-32 lg:my-auto lg:py-8 max-w-xl">
+        <div className="mt-10 sm:mt-20 lg:my-auto lg:py-8 max-w-xl">
           <p className="hidden lg:block text-xs font-mono text-[#4ade80] mb-2 tracking-wide">
             {t.login.kicker}
           </p>
@@ -309,7 +309,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
               type="button"
               onClick={() => setMobileAuthOpen(false)}
               aria-label={t.common.close}
-              className="lg:hidden absolute top-3.5 right-3.5 w-8 h-8 rounded-lg border border-zinc-800 bg-[#14171a] text-zinc-400 hover:text-zinc-100 hover:border-[#4ade80]/30 active:scale-95 inline-flex items-center justify-center transition-all cursor-pointer"
+              className="lg:hidden absolute top-3 right-3 min-w-[40px] min-h-[40px] rounded-lg border border-zinc-800 bg-[#14171a] text-zinc-400 hover:text-zinc-100 hover:border-[#4ade80]/30 active:scale-95 inline-flex items-center justify-center transition-all cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -606,7 +606,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
             </p>
           </div>
         </div>
-        <div className="mt-3 sm:mt-4 max-w-[220px]">
+        <div className="mt-3 sm:mt-4 w-full max-w-[280px]">
           <PWAInstallButton />
         </div>
         <footer className="mt-3 sm:mt-5 max-w-xl">

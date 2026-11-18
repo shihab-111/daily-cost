@@ -135,7 +135,7 @@ export const ProductsPage: React.FC = () => {
               />
             </div>
 
-            <div className="flex items-center gap-1 p-1 bg-[#09090b] border border-[#27272a] rounded-lg overflow-x-auto no-scrollbar max-w-full">
+            <div className="flex flex-wrap items-center gap-1 p-1 bg-[#09090b] border border-[#27272a] rounded-lg max-w-full">
               {(
                 [
                   { id: 'all', label: t.common.all },
@@ -148,7 +148,7 @@ export const ProductsPage: React.FC = () => {
                   key={st.id}
                   type="button"
                   onClick={() => setStatusFilter(st.id)}
-                  className={`px-2.5 min-h-[36px] sm:min-h-0 py-1.5 text-xs font-medium rounded-md cursor-pointer whitespace-nowrap shrink-0 ${
+                  className={`flex-1 sm:flex-initial px-2.5 min-h-[38px] sm:min-h-0 py-1.5 text-xs font-medium rounded-md cursor-pointer whitespace-nowrap text-center ${
                     statusFilter === st.id
                       ? 'bg-[#22c55e] text-zinc-950 font-semibold'
                       : 'text-zinc-400 hover:text-zinc-100'
@@ -223,6 +223,8 @@ export const ProductsPage: React.FC = () => {
                               src={prod.thumbnailUrl}
                               alt={prod.name}
                               referrerPolicy="no-referrer"
+                              loading="lazy"
+                              decoding="async"
                               className="w-full h-full object-cover"
                             />
                           </button>
@@ -279,7 +281,7 @@ export const ProductsPage: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between gap-2 pt-1">
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
                         <div className="inline-flex items-center gap-2 bg-[#09090b] border border-[#27272a] rounded-lg p-1">
                           <button
                             type="button"
@@ -382,6 +384,8 @@ export const ProductsPage: React.FC = () => {
                                 src={prod.thumbnailUrl}
                                 alt={prod.name}
                                 referrerPolicy="no-referrer"
+                                loading="lazy"
+                                decoding="async"
                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                               />
                             </button>

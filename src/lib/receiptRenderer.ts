@@ -1,4 +1,3 @@
-import { jsPDF } from 'jspdf';
 import { CustomerReceiptFormValues } from './validators/schemas';
 import { formatMoney, resolveReceiptLogoUrl } from './utils';
 
@@ -486,7 +485,10 @@ export async function downloadReceiptAsPng(
 export async function downloadReceiptAsPdf(
   receipt: CustomerReceiptFormValues
 ): Promise<void> {
-  const canvas = await renderReceiptToCanvas(receipt);
+  const [{ jsPDF }, canvas] = await Promise.all([
+    import('jspdf'),
+    renderReceiptToCanvas(receipt),
+  ]);
   const dataUrl = canvas.toDataURL('image/png');
   const isThermal = receipt.paperStyle === 'pos_thermal';
 

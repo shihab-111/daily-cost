@@ -424,6 +424,8 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
                 src={profilePhotoUrl}
                 alt={profileDisplayName || 'Account'}
                 referrerPolicy="no-referrer"
+                loading="lazy"
+                decoding="async"
                 onError={() => setAvatarFailed(true)}
                 className="w-full h-full object-cover"
               />
@@ -724,7 +726,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
               </button>
 
               {mobileMoreOpen && (
-                <div className="absolute right-0 mt-1.5 w-60 bg-[#121214] border border-[#27272a] rounded-xl shadow-2xl p-2 z-50 space-y-1.5">
+                <div className="absolute right-0 mt-1.5 w-[min(15rem,calc(100vw-1rem))] bg-[#121214] border border-[#27272a] rounded-xl shadow-2xl p-2 z-50 space-y-1.5">
                   <NavLink
                     to="/profile"
                     onClick={() => setMobileMoreOpen(false)}
@@ -803,7 +805,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
 
         {/* Mobile Non-Sticky Workspace & Page Actions Bar */}
         {(mode === 'business' || headerAction) && (
-          <div className="md:hidden bg-[#121214]/70 border-b border-[#27272a] px-4 py-2.5 flex flex-col gap-2 no-print">
+          <div className="md:hidden bg-[#121214]/70 border-b border-[#27272a] px-3 sm:px-4 py-2.5 flex flex-col gap-2 no-print">
             {mode === 'business' && (
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between gap-2">
@@ -821,7 +823,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
                             setActiveBusinessId(e.target.value);
                             setConfirmDeleteBizId(null);
                           }}
-                          className="flex-1 min-w-0 max-w-[180px] px-2.5 py-1.5 text-sm font-medium bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg focus:outline-none focus:border-[#22c55e] truncate"
+                          className="flex-1 min-w-0 px-2.5 py-2 text-base sm:text-xs font-medium bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg focus:outline-none focus:border-[#22c55e] truncate"
                         >
                           {businesses.map((b) => (
                             <option key={b.id} value={b.id}>
@@ -829,6 +831,18 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
                             </option>
                           ))}
                         </select>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSidebarAddOpen(true);
+                            setMobileOpen(true);
+                          }}
+                          title={t.business.addBusiness}
+                          aria-label={t.business.addBusiness}
+                          className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center bg-[#09090b] border border-[#27272a] hover:border-[#22c55e]/50 text-[#4ade80] rounded-lg transition-colors cursor-pointer shrink-0"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </button>
                         {activeBusiness && (
                           <button
                             type="button"
@@ -840,9 +854,9 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
                             }}
                             title={`${t.common.delete} ${activeBusiness.name}`}
                             aria-label={`${t.common.delete} ${activeBusiness.name}`}
-                            className="min-h-[34px] min-w-[34px] inline-flex items-center justify-center bg-[#09090b] border border-[#27272a] hover:border-red-500/40 text-zinc-400 hover:text-red-400 rounded-lg transition-colors cursor-pointer shrink-0"
+                            className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center bg-[#09090b] border border-[#27272a] hover:border-red-500/40 text-zinc-400 hover:text-red-400 rounded-lg transition-colors cursor-pointer shrink-0"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         )}
                       </>
@@ -853,7 +867,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
                           setSidebarAddOpen(true);
                           setMobileOpen(true);
                         }}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-[#4ade80] bg-[#22c55e]/10 border border-[#22c55e]/30 rounded-lg cursor-pointer"
+                        className="inline-flex items-center gap-1 min-h-[40px] px-3 py-1.5 text-xs font-medium text-[#4ade80] bg-[#22c55e]/10 border border-[#22c55e]/30 rounded-lg cursor-pointer"
                       >
                         <Plus className="w-3.5 h-3.5" />
                         <span>{t.business.addBusiness}</span>

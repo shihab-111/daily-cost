@@ -217,11 +217,12 @@ export const PathaoPage: React.FC = () => {
     <DashboardShell
       businessName={businessName}
       headerAction={
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             type="button"
             variant="secondary"
             size="sm"
+            className="flex-1 md:flex-none min-h-[40px] md:min-h-0"
             disabled={filteredParcels.length === 0}
             onClick={() => exportPathaoBulkCsv(filteredParcels)}
           >
@@ -231,6 +232,7 @@ export const PathaoPage: React.FC = () => {
           <Button
             type="button"
             size="sm"
+            className="flex-1 md:flex-none min-h-[40px] md:min-h-0"
             onClick={() => {
               setEditingParcel(null);
               setSelectedCustomer(null);
@@ -269,7 +271,7 @@ export const PathaoPage: React.FC = () => {
                   (serverStatus.merchantLabel ||
                     serverStatus.merchantId ||
                     serverStatus.defaultStoreId) && (
-                    <span className="text-[11px] font-mono text-[#4ade80]">
+                    <span className="text-[11px] font-mono text-[#4ade80] break-words">
                       {[
                         serverStatus.merchantLabel,
                         serverStatus.merchantId ? `Merchant #${serverStatus.merchantId}` : '',
@@ -361,7 +363,7 @@ export const PathaoPage: React.FC = () => {
                 id="quick-customer-pathao"
                 value=""
                 onChange={(e) => handleQuickCustomerPick(e.target.value)}
-                className="flex-1 max-w-md px-3 py-2 text-base sm:text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg focus:outline-none focus:border-[#22c55e]"
+                className="w-full sm:flex-1 min-w-0 sm:max-w-md px-3 py-2 min-h-[42px] sm:min-h-0 text-base sm:text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg focus:outline-none focus:border-[#22c55e]"
               >
                 <option value="">{t.pathao.pickCustomerPlaceholder}</option>
                 {businessCustomers.map((c) => {
@@ -403,7 +405,7 @@ export const PathaoPage: React.FC = () => {
                   key={tab.id}
                   type="button"
                   onClick={() => setFilterMode(tab.id)}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors cursor-pointer ${
+                  className={`px-3 min-h-[38px] sm:min-h-0 py-1.5 text-xs font-medium rounded-lg border transition-colors cursor-pointer ${
                     filterMode === tab.id
                       ? 'bg-[#22c55e] text-zinc-950 border-[#22c55e] font-semibold'
                       : 'bg-[#09090b] text-zinc-300 border-[#27272a] hover:border-zinc-500'
@@ -476,9 +478,20 @@ export const PathaoPage: React.FC = () => {
                         </span>
                       </div>
 
-                      <p className="text-xs text-zinc-300 leading-relaxed">
+                      <p className="text-xs text-zinc-300 leading-relaxed break-words">
                         {p.recipientAddress}
                       </p>
+
+                      <div className="p-2.5 rounded-lg bg-[#09090b] border border-[#27272a] space-y-1 text-xs">
+                        <p className="text-zinc-200 line-clamp-2">
+                          {p.itemDescription || (p.itemType === 1 ? 'Document' : 'Parcel')}
+                        </p>
+                        <p className="text-[11px] text-zinc-400 font-mono">
+                          {p.itemQuantity} pcs · {p.itemWeight} kg · {p.deliveryType === 12 ? '12h' : '48h'}
+                          {p.storeName ? ` · ${p.storeName}` : ''}
+                          {p.deliveryFee > 0 ? ` · Fee: ${formatMoney(p.deliveryFee, 'BDT')}` : ''}
+                        </p>
+                      </div>
 
                       <div className="grid grid-cols-2 gap-2 p-2.5 rounded-lg bg-[#09090b] border border-[#27272a] text-xs">
                         <div>
@@ -497,13 +510,13 @@ export const PathaoPage: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         {isApi ? (
                           <Button
                             type="button"
                             variant="secondary"
                             size="sm"
-                            className="flex-1 min-h-[40px]"
+                            className="flex-1 min-w-[140px] min-h-[40px]"
                             disabled={refreshingId === p.id}
                             onClick={() => handleRefreshStatus(p)}
                           >
@@ -522,7 +535,7 @@ export const PathaoPage: React.FC = () => {
                           <Button
                             type="button"
                             size="sm"
-                            className="flex-1 min-h-[40px]"
+                            className="flex-1 min-w-[140px] min-h-[40px]"
                             disabled={sendingId === p.id}
                             onClick={() => handleQuickSendQueued(p)}
                           >
@@ -532,48 +545,50 @@ export const PathaoPage: React.FC = () => {
                             </span>
                           </Button>
                         )}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedCustomer(null);
-                            setEditingParcel(p);
-                            setModalOpen(true);
-                          }}
-                          aria-label={`Edit ${p.recipientName}`}
-                          className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center bg-[#09090b] border border-[#27272a] text-zinc-300 hover:text-[#4ade80] rounded-lg cursor-pointer"
-                        >
-                          <Edit3 className="w-4 h-4" />
-                        </button>
-                        {confirmDeleteId === p.id ? (
-                          <div className="inline-flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-lg px-2.5 min-h-[40px]">
-                            <button
-                              type="button"
-                              onClick={async () => {
-                                if (user) await dbService.deletePathaoParcel(user, p);
-                                setConfirmDeleteId(null);
-                              }}
-                              className="text-xs font-semibold text-red-400 cursor-pointer"
-                            >
-                              {t.common.delete}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setConfirmDeleteId(null)}
-                              className="text-xs text-zinc-400 cursor-pointer"
-                            >
-                              {t.common.no}
-                            </button>
-                          </div>
-                        ) : (
+                        <div className="flex items-center gap-2 ml-auto shrink-0">
                           <button
                             type="button"
-                            onClick={() => setConfirmDeleteId(p.id)}
-                            aria-label={`Delete ${p.recipientName}`}
-                            className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center bg-[#09090b] border border-[#27272a] text-zinc-300 hover:text-red-400 rounded-lg cursor-pointer"
+                            onClick={() => {
+                              setSelectedCustomer(null);
+                              setEditingParcel(p);
+                              setModalOpen(true);
+                            }}
+                            aria-label={`Edit ${p.recipientName}`}
+                            className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center bg-[#09090b] border border-[#27272a] text-zinc-300 hover:text-[#4ade80] rounded-lg cursor-pointer"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Edit3 className="w-4 h-4" />
                           </button>
-                        )}
+                          {confirmDeleteId === p.id ? (
+                            <div className="inline-flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-lg px-2.5 min-h-[40px]">
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  if (user) await dbService.deletePathaoParcel(user, p);
+                                  setConfirmDeleteId(null);
+                                }}
+                                className="text-xs font-semibold text-red-400 cursor-pointer"
+                              >
+                                {t.common.delete}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setConfirmDeleteId(null)}
+                                className="text-xs text-zinc-400 cursor-pointer"
+                              >
+                                {t.common.no}
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setConfirmDeleteId(p.id)}
+                              aria-label={`Delete ${p.recipientName}`}
+                              className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center bg-[#09090b] border border-[#27272a] text-zinc-300 hover:text-red-400 rounded-lg cursor-pointer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );

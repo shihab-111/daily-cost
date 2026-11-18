@@ -283,7 +283,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
 
         {/* Multi-Photo Product Gallery Uploader */}
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <label className="text-xs font-medium text-zinc-300">
               Product &amp; Model Photos ({photos.length}/20)
             </label>
@@ -299,6 +299,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
               type="button"
               variant="secondary"
               size="sm"
+              className="min-h-[40px] sm:min-h-0"
               disabled={processingPhotos || photos.length >= 20}
               onClick={() => fileInputRef.current?.click()}
             >
@@ -348,7 +349,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                           setPhotos((prev) => prev.filter((_, i) => i !== idx));
                         }}
                         aria-label="Delete photo"
-                        className="p-1 text-zinc-500 hover:text-red-400 cursor-pointer"
+                        className="min-h-[36px] min-w-[36px] sm:min-h-0 sm:min-w-0 inline-flex items-center justify-center p-1.5 text-zinc-500 hover:text-red-400 cursor-pointer"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>

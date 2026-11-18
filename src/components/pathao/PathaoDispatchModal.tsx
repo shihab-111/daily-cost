@@ -272,7 +272,7 @@ export const PathaoDispatchModal: React.FC<PathaoDispatchModalProps> = ({
                 (serverStatus.merchantLabel ||
                   serverStatus.merchantId ||
                   serverStatus.defaultStoreId) && (
-                  <p className="text-[11px] font-mono text-[#4ade80] mt-0.5">
+                  <p className="text-[11px] font-mono text-[#4ade80] mt-0.5 break-words">
                     {[
                       serverStatus.merchantLabel,
                       serverStatus.merchantId ? `Merchant #${serverStatus.merchantId}` : '',

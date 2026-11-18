@@ -69,7 +69,7 @@ export const LightboxModal: React.FC<LightboxModalProps> = ({
             className="inline-flex items-center gap-1.5 min-h-[40px] px-3 py-1.5 text-xs font-medium bg-[#18181b] border border-[#27272a] hover:bg-zinc-800 rounded-lg cursor-pointer"
           >
             <Download className="w-3.5 h-3.5 text-[#4ade80]" />
-            <span className="hidden xs:inline sm:inline">{t.common.download}</span>
+            <span>{t.common.download}</span>
           </button>
           <button
             type="button"

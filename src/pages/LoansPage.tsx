@@ -418,7 +418,7 @@ export const LoansPage: React.FC = () => {
               />
             </div>
 
-            <div className="flex items-center gap-1 p-1 bg-[#09090b] border border-[#27272a] rounded-lg overflow-x-auto no-scrollbar max-w-full">
+            <div className="flex flex-wrap items-center gap-1 p-1 bg-[#09090b] border border-[#27272a] rounded-lg max-w-full">
               {(
                 [
                   { id: 'all', label: t.loans.filterAll },
@@ -432,7 +432,7 @@ export const LoansPage: React.FC = () => {
                   key={tab.id}
                   type="button"
                   onClick={() => setFilterMode(tab.id)}
-                  className={`px-3 min-h-[36px] sm:min-h-0 py-1.5 text-xs font-medium rounded-md cursor-pointer whitespace-nowrap shrink-0 ${
+                  className={`flex-1 sm:flex-initial px-3 min-h-[38px] sm:min-h-0 py-1.5 text-xs font-medium rounded-md cursor-pointer whitespace-nowrap text-center ${
                     filterMode === tab.id
                       ? 'bg-[#22c55e] text-zinc-950 font-semibold'
                       : 'text-zinc-400 hover:text-zinc-100'
@@ -543,7 +543,7 @@ export const LoansPage: React.FC = () => {
                       </div>
 
                       {isRepaying && (
-                        <div className="flex items-center gap-2 p-2 bg-[#09090b] border border-[#27272a] rounded-lg">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 p-2.5 bg-[#09090b] border border-[#27272a] rounded-lg">
                           <input
                             type="number"
                             min="0.01"
@@ -552,25 +552,29 @@ export const LoansPage: React.FC = () => {
                             value={repayAmount}
                             onChange={(e) => setRepayAmount(e.target.value)}
                             placeholder={t.loans.repaymentPromptLabel}
-                            className="flex-1 min-w-0 px-2.5 py-1.5 text-base bg-[#121214] text-zinc-100 border border-[#27272a] rounded-md font-mono"
+                            className="w-full sm:flex-1 min-w-0 px-2.5 py-2 text-base bg-[#121214] text-zinc-100 border border-[#27272a] rounded-md font-mono"
                           />
-                          <Button
-                            size="sm"
-                            disabled={updatingId === l.id || !(Number(repayAmount) > 0)}
-                            onClick={() => handleApplyRepayment(l)}
-                          >
-                            {t.loans.saveRepayment}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => {
-                              setRepayLoanId(null);
-                              setRepayAmount('');
-                            }}
-                          >
-                            {t.expenses.cancelEdit}
-                          </Button>
+                          <div className="flex items-center gap-2 [&>button]:flex-1 sm:[&>button]:flex-initial">
+                            <Button
+                              size="sm"
+                              className="min-h-[40px] sm:min-h-0"
+                              disabled={updatingId === l.id || !(Number(repayAmount) > 0)}
+                              onClick={() => handleApplyRepayment(l)}
+                            >
+                              {t.loans.saveRepayment}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="min-h-[40px] sm:min-h-0"
+                              onClick={() => {
+                                setRepayLoanId(null);
+                                setRepayAmount('');
+                              }}
+                            >
+                              {t.expenses.cancelEdit}
+                            </Button>
+                          </div>
                         </div>
                       )}
 

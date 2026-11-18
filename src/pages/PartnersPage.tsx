@@ -184,7 +184,7 @@ export const PartnersPage: React.FC = () => {
               />
             </div>
 
-            <div className="inline-flex items-center p-1 bg-[#09090b] border border-[#27272a] rounded-lg self-start sm:self-auto">
+            <div className="flex flex-wrap items-center gap-1 p-1 bg-[#09090b] border border-[#27272a] rounded-lg w-full sm:w-auto">
               {(
                 [
                   { id: 'all', label: t.partners.filterAll },
@@ -196,7 +196,7 @@ export const PartnersPage: React.FC = () => {
                   key={tab.id}
                   type="button"
                   onClick={() => setStatusFilter(tab.id)}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer whitespace-nowrap ${
+                  className={`flex-1 sm:flex-initial px-3 min-h-[38px] sm:min-h-0 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer whitespace-nowrap text-center ${
                     statusFilter === tab.id
                       ? 'bg-[#22c55e] text-zinc-950 font-semibold'
                       : 'text-zinc-400 hover:text-zinc-100'
@@ -301,13 +301,13 @@ export const PartnersPage: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 pt-1">
+                      <div className="flex flex-wrap items-center gap-2 pt-1">
                         {hasDue && (
                           <Button
                             type="button"
                             variant="secondary"
                             size="sm"
-                            className="flex-1 min-h-[40px]"
+                            className="flex-1 min-w-[125px] min-h-[40px]"
                             disabled={settlingId === p.id}
                             onClick={() => handleClearDue(p)}
                           >

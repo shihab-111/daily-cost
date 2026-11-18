@@ -633,9 +633,9 @@ export const AdminPage: React.FC = () => {
                   </div>
 
                   <div className="grid grid-cols-1 gap-2 pt-2 border-t border-[#27272a] text-xs">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-zinc-400">{t.admin.businessesColumn}:</span>
-                      <span className="text-zinc-200 font-medium text-right truncate">
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="text-zinc-400 shrink-0">{t.admin.businessesColumn}:</span>
+                      <span className="text-zinc-200 font-medium text-right break-words min-w-0">
                         {row.businessNames.join(', ')}
                       </span>
                     </div>
