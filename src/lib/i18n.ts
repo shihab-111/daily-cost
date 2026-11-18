@@ -254,6 +254,12 @@ export interface TranslationStrings {
     parcelOption: string;
     documentOption: string;
     specialInstructionLabel: string;
+    orderStatusLabel: string;
+    filterAllOrders: string;
+    statusPending: string;
+    statusReceived: string;
+    statusRejected: string;
+    statusNoCall: string;
   };
   partners: {
     pageTitle: string;
@@ -840,6 +846,12 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       parcelOption: 'parcel',
       documentOption: 'document',
       specialInstructionLabel: 'Special Instruction / Notes',
+      orderStatusLabel: 'Order Category / Status',
+      filterAllOrders: 'All Orders',
+      statusPending: 'Pending',
+      statusReceived: 'Order Received',
+      statusRejected: 'Rejected / Not Received',
+      statusNoCall: 'Not Received Call',
     },
     partners: {
       pageTitle: 'Business Partners & Investment',
@@ -1438,6 +1450,12 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       parcelOption: 'parcel',
       documentOption: 'document',
       specialInstructionLabel: 'বিশেষ নির্দেশনা / নোট',
+      orderStatusLabel: 'অর্ডারের অবস্থা / ক্যাটাগরি',
+      filterAllOrders: 'সব অর্ডার',
+      statusPending: 'অপেক্ষমাণ',
+      statusReceived: 'অর্ডার রিসিভড',
+      statusRejected: 'রিজেক্টেড / রিসিভ করেনি',
+      statusNoCall: 'কল রিসিভ করেনি',
     },
     partners: {
       pageTitle: 'বিজনেস পার্টনার ও বিনিয়োগ',

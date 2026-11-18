@@ -11,7 +11,7 @@ import {
   where,
 } from 'firebase/firestore';
 import { commitOfflineSafe, db, handleFirestoreError, OperationType } from '../firebase/client';
-import { Customer } from '../../types';
+import { Customer, CustomerOrderStatus } from '../../types';
 import { CustomerFormValues } from '../validators/schemas';
 import { generateSafeId, getTodayDhakaDate } from '../utils';
 import { logActivity } from './activityService';
@@ -101,6 +101,7 @@ export async function saveCustomer(
     quantity,
     unitPrice,
     orderDetails: values.orderDetails.trim().slice(0, 500),
+    orderStatus: values.orderStatus || 'pending',
     notes: values.notes.trim().slice(0, 1000),
     totalOrders: nextOrders,
     totalSpent: nextSpent,
@@ -164,6 +165,42 @@ export async function incrementCustomerOrderMetrics(
     OperationType.UPDATE,
     path
   );
+}
+
+export async function updateCustomerOrderStatus(
+  user: User,
+  customer: Customer,
+  orderStatus: CustomerOrderStatus
+): Promise<void> {
+  const path = `customers/${customer.id}`;
+  await commitOfflineSafe(
+    updateDoc(doc(db, 'customers', customer.id), {
+      orderStatus,
+      updatedAt: serverTimestamp(),
+    }),
+    OperationType.UPDATE,
+    path
+  );
+
+  const statusLabel =
+    orderStatus === 'received'
+      ? 'Order Received'
+      : orderStatus === 'rejected'
+      ? 'Rejected / Not Received'
+      : orderStatus === 'no_call'
+      ? 'Not Received Call'
+      : 'Pending';
+
+  await logActivity(user, {
+    mode: 'business',
+    businessId: customer.businessId || '',
+    action: 'customer_updated',
+    summary: `Order status (${statusLabel}): ${customer.name} (${customer.phone})`,
+    entityType: 'customer',
+    entityId: customer.id,
+    amount: 0,
+    currency: 'BDT',
+  });
 }
 
 export async function deleteCustomer(user: User, customer: Customer): Promise<void> {

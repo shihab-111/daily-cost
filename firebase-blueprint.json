@@ -155,6 +155,7 @@
         "quantity": { "type": "number" },
         "unitPrice": { "type": "number" },
         "orderDetails": { "type": "string", "maxLength": 500 },
+        "orderStatus": { "type": "string", "enum": ["pending", "received", "rejected", "no_call"] },
         "notes": { "type": "string", "maxLength": 1000 },
         "totalOrders": { "type": "integer" },
         "totalSpent": { "type": "number" },

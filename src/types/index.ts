@@ -157,6 +157,8 @@ export type CustomerNumberOption =
   | 'Rocket'
   | 'Alternate';
 
+export type CustomerOrderStatus = 'pending' | 'received' | 'rejected' | 'no_call';
+
 export interface Customer {
   id: string;
   userId: string;
@@ -178,6 +180,7 @@ export interface Customer {
   quantity?: number;
   unitPrice?: number;
   orderDetails?: string;
+  orderStatus?: CustomerOrderStatus;
   notes: string;
   totalOrders: number;
   totalSpent: number;

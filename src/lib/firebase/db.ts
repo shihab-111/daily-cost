@@ -5,6 +5,7 @@ import {
   BusinessPartner,
   BusinessProfile,
   Customer,
+  CustomerOrderStatus,
   CustomerReceipt,
   Expense,
   ExpenseCategoryItem,
@@ -173,6 +174,11 @@ export interface BusinessDataAdapter {
     orderAmount: number,
     orderDate: string
   ): Promise<void>;
+  updateCustomerOrderStatus(
+    user: User,
+    customer: Customer,
+    orderStatus: CustomerOrderStatus
+  ): Promise<void>;
   deleteCustomer(user: User, customer: Customer): Promise<void>;
   subscribeBusinessPartners(
     user: User,
@@ -303,6 +309,7 @@ class FirestoreBusinessAdapter implements BusinessDataAdapter {
   deleteProduct = productService.deleteProduct;
   saveCustomer = customerService.saveCustomer;
   incrementCustomerOrderMetrics = customerService.incrementCustomerOrderMetrics;
+  updateCustomerOrderStatus = customerService.updateCustomerOrderStatus;
   deleteCustomer = customerService.deleteCustomer;
   subscribeBusinessPartners = partnerService.subscribeBusinessPartners;
   saveBusinessPartner = partnerService.saveBusinessPartner;

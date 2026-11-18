@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { User } from 'firebase/auth';
 import { Truck } from 'lucide-react';
-import { Customer, CustomerNumberOption } from '../../types';
+import { Customer, CustomerNumberOption, CustomerOrderStatus } from '../../types';
 import { useLanguage } from '../../context/LanguageContext';
 import { useMode } from '../../context/ModeContext';
 import { useProducts, useSettings } from '../../hooks/useBusinessData';
@@ -54,6 +54,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
   const [quantity, setQuantity] = useState('1');
   const [unitPrice, setUnitPrice] = useState('');
   const [orderDetails, setOrderDetails] = useState('');
+  const [orderStatus, setOrderStatus] = useState<CustomerOrderStatus>('pending');
   const [notes, setNotes] = useState('');
   const [recordAsNewOrder, setRecordAsNewOrder] = useState(false);
 
@@ -99,6 +100,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
           : ''
       );
       setOrderDetails(editingCustomer.orderDetails || '');
+      setOrderStatus(editingCustomer.orderStatus || 'pending');
       setNotes(editingCustomer.notes);
     } else {
       setName('');
@@ -118,6 +120,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
       setQuantity('1');
       setUnitPrice('');
       setOrderDetails('');
+      setOrderStatus('pending');
       setNotes('');
     }
   }, [open, editingCustomer]);
@@ -163,6 +166,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
       quantity: quantity === '' ? 1 : quantity,
       unitPrice: unitPrice === '' ? 0 : unitPrice,
       orderDetails,
+      orderStatus,
       notes,
     });
 
@@ -207,6 +211,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
           quantity: parsed.data.quantity,
           unitPrice: parsed.data.unitPrice,
           orderDetails: parsed.data.orderDetails,
+          orderStatus: parsed.data.orderStatus,
           notes: parsed.data.notes,
           totalOrders: editingCustomer ? editingCustomer.totalOrders || 1 : 1,
           totalSpent: orderAmount > 0 ? orderAmount : editingCustomer?.totalSpent || 0,
@@ -433,7 +438,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-4">
             <Input
               label={t.customers.storeNameLabel}
               maxLength={120}
@@ -449,6 +454,16 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
               placeholder="Optional order reference"
               className="font-mono"
             />
+            <Select
+              label={t.customers.orderStatusLabel}
+              value={orderStatus}
+              onChange={(e) => setOrderStatus(e.target.value as CustomerOrderStatus)}
+            >
+              <option value="pending">{t.customers.statusPending}</option>
+              <option value="received">{t.customers.statusReceived}</option>
+              <option value="rejected">{t.customers.statusRejected}</option>
+              <option value="no_call">{t.customers.statusNoCall}</option>
+            </Select>
           </div>
 
           <div className="space-y-1.5">

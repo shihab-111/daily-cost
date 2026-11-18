@@ -1,17 +1,43 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Download, Edit3, FileText, Plus, Search, Trash2, Truck, Users } from 'lucide-react';
+import {
+  CheckCircle2,
+  Clock,
+  Download,
+  Edit3,
+  FileText,
+  PhoneMissed,
+  Plus,
+  Search,
+  Trash2,
+  Truck,
+  Users,
+  XCircle,
+} from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useLanguage } from '../context/LanguageContext';
 import { useMode } from '../context/ModeContext';
 import { useCustomers, usePathaoParcels, useSettings } from '../hooks/useBusinessData';
 import { dbService } from '../lib/firebase/db';
 import { exportCustomersOrdersCsv, formatMoney } from '../lib/utils';
-import { Customer, PathaoParcel } from '../types';
+import { Customer, CustomerOrderStatus, PathaoParcel } from '../types';
 import { DashboardShell } from '../components/layout/DashboardShell';
 import { CustomerModal } from '../components/customers/CustomerModal';
 import { PathaoDispatchModal } from '../components/pathao/PathaoDispatchModal';
 import { Button, Card } from '../components/ui';
+
+function getOrderStatusSelectStyle(status: CustomerOrderStatus): string {
+  switch (status) {
+    case 'received':
+      return 'border-[#22c55e]/50 bg-[#22c55e]/10 text-[#4ade80]';
+    case 'rejected':
+      return 'border-red-500/50 bg-red-500/10 text-red-400';
+    case 'no_call':
+      return 'border-amber-500/50 bg-amber-500/10 text-amber-300';
+    default:
+      return 'border-[#27272a] bg-[#09090b] text-zinc-300';
+  }
+}
 
 export const CustomersPage: React.FC = () => {
   const { user } = useAuth();
@@ -23,6 +49,8 @@ export const CustomersPage: React.FC = () => {
   const navigate = useNavigate();
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | CustomerOrderStatus>('all');
+  const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -49,11 +77,33 @@ export const CustomersPage: React.FC = () => {
     return map;
   }, [parcels, matchesBusiness]);
 
+  const statusCounts = useMemo(() => {
+    const counts = {
+      all: businessCustomers.length,
+      received: 0,
+      rejected: 0,
+      no_call: 0,
+      pending: 0,
+    };
+    for (const c of businessCustomers) {
+      const s = c.orderStatus || 'pending';
+      if (s === 'received') counts.received += 1;
+      else if (s === 'rejected') counts.rejected += 1;
+      else if (s === 'no_call') counts.no_call += 1;
+      else counts.pending += 1;
+    }
+    return counts;
+  }, [businessCustomers]);
+
   const filteredCustomers = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return businessCustomers;
-    return businessCustomers.filter(
-      (c) =>
+    return businessCustomers.filter((c) => {
+      const currentStatus: CustomerOrderStatus = c.orderStatus || 'pending';
+      if (statusFilter !== 'all' && currentStatus !== statusFilter) {
+        return false;
+      }
+      if (!q) return true;
+      return (
         c.name.toLowerCase().includes(q) ||
         c.phone.toLowerCase().includes(q) ||
         (c.numberOption || '').toLowerCase().includes(q) ||
@@ -66,8 +116,22 @@ export const CustomersPage: React.FC = () => {
         (c.productName || '').toLowerCase().includes(q) ||
         (c.productSize || '').toLowerCase().includes(q) ||
         (c.orderDetails || '').toLowerCase().includes(q)
-    );
-  }, [businessCustomers, searchQuery]);
+      );
+    });
+  }, [businessCustomers, searchQuery, statusFilter]);
+
+  const handleQuickStatusChange = async (
+    customer: Customer,
+    nextStatus: CustomerOrderStatus
+  ) => {
+    if (!user || (customer.orderStatus || 'pending') === nextStatus) return;
+    setUpdatingStatusId(customer.id);
+    try {
+      await dbService.updateCustomerOrderStatus(user, customer, nextStatus);
+    } finally {
+      setUpdatingStatusId((prev) => (prev === customer.id ? null : prev));
+    }
+  };
 
   const metrics = useMemo(() => {
     const totalOrders = businessCustomers.reduce((sum, c) => sum + (c.totalOrders || 0), 0);
@@ -198,6 +262,84 @@ export const CustomersPage: React.FC = () => {
           </Card>
         </section>
 
+        {/* Order Outcome Category Counters & Filters */}
+        <section
+          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3"
+          aria-label="Order Status Categories"
+        >
+          {(
+            [
+              {
+                key: 'all' as const,
+                label: t.customers.filterAllOrders,
+                count: statusCounts.all,
+                icon: Users,
+                accent: 'text-zinc-100',
+                activeBorder: 'border-zinc-400 bg-zinc-800/40',
+              },
+              {
+                key: 'received' as const,
+                label: t.customers.statusReceived,
+                count: statusCounts.received,
+                icon: CheckCircle2,
+                accent: 'text-[#4ade80]',
+                activeBorder: 'border-[#22c55e] bg-[#22c55e]/10',
+              },
+              {
+                key: 'rejected' as const,
+                label: t.customers.statusRejected,
+                count: statusCounts.rejected,
+                icon: XCircle,
+                accent: 'text-red-400',
+                activeBorder: 'border-red-500 bg-red-500/10',
+              },
+              {
+                key: 'no_call' as const,
+                label: t.customers.statusNoCall,
+                count: statusCounts.no_call,
+                icon: PhoneMissed,
+                accent: 'text-amber-300',
+                activeBorder: 'border-amber-500 bg-amber-500/10',
+              },
+              {
+                key: 'pending' as const,
+                label: t.customers.statusPending,
+                count: statusCounts.pending,
+                icon: Clock,
+                accent: 'text-zinc-300',
+                activeBorder: 'border-zinc-500 bg-zinc-800/50',
+              },
+            ] as const
+          ).map((cat) => {
+            const Icon = cat.icon;
+            const active = statusFilter === cat.key;
+            return (
+              <button
+                key={cat.key}
+                type="button"
+                onClick={() => setStatusFilter(cat.key)}
+                className={`text-left p-3 sm:p-3.5 rounded-xl border transition-colors cursor-pointer flex flex-col justify-between gap-1.5 min-h-[76px] ${
+                  cat.key === 'all' ? 'col-span-2 sm:col-span-1' : ''
+                } ${
+                  active
+                    ? cat.activeBorder
+                    : 'bg-[#121214] border-[#27272a] hover:border-zinc-600'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-medium text-zinc-300 leading-snug">
+                    {cat.label}
+                  </span>
+                  <Icon className={`w-4 h-4 shrink-0 ${cat.accent}`} />
+                </div>
+                <p className={`text-lg sm:text-xl font-semibold font-mono tabular-nums ${cat.accent}`}>
+                  {cat.count.toLocaleString('en-BD')}
+                </p>
+              </button>
+            );
+          })}
+        </section>
+
         {/* Search & Selection Bar */}
         <Card className="p-3.5 sm:p-4 space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -268,23 +410,34 @@ export const CustomersPage: React.FC = () => {
               ))}
             </div>
           ) : filteredCustomers.length === 0 ? (
-            <div className="p-12 text-center">
+            <div className="p-10 sm:p-12 text-center">
               <Users className="w-8 h-8 text-zinc-600 mx-auto mb-3" />
               <p className="text-sm font-semibold text-zinc-200">{t.customers.noCustomersTitle}</p>
               <p className="text-xs text-zinc-500 mt-1">
                 {t.customers.noCustomersDesc}
               </p>
-              <Button
-                className="mt-4"
-                size="sm"
-                onClick={() => {
-                  setEditingCustomer(null);
-                  setModalOpen(true);
-                }}
-              >
-                <Plus className="w-3.5 h-3.5" />
-                {t.customers.addFirstCustomer}
-              </Button>
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                {statusFilter !== 'all' && (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setStatusFilter('all')}
+                  >
+                    {t.customers.filterAllOrders}
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setEditingCustomer(null);
+                    setModalOpen(true);
+                  }}
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  {t.customers.addFirstCustomer}
+                </Button>
+              </div>
             </div>
           ) : (
             <>
@@ -402,6 +555,34 @@ export const CustomersPage: React.FC = () => {
                         </div>
                       </div>
 
+                      <div className="flex items-center justify-between gap-2">
+                        <label
+                          htmlFor={`mobile-order-status-${c.id}`}
+                          className="text-[11px] font-medium text-zinc-400 shrink-0"
+                        >
+                          {t.customers.orderStatusLabel}
+                        </label>
+                        <select
+                          id={`mobile-order-status-${c.id}`}
+                          value={c.orderStatus || 'pending'}
+                          disabled={updatingStatusId === c.id}
+                          onChange={(e) =>
+                            void handleQuickStatusChange(
+                              c,
+                              e.target.value as CustomerOrderStatus
+                            )
+                          }
+                          className={`flex-1 max-w-[210px] px-2.5 py-1.5 min-h-[40px] text-base sm:text-xs font-medium rounded-lg border focus:outline-none focus:border-[#22c55e] cursor-pointer ${getOrderStatusSelectStyle(
+                            c.orderStatus || 'pending'
+                          )}`}
+                        >
+                          <option value="pending">{t.customers.statusPending}</option>
+                          <option value="received">{t.customers.statusReceived}</option>
+                          <option value="rejected">{t.customers.statusRejected}</option>
+                          <option value="no_call">{t.customers.statusNoCall}</option>
+                        </select>
+                      </div>
+
                       <div className="flex flex-wrap items-center gap-2 pt-1">
                         <Button
                           type="button"
@@ -497,6 +678,7 @@ export const CustomersPage: React.FC = () => {
                     <th className="py-3 px-4">{t.customers.bdPhone}</th>
                     <th className="py-3 px-4">{t.customers.districtAddress}</th>
                     <th className="py-3 px-4">{t.customers.orderProductCol}</th>
+                    <th className="py-3 px-4">{t.customers.orderStatusLabel}</th>
                     <th className="py-3 px-4 text-right">{t.customers.orders}</th>
                     <th className="py-3 px-4 text-right">{t.customers.totalSpent}</th>
                     <th className="py-3 px-4 text-right">{t.common.actions}</th>
@@ -570,6 +752,27 @@ export const CustomersPage: React.FC = () => {
                             </p>
                           )}
                         </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <select
+                          aria-label={`${t.customers.orderStatusLabel} for ${c.name}`}
+                          value={c.orderStatus || 'pending'}
+                          disabled={updatingStatusId === c.id}
+                          onChange={(e) =>
+                            void handleQuickStatusChange(
+                              c,
+                              e.target.value as CustomerOrderStatus
+                            )
+                          }
+                          className={`px-2.5 py-1.5 text-xs font-medium rounded-lg border focus:outline-none focus:border-[#22c55e] cursor-pointer ${getOrderStatusSelectStyle(
+                            c.orderStatus || 'pending'
+                          )}`}
+                        >
+                          <option value="pending">{t.customers.statusPending}</option>
+                          <option value="received">{t.customers.statusReceived}</option>
+                          <option value="rejected">{t.customers.statusRejected}</option>
+                          <option value="no_call">{t.customers.statusNoCall}</option>
+                        </select>
                       </td>
                       <td className="py-3 px-4 text-right font-mono tabular-nums text-zinc-200 whitespace-nowrap">
                         {c.totalOrders || 0}
