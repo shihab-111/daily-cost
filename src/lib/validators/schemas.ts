@@ -94,6 +94,24 @@ export const customerSchema = z.object({
     .default(''),
   address: z.string().trim().max(240).default(''),
   district: z.string().trim().max(80).default('Dhaka'),
+  zone: z.string().trim().max(80).default(''),
+  area: z.string().trim().max(80).default(''),
+  itemType: z.enum(['parcel', 'document']).default('parcel'),
+  storeName: z.string().trim().max(120).default(''),
+  merchantOrderId: z
+    .string()
+    .trim()
+    .max(64)
+    .refine(
+      (v) => !v || /^[a-zA-Z0-9_-]+$/.test(v),
+      'Order ID can only contain letters, numbers, hyphens, and underscores.'
+    )
+    .default(''),
+  itemWeight: z.coerce
+    .number()
+    .min(0.1, 'Weight must be at least 0.1 kg.')
+    .max(500, 'Weight cannot exceed 500 kg.')
+    .default(0.5),
   productName: z.string().trim().max(160).default(''),
   productSize: z.string().trim().max(40).default(''),
   quantity: z.coerce.number().min(0, 'Quantity cannot be negative.').max(99999).default(1),
@@ -178,6 +196,50 @@ export const personalLoanSchema = z
     message: 'Repaid amount cannot exceed total loan amount.',
     path: ['paidAmount'],
   });
+
+export const pathaoParcelSchema = z.object({
+  customerId: z.string().trim().max(128).default(''),
+  merchantOrderId: z
+    .string()
+    .trim()
+    .min(1, 'Merchant order ID is required.')
+    .max(64)
+    .regex(/^[a-zA-Z0-9_-]+$/, 'Order ID can only contain letters, numbers, hyphens, and underscores.'),
+  storeId: z.coerce.number().int().min(0).max(99999999).default(0),
+  storeName: z.string().trim().max(120).default(''),
+  recipientName: z.string().trim().min(1, 'Customer name is required.').max(140),
+  recipientPhone: z
+    .string()
+    .trim()
+    .refine((val) => isValidBdPhone(val), {
+      message: 'Enter a valid Bangladeshi phone number (01XXXXXXXXX or +8801XXXXXXXXX).',
+    })
+    .transform((val) => {
+      const normalized = normalizeBdPhone(val);
+      return normalized.startsWith('+880') ? normalized.slice(3) : normalized;
+    }),
+  recipientAddress: z
+    .string()
+    .trim()
+    .min(10, 'Full delivery address (at least 10 characters, including area/thana) is required for Pathao.')
+    .max(300),
+  recipientDistrict: z.string().trim().max(80).default('Dhaka'),
+  deliveryType: z.union([z.literal(48), z.literal(12)]).default(48),
+  itemType: z.union([z.literal(2), z.literal(1)]).default(2),
+  itemQuantity: z.coerce.number().int().min(1, 'Quantity must be at least 1.').max(99999).default(1),
+  itemWeight: z.coerce
+    .number()
+    .min(0.1, 'Weight must be at least 0.1 kg.')
+    .max(500, 'Weight cannot exceed 500 kg.')
+    .default(0.5),
+  amountToCollect: z.coerce
+    .number()
+    .min(0, 'COD amount cannot be negative.')
+    .max(999999999)
+    .default(0),
+  itemDescription: z.string().trim().max(300).default(''),
+  specialInstruction: z.string().trim().max(300).default(''),
+});
 
 export const receiptLineItemSchema = z.object({
   name: z.string().trim().min(1, 'Item name is required.').max(160),
@@ -288,6 +350,7 @@ export type ProductFormValues = z.infer<typeof productSchema>;
 export type CustomerFormValues = z.infer<typeof customerSchema>;
 export type BusinessPartnerFormValues = z.infer<typeof businessPartnerSchema>;
 export type PersonalLoanFormValues = z.infer<typeof personalLoanSchema>;
+export type PathaoParcelFormValues = z.infer<typeof pathaoParcelSchema>;
 export type SettingsFormValues = z.infer<typeof settingsSchema>;
 export type ReceiptTemplateFormValues = z.infer<typeof receiptTemplateSchema>;
 export type CustomerReceiptFormValues = z.infer<typeof customerReceiptSchema>;

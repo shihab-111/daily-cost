@@ -8,6 +8,7 @@ import {
   CustomerReceipt,
   Expense,
   ExpenseCategoryItem,
+  PathaoParcel,
   PersonalLoan,
   Product,
   ProductPhoto,
@@ -22,6 +23,7 @@ import {
   CustomerFormValues,
   CustomerReceiptFormValues,
   ExpenseFormValues,
+  PathaoParcelFormValues,
   PersonalLoanFormValues,
   ProductFormValues,
   ReceiptTemplateFormValues,
@@ -35,6 +37,7 @@ import * as customerService from '../services/customerService';
 import * as expenseService from '../services/expenseService';
 import * as loanService from '../services/loanService';
 import * as partnerService from '../services/partnerService';
+import * as pathaoService from '../services/pathaoService';
 import * as productService from '../services/productService';
 import * as profileService from '../services/profileService';
 import * as receiptService from '../services/receiptService';
@@ -203,6 +206,27 @@ export interface BusinessDataAdapter {
     entries: PersonalLoanFormValues[]
   ): Promise<string[]>;
   deletePersonalLoan(user: User, loan: PersonalLoan): Promise<void>;
+  subscribePathaoParcels(
+    user: User,
+    onData: (parcels: PathaoParcel[]) => void,
+    onError: (err: Error) => void
+  ): () => void;
+  fetchPathaoServerStatus(
+    ctx?: pathaoService.PathaoMerchantContext
+  ): Promise<pathaoService.PathaoServerStatus>;
+  fetchPathaoStores(
+    ctx?: pathaoService.PathaoMerchantContext
+  ): Promise<pathaoService.PathaoStoreOption[]>;
+  dispatchPathaoParcel(
+    user: User,
+    values: PathaoParcelFormValues,
+    options: pathaoService.DispatchPathaoOptions
+  ): Promise<{ parcelId: string; consignmentId: string; orderStatus: string }>;
+  refreshPathaoParcelStatus(
+    parcel: PathaoParcel,
+    ctx?: pathaoService.PathaoMerchantContext
+  ): Promise<string>;
+  deletePathaoParcel(user: User, parcel: PathaoParcel): Promise<void>;
   saveSettings(user: User, values: SettingsFormValues, hasExisting: boolean): Promise<void>;
   subscribeReceiptTemplate(
     user: User,
@@ -288,6 +312,12 @@ class FirestoreBusinessAdapter implements BusinessDataAdapter {
   savePersonalLoan = loanService.savePersonalLoan;
   saveMultiplePersonalLoans = loanService.saveMultiplePersonalLoans;
   deletePersonalLoan = loanService.deletePersonalLoan;
+  subscribePathaoParcels = pathaoService.subscribePathaoParcels;
+  fetchPathaoServerStatus = pathaoService.fetchPathaoServerStatus;
+  fetchPathaoStores = pathaoService.fetchPathaoStores;
+  dispatchPathaoParcel = pathaoService.dispatchPathaoParcel;
+  refreshPathaoParcelStatus = pathaoService.refreshPathaoParcelStatus;
+  deletePathaoParcel = pathaoService.deletePathaoParcel;
   saveSettings = settingsService.saveSettings;
   subscribeReceiptTemplate = receiptService.subscribeReceiptTemplate;
   saveReceiptTemplate = receiptService.saveReceiptTemplate;

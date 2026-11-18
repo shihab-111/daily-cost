@@ -39,6 +39,7 @@ export interface TranslationStrings {
     productInventory: string;
     customersBd: string;
     partners: string;
+    pathaoDelivery: string;
     personalLoans: string;
     receiptStudio: string;
     settingsData: string;
@@ -237,6 +238,22 @@ export interface TranslationStrings {
     recordNewOrderLabel: string;
     sizeWord: string;
     perPcWord: string;
+    sendToPathaoBtn: string;
+    saveAndSendPathaoBtn: string;
+    exportAllCsv: string;
+    exportSelectedCsv: string;
+    selectAllVisible: string;
+    clearSelection: string;
+    selectedCountWord: string;
+    zoneLabel: string;
+    areaLabel: string;
+    itemTypeLabel: string;
+    itemWeightLabel: string;
+    storeNameLabel: string;
+    merchantOrderIdLabel: string;
+    parcelOption: string;
+    documentOption: string;
+    specialInstructionLabel: string;
   };
   partners: {
     pageTitle: string;
@@ -350,6 +367,69 @@ export interface TranslationStrings {
     overviewCardTitle: string;
     overviewCardDesc: string;
     manageLoansBtn: string;
+  };
+  pathao: {
+    pageTitle: string;
+    newParcel: string;
+    pickCustomerLabel: string;
+    pickCustomerPlaceholder: string;
+    exportBulkCsv: string;
+    serverConnectedTitle: string;
+    serverConnectedDesc: string;
+    serverNotConfiguredTitle: string;
+    serverNotConfiguredDesc: string;
+    totalParcels: string;
+    dispatchedCount: string;
+    queuedCount: string;
+    totalCodAmount: string;
+    totalDeliveryFees: string;
+    searchPlaceholder: string;
+    filterAll: string;
+    filterDispatched: string;
+    filterQueued: string;
+    showingOf: string;
+    parcelsWord: string;
+    noParcelsTitle: string;
+    noParcelsDesc: string;
+    consignmentCol: string;
+    recipientCol: string;
+    itemCol: string;
+    codCol: string;
+    feeCol: string;
+    statusCol: string;
+    sendNowBtn: string;
+    sendingBtn: string;
+    refreshBtn: string;
+    refreshingBtn: string;
+    queuedBadge: string;
+    apiBadge: string;
+    modalTitle: string;
+    modalEditTitle: string;
+    modalSubtitle: string;
+    storeLabel: string;
+    loadingStores: string;
+    noStoreFallback: string;
+    orderIdLabel: string;
+    recipientNameLabel: string;
+    recipientPhoneLabel: string;
+    districtLabel: string;
+    addressLabel: string;
+    addressHint: string;
+    deliveryTypeLabel: string;
+    normalDelivery: string;
+    onDemandDelivery: string;
+    itemTypeLabel: string;
+    parcelType: string;
+    documentType: string;
+    quantityLabel: string;
+    weightLabel: string;
+    codAmountLabel: string;
+    itemDescLabel: string;
+    instructionLabel: string;
+    sendToPathaoSubmit: string;
+    saveQueueDraftBtn: string;
+    dispatchSuccessPrefix: string;
+    queueSuccessMsg: string;
   };
   receipts: {
     newBlankReceipt: string;
@@ -539,6 +619,7 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       productInventory: 'Product Inventory',
       customersBd: 'Customer (Order)',
       partners: 'Partners & Invest',
+      pathaoDelivery: 'Pathao Delivery',
       personalLoans: 'Loans (Given & Taken)',
       receiptStudio: 'Receipt Studio',
       settingsData: 'Settings & Data',
@@ -743,6 +824,22 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       recordNewOrderLabel: 'Add as a new order (+1 order & add total to customer spent)',
       sizeWord: 'Size',
       perPcWord: 'per product',
+      sendToPathaoBtn: 'Pathao',
+      saveAndSendPathaoBtn: 'Save & Send to Pathao',
+      exportAllCsv: 'Export All CSV',
+      exportSelectedCsv: 'Export Selected CSV',
+      selectAllVisible: 'Select All',
+      clearSelection: 'Clear',
+      selectedCountWord: 'selected',
+      zoneLabel: 'Recipient Zone *',
+      areaLabel: 'Recipient Area (Optional)',
+      itemTypeLabel: 'Item Type',
+      itemWeightLabel: 'Item Weight (kg)',
+      storeNameLabel: 'Store Name (Optional)',
+      merchantOrderIdLabel: 'Merchant Order ID (Optional)',
+      parcelOption: 'parcel',
+      documentOption: 'document',
+      specialInstructionLabel: 'Special Instruction / Notes',
     },
     partners: {
       pageTitle: 'Business Partners & Investment',
@@ -860,6 +957,73 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       overviewCardTitle: 'Personal Loans (Given & Taken)',
       overviewCardDesc: 'Track who owes you and who you owe by name.',
       manageLoansBtn: 'Manage Loans',
+    },
+    pathao: {
+      pageTitle: 'Pathao Courier Delivery',
+      newParcel: 'New Pathao Parcel',
+      pickCustomerLabel: 'Quick-Send Saved Customer',
+      pickCustomerPlaceholder: 'Pick a customer from Customer (Order)...',
+      exportBulkCsv: 'Pathao Bulk CSV',
+      serverConnectedTitle: 'Pathao Courier API Connected',
+      serverConnectedDesc:
+        'Live parcel booking and consignment tracking are enabled via your server environment.',
+      serverNotConfiguredTitle: 'Pathao API Keys Not Set on Server Yet',
+      serverNotConfiguredDesc:
+        'Set PATHAO_BASE_URL (https://api-hermes.pathao.com or sandbox URL), PATHAO_CLIENT_ID, PATHAO_CLIENT_SECRET, PATHAO_USERNAME, PATHAO_PASSWORD & PATHAO_DEFAULT_STORE_ID (or PATHAO_MERCHANTS_JSON per user/business) in your server .env to send parcels live. You can still queue drafts and export Pathao Bulk CSV anytime.',
+      totalParcels: 'Total Parcels',
+      dispatchedCount: 'Sent to Pathao',
+      queuedCount: 'Queued Drafts',
+      totalCodAmount: 'Total COD Amount',
+      totalDeliveryFees: 'Delivery Fees',
+      searchPlaceholder: 'Search customer, phone, consignment ID, order ID, or address...',
+      filterAll: 'All',
+      filterDispatched: 'Sent to Pathao',
+      filterQueued: 'Queued Drafts',
+      showingOf: 'Showing',
+      parcelsWord: 'parcels',
+      noParcelsTitle: 'No Pathao Parcels Yet',
+      noParcelsDesc:
+        'Add a customer in Customer (Order) and click "Save & Send to Pathao" or pick a customer above to dispatch directly.',
+      consignmentCol: 'Order & Consignment',
+      recipientCol: 'Customer & Address',
+      itemCol: 'Parcel Details',
+      codCol: 'COD (Tk)',
+      feeCol: 'Fee',
+      statusCol: 'Status',
+      sendNowBtn: 'Send Now',
+      sendingBtn: 'Sending...',
+      refreshBtn: 'Track',
+      refreshingBtn: 'Checking...',
+      queuedBadge: 'Queued Draft',
+      apiBadge: 'Pathao Live',
+      modalTitle: 'Send Order to Pathao Courier',
+      modalEditTitle: 'Edit / Dispatch Pathao Parcel',
+      modalSubtitle:
+        'Customer details & order total are pre-filled. Review and send directly to Pathao Courier or save to queue.',
+      storeLabel: 'Pickup Store *',
+      loadingStores: 'Loading Pathao stores...',
+      noStoreFallback: 'Default Server Store',
+      orderIdLabel: 'Merchant Order ID *',
+      recipientNameLabel: 'Customer Name *',
+      recipientPhoneLabel: 'Customer Phone (11-digit BD) *',
+      districtLabel: 'District / City',
+      addressLabel: 'Full Delivery Address *',
+      addressHint: 'Include House, Road, Area/Thana & District (min 10 chars) for Pathao auto-routing.',
+      deliveryTypeLabel: 'Delivery Speed',
+      normalDelivery: 'Normal Delivery (48h)',
+      onDemandDelivery: 'On Demand / Express (12h)',
+      itemTypeLabel: 'Item Type',
+      parcelType: 'Parcel',
+      documentType: 'Document',
+      quantityLabel: 'Quantity (Pcs) *',
+      weightLabel: 'Weight (kg) *',
+      codAmountLabel: 'Cash on Delivery (৳ COD) *',
+      itemDescLabel: 'Product / Item Description',
+      instructionLabel: 'Special Instructions (Courier Note)',
+      sendToPathaoSubmit: 'Send to Pathao Now',
+      saveQueueDraftBtn: 'Save to Pathao Queue',
+      dispatchSuccessPrefix: 'Sent to Pathao! Consignment ID:',
+      queueSuccessMsg: 'Saved to Pathao Queue. Ready to Send Now or export Bulk CSV.',
     },
     receipts: {
       newBlankReceipt: 'New Blank Receipt',
@@ -1054,6 +1218,7 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       productInventory: 'পণ্য ও স্টক',
       customersBd: 'কাস্টমার (অর্ডার)',
       partners: 'পার্টনার ও বিনিয়োগ',
+      pathaoDelivery: 'পাঠাও ডেলিভারি',
       personalLoans: 'ধার ও লোন হিসাব',
       receiptStudio: 'রসিদ / মেমো স্টুডিও',
       settingsData: 'সেটিংস ও ডেটা',
@@ -1257,6 +1422,22 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       recordNewOrderLabel: 'নতুন অর্ডার হিসেবে যোগ করুন (+১ অর্ডার ও মোট খরচে যোগ হবে)',
       sizeWord: 'সাইজ',
       perPcWord: 'প্রতি পিস',
+      sendToPathaoBtn: 'পাঠাও',
+      saveAndSendPathaoBtn: 'সংরক্ষণ ও পাঠাওয়ে পাঠান',
+      exportAllCsv: 'সব অর্ডার CSV',
+      exportSelectedCsv: 'নির্বাচিত অর্ডার CSV',
+      selectAllVisible: 'সব নির্বাচন',
+      clearSelection: 'বাতিল',
+      selectedCountWord: 'টি নির্বাচিত',
+      zoneLabel: 'জোন / এলাকা (Zone) *',
+      areaLabel: 'এরিয়া (Area - ঐচ্ছিক)',
+      itemTypeLabel: 'আইটেমের ধরন',
+      itemWeightLabel: 'ওজন (কেজি)',
+      storeNameLabel: 'স্টোরের নাম (ঐচ্ছিক)',
+      merchantOrderIdLabel: 'মার্চেন্ট অর্ডার আইডি (ঐচ্ছিক)',
+      parcelOption: 'parcel',
+      documentOption: 'document',
+      specialInstructionLabel: 'বিশেষ নির্দেশনা / নোট',
     },
     partners: {
       pageTitle: 'বিজনেস পার্টনার ও বিনিয়োগ',
@@ -1374,6 +1555,73 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       overviewCardTitle: 'ব্যক্তিগত ধার ও লোন (নামসহ)',
       overviewCardDesc: 'কে আপনার কাছে ঋণী এবং আপনি কার কাছে ঋণী তা দেখুন।',
       manageLoansBtn: 'লোন হিসাব দেখুন',
+    },
+    pathao: {
+      pageTitle: 'পাঠাও কুরিয়ার ডেলিভারি',
+      newParcel: 'নতুন পাঠাও পার্সেল',
+      pickCustomerLabel: 'সেভ করা কাস্টমার থেকে পাঠান',
+      pickCustomerPlaceholder: 'কাস্টমার (অর্ডার) থেকে একজন নির্বাচন করুন...',
+      exportBulkCsv: 'পাঠাও বাল্ক CSV',
+      serverConnectedTitle: 'পাঠাও কুরিয়ার API সংযুক্ত',
+      serverConnectedDesc:
+        'আপনার সার্ভার এনভায়রনমেন্টের মাধ্যমে সরাসরি পার্সেল বুকিং ও লাইভ ট্র্যাকিং চালু আছে।',
+      serverNotConfiguredTitle: 'সার্ভারে পাঠাও API কী এখনও সেট করা হয়নি',
+      serverNotConfiguredDesc:
+        'সরাসরি পাঠাওয়ে পাঠাতে সার্ভারে .env ফাইলে PATHAO_BASE_URL (https://api-hermes.pathao.com বা স্যান্ডবক্স), PATHAO_CLIENT_ID, PATHAO_CLIENT_SECRET, PATHAO_USERNAME, PATHAO_PASSWORD ও PATHAO_DEFAULT_STORE_ID (অথবা প্রতি ইউজার/ব্যবসার জন্য PATHAO_MERCHANTS_JSON) যোগ করুন। তবুও আপনি ড্রাফট সেভ ও পাঠাও বাল্ক CSV ডাউনলোড করতে পারবেন।',
+      totalParcels: 'মোট পার্সেল',
+      dispatchedCount: 'পাঠাওয়ে পাঠানো',
+      queuedCount: 'অপেক্ষমাণ ড্রাফট',
+      totalCodAmount: 'মোট COD টাকা',
+      totalDeliveryFees: 'ডেলিভারি চার্জ',
+      searchPlaceholder: 'কাস্টমার, মোবাইল, কনসাইনমেন্ট আইডি, অর্ডার আইডি বা ঠিকানা খুঁজুন...',
+      filterAll: 'সব',
+      filterDispatched: 'পাঠাওয়ে পাঠানো',
+      filterQueued: 'ড্রাফট / কিউ',
+      showingOf: 'দেখানো হচ্ছে',
+      parcelsWord: 'টি পার্সেল',
+      noParcelsTitle: 'এখনো কোনো পাঠাও পার্সেল নেই',
+      noParcelsDesc:
+        'কাস্টমার (অর্ডার) পেজ থেকে কাস্টমার যোগ করে "সংরক্ষণ ও পাঠাওয়ে পাঠান" চাপুন অথবা উপর থেকে কাস্টমার নির্বাচন করুন।',
+      consignmentCol: 'অর্ডার ও কনসাইনমেন্ট',
+      recipientCol: 'কাস্টমার ও ঠিকানা',
+      itemCol: 'পার্সেলের বিবরণ',
+      codCol: 'COD (৳)',
+      feeCol: 'চার্জ',
+      statusCol: 'অবস্থা',
+      sendNowBtn: 'এখনই পাঠান',
+      sendingBtn: 'পাঠানো হচ্ছে...',
+      refreshBtn: 'ট্র্যাক',
+      refreshingBtn: 'যাচাই হচ্ছে...',
+      queuedBadge: 'কিউ ড্রাফট',
+      apiBadge: 'পাঠাও লাইভ',
+      modalTitle: 'পাঠাও কুরিয়ারে অর্ডার পাঠান',
+      modalEditTitle: 'পাঠাও পার্সেল সম্পাদনা / প্রেরণ',
+      modalSubtitle:
+        'কাস্টমারের ঠিকানা ও অর্ডারের মোট টাকা অটো-ফিল করা হয়েছে। যাচাই করে সরাসরি পাঠাওয়ে পাঠান বা কিউতে সেভ করুন।',
+      storeLabel: 'পিকআপ স্টোর *',
+      loadingStores: 'পাঠাও স্টোর লোড হচ্ছে...',
+      noStoreFallback: 'ডিফল্ট সার্ভার স্টোর',
+      orderIdLabel: 'মার্চেন্ট অর্ডার আইডি *',
+      recipientNameLabel: 'কাস্টমারের নাম *',
+      recipientPhoneLabel: 'কাস্টমারের মোবাইল (১১ ডিজিট) *',
+      districtLabel: 'জেলা / শহর',
+      addressLabel: 'সম্পূর্ণ ডেলিভারি ঠিকানা *',
+      addressHint: 'পাঠাও অটো-রাউটিংয়ের জন্য বাসা, রোড, এলাকা/থানা ও জেলা লিখুন (কমপক্ষে ১০ অক্ষর)।',
+      deliveryTypeLabel: 'ডেলিভারির ধরন',
+      normalDelivery: 'নরমাল ডেলিভারি (৪৮ ঘণ্টা)',
+      onDemandDelivery: 'এক্সপ্রেস / অন-ডিমান্ড (১২ ঘণ্টা)',
+      itemTypeLabel: 'পার্সেলের ধরন',
+      parcelType: 'পার্সেল',
+      documentType: 'ডকুমেন্ট',
+      quantityLabel: 'পরিমাণ (পিস) *',
+      weightLabel: 'ওজন (কেজি) *',
+      codAmountLabel: 'ক্যাশ অন ডেলিভারি (৳ COD) *',
+      itemDescLabel: 'পণ্যের বিবরণ',
+      instructionLabel: 'বিশেষ নির্দেশনা (কুরিয়ার নোট)',
+      sendToPathaoSubmit: 'সরাসরি পাঠাওয়ে পাঠান',
+      saveQueueDraftBtn: 'পাঠাও কিউতে সেভ করুন',
+      dispatchSuccessPrefix: 'পাঠাওয়ে পাঠানো হয়েছে! কনসাইনমেন্ট আইডি:',
+      queueSuccessMsg: 'পাঠাও কিউতে সংরক্ষিত হয়েছে। পরে পাঠাতে পারবেন অথবা বাল্ক CSV ডাউনলোড করুন।',
     },
     receipts: {
       newBlankReceipt: 'নতুন রসিদ',

@@ -144,6 +144,12 @@
         "email": { "type": "string", "maxLength": 140 },
         "address": { "type": "string", "maxLength": 240 },
         "district": { "type": "string", "maxLength": 80 },
+        "zone": { "type": "string", "maxLength": 80 },
+        "area": { "type": "string", "maxLength": 80 },
+        "itemType": { "type": "string", "enum": ["parcel", "document"] },
+        "storeName": { "type": "string", "maxLength": 120 },
+        "merchantOrderId": { "type": "string", "maxLength": 64 },
+        "itemWeight": { "type": "number" },
         "productName": { "type": "string", "maxLength": 160 },
         "productSize": { "type": "string", "maxLength": 40 },
         "quantity": { "type": "number" },
@@ -178,11 +184,12 @@
             "customer_created", "customer_updated", "customer_deleted",
             "partner_created", "partner_updated", "partner_deleted",
             "receipt_created", "receipt_deleted",
-            "loan_created", "loan_updated", "loan_deleted"
+            "loan_created", "loan_updated", "loan_deleted",
+            "pathao_created", "pathao_updated", "pathao_deleted"
           ]
         },
         "summary": { "type": "string", "minLength": 1, "maxLength": 240 },
-        "entityType": { "type": "string", "enum": ["expense", "product", "customer", "partner", "receipt", "loan"] },
+        "entityType": { "type": "string", "enum": ["expense", "product", "customer", "partner", "receipt", "loan", "pathao"] },
         "entityId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
         "amount": { "type": "number" },
         "currency": { "type": "string", "enum": ["BDT", "USD"] },
@@ -413,6 +420,43 @@
         "userId", "direction", "personName", "phone", "amount", "paidAmount",
         "currency", "date", "dueDate", "notes", "createdAt", "updatedAt"
       ]
+    },
+    "PathaoParcel": {
+      "title": "PathaoParcel",
+      "description": "Tenant-isolated Pathao Courier parcel dispatch & tracking record linked to business customers.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "businessId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]*$" },
+        "customerId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]*$" },
+        "merchantOrderId": { "type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "consignmentId": { "type": "string", "maxLength": 80 },
+        "storeId": { "type": "integer" },
+        "storeName": { "type": "string", "maxLength": 120 },
+        "recipientName": { "type": "string", "minLength": 1, "maxLength": 140 },
+        "recipientPhone": { "type": "string", "minLength": 11, "maxLength": 20 },
+        "recipientAddress": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "recipientDistrict": { "type": "string", "maxLength": 80 },
+        "deliveryType": { "type": "integer" },
+        "itemType": { "type": "integer" },
+        "itemQuantity": { "type": "integer" },
+        "itemWeight": { "type": "number" },
+        "amountToCollect": { "type": "number" },
+        "deliveryFee": { "type": "number" },
+        "itemDescription": { "type": "string", "maxLength": 300 },
+        "specialInstruction": { "type": "string", "maxLength": 300 },
+        "orderStatus": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "dispatchMode": { "type": "string", "enum": ["api", "queued"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId", "customerId", "merchantOrderId", "consignmentId", "storeId", "storeName",
+        "recipientName", "recipientPhone", "recipientAddress", "recipientDistrict",
+        "deliveryType", "itemType", "itemQuantity", "itemWeight", "amountToCollect",
+        "deliveryFee", "itemDescription", "specialInstruction", "orderStatus", "dispatchMode",
+        "createdAt", "updatedAt"
+      ]
     }
   },
   "firestore": {
@@ -483,6 +527,10 @@
     "/personalLoans/{loanId}": {
       "schema": { "$ref": "#/entities/PersonalLoan" },
       "description": "Tenant-isolated personal loans given to and taken from named individuals."
+    },
+    "/pathaoParcels/{parcelId}": {
+      "schema": { "$ref": "#/entities/PathaoParcel" },
+      "description": "Tenant-isolated Pathao Courier parcel bookings and consignment tracking."
     }
   }
 }

@@ -4,10 +4,12 @@ import {
   BusinessExpenseCategory,
   BusinessPartner,
   CurrencyCode,
+  Customer,
   DateRangePreset,
   Expense,
   ExpenseCategory,
   ExpenseCategoryItem,
+  PathaoParcel,
   PersonalExpenseCategory,
   PersonalLoan,
   Product,
@@ -213,6 +215,20 @@ export function isValidBdPhone(raw: string): boolean {
   return BD_CARRIER_PHONE_REGEX.test(compact);
 }
 
+export function toLocalBdPhone11(raw: string): string {
+  const digits = String(raw || '').replace(/\D/g, '');
+  if (digits.startsWith('8801') && digits.length === 13) {
+    return digits.slice(2);
+  }
+  if (digits.startsWith('01') && digits.length === 11) {
+    return digits;
+  }
+  if (digits.startsWith('1') && digits.length === 10) {
+    return `0${digits}`;
+  }
+  return String(raw || '').trim();
+}
+
 export function getTodayDhakaDate(): string {
   const now = new Date();
   const dhakaTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Dhaka' }));
@@ -316,6 +332,34 @@ function downloadCsv(filename: string, headers: string[], rows: Array<Array<stri
   ].join('\n');
 
   const blob = new Blob(['\uFEFF' + content], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+function downloadPathaoStandardCsv(
+  filename: string,
+  headers: string[],
+  rows: Array<Array<string | number>>
+) {
+  const escapeMinimal = (v: string | number) => {
+    const str = String(v ?? '');
+    if (/[",\r\n]/.test(str)) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+  const content = [
+    headers.map(escapeMinimal).join(','),
+    ...rows.map((r) => r.map(escapeMinimal).join(',')),
+  ].join('\n');
+
+  const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
@@ -495,6 +539,92 @@ export function exportPersonalLoansCsv(loans: PersonalLoan[]) {
     ];
   });
   downloadCsv(`personal-loans-${getTodayDhakaDate()}.csv`, headers, rows);
+}
+
+const PATHAO_SAMPLE_CSV_HEADERS = [
+  'ItemType',
+  'StoreName',
+  'MerchantOrderId',
+  'RecipientName(*)',
+  'RecipientPhone(*)',
+  'RecipientAddress(*)',
+  'RecipientCity(*)',
+  'RecipientZone(*)',
+  'RecipientArea',
+  'AmountToCollect(*)',
+  'ItemQuantity',
+  'ItemWeight',
+  'ItemDesc',
+  'SpecialInstruction',
+];
+
+export function exportPathaoBulkCsv(parcels: PathaoParcel[]) {
+  const rows = parcels.map((p) => [
+    p.itemType === 1 ? 'document' : 'parcel',
+    p.storeName || '',
+    p.merchantOrderId || '',
+    p.recipientName,
+    toLocalBdPhone11(p.recipientPhone),
+    p.recipientAddress,
+    p.recipientDistrict || 'Dhaka',
+    '',
+    '',
+    Math.round(p.amountToCollect || 0),
+    Math.max(1, Math.round(p.itemQuantity || 1)),
+    p.itemWeight || 0.5,
+    p.itemDescription || '',
+    p.specialInstruction || '',
+  ]);
+  downloadPathaoStandardCsv(
+    `pathao-bulk-orders-${getTodayDhakaDate()}.csv`,
+    PATHAO_SAMPLE_CSV_HEADERS,
+    rows
+  );
+}
+
+export function exportCustomersOrdersCsv(
+  customers: Customer[],
+  latestParcelByCustomer: Record<string, PathaoParcel> = {}
+) {
+  const rows = customers.map((c) => {
+    const qty = Math.max(1, Math.round(Number(c.quantity) || 1));
+    const unitPrice = Math.max(0, Number(c.unitPrice) || 0);
+    const currentOrderTotal = Math.round(qty * unitPrice * 100) / 100;
+    const amountToCollect = Math.round(
+      currentOrderTotal > 0 ? currentOrderTotal : c.totalSpent || 0
+    );
+    const parcel = latestParcelByCustomer[c.id];
+    const itemDesc = [
+      c.productName?.trim(),
+      c.productSize?.trim() ? `Size: ${c.productSize.trim()}` : '',
+      c.orderDetails?.trim(),
+    ]
+      .filter(Boolean)
+      .join(' · ');
+
+    return [
+      c.itemType === 'document' ? 'document' : 'parcel',
+      c.storeName?.trim() || parcel?.storeName || '',
+      c.merchantOrderId?.trim() || parcel?.merchantOrderId || '',
+      c.name,
+      toLocalBdPhone11(c.phone),
+      c.address?.trim() || '',
+      c.district?.trim() || 'Dhaka',
+      c.zone?.trim() || '',
+      c.area?.trim() || '',
+      amountToCollect,
+      qty,
+      c.itemWeight && c.itemWeight > 0 ? c.itemWeight : 0.5,
+      itemDesc,
+      c.notes?.trim() || '',
+    ];
+  });
+
+  downloadPathaoStandardCsv(
+    `customer-orders-${getTodayDhakaDate()}.csv`,
+    PATHAO_SAMPLE_CSV_HEADERS,
+    rows
+  );
 }
 
 

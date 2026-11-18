@@ -167,6 +167,12 @@ export interface Customer {
   email: string;
   address: string;
   district: string;
+  zone?: string;
+  area?: string;
+  itemType?: 'parcel' | 'document';
+  storeName?: string;
+  merchantOrderId?: string;
+  itemWeight?: number;
   productName?: string;
   productSize?: string;
   quantity?: number;
@@ -218,9 +224,12 @@ export interface ActivityLog {
     | 'receipt_deleted'
     | 'loan_created'
     | 'loan_updated'
-    | 'loan_deleted';
+    | 'loan_deleted'
+    | 'pathao_created'
+    | 'pathao_updated'
+    | 'pathao_deleted';
   summary: string;
-  entityType: 'expense' | 'product' | 'customer' | 'partner' | 'receipt' | 'loan';
+  entityType: 'expense' | 'product' | 'customer' | 'partner' | 'receipt' | 'loan' | 'pathao';
   entityId: string;
   amount: number;
   currency: CurrencyCode;
@@ -241,6 +250,36 @@ export interface PersonalLoan {
   date: string; // YYYY-MM-DD (Asia/Dhaka)
   dueDate: string; // YYYY-MM-DD or ''
   notes: string;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+export type PathaoDeliveryType = 48 | 12;
+export type PathaoItemType = 2 | 1;
+
+export interface PathaoParcel {
+  id: string;
+  userId: string;
+  businessId?: string;
+  customerId: string;
+  merchantOrderId: string;
+  consignmentId: string;
+  storeId: number;
+  storeName: string;
+  recipientName: string;
+  recipientPhone: string;
+  recipientAddress: string;
+  recipientDistrict: string;
+  deliveryType: PathaoDeliveryType;
+  itemType: PathaoItemType;
+  itemQuantity: number;
+  itemWeight: number;
+  amountToCollect: number;
+  deliveryFee: number;
+  itemDescription: string;
+  specialInstruction: string;
+  orderStatus: string;
+  dispatchMode: 'api' | 'queued';
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }

@@ -77,6 +77,11 @@ export async function saveCustomer(
     ? existing.lastOrderDate
     : '';
 
+  const itemWeight = Math.max(
+    0.1,
+    Math.min(500, Math.round((Number(values.itemWeight) || 0.5) * 100) / 100)
+  );
+
   const payloadBase = {
     businessId: resolvedBusinessId,
     name: values.name.trim().slice(0, 140),
@@ -85,6 +90,12 @@ export async function saveCustomer(
     email: values.email.trim().slice(0, 140),
     address: values.address.trim().slice(0, 240),
     district: values.district.trim().slice(0, 80) || 'Dhaka',
+    zone: (values.zone || '').trim().slice(0, 80),
+    area: (values.area || '').trim().slice(0, 80),
+    itemType: values.itemType === 'document' ? ('document' as const) : ('parcel' as const),
+    storeName: (values.storeName || '').trim().slice(0, 120),
+    merchantOrderId: (values.merchantOrderId || '').trim().slice(0, 64),
+    itemWeight,
     productName: values.productName.trim().slice(0, 160),
     productSize: values.productSize.trim().slice(0, 40),
     quantity,

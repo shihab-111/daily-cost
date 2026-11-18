@@ -19,6 +19,7 @@ import {
   Settings,
   ShieldCheck,
   Trash2,
+  Truck,
   User as UserIcon,
   UserCircle,
   Users,
@@ -81,6 +82,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
           { to: '/expenses', label: t.nav.businessExpenses, icon: Receipt },
           { to: '/products', label: t.nav.productInventory, icon: Package },
           { to: '/customers', label: t.nav.customersBd, icon: Users },
+          { to: '/pathao', label: t.nav.pathaoDelivery, icon: Truck },
           { to: '/partners', label: t.nav.partners, icon: Handshake },
           { to: '/receipts', label: t.nav.receiptStudio, icon: FileText },
           { to: '/settings', label: t.nav.settingsData, icon: Settings },
@@ -98,6 +100,7 @@ export const DashboardShell: React.FC<DashboardShellProps> = ({
       mode === 'personal' &&
       (location.pathname.startsWith('/products') ||
         location.pathname.startsWith('/customers') ||
+        location.pathname.startsWith('/pathao') ||
         location.pathname.startsWith('/partners') ||
         location.pathname.startsWith('/receipts'))
     ) {

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { User } from 'firebase/auth';
+import { Truck } from 'lucide-react';
 import { Customer, CustomerNumberOption } from '../../types';
 import { useLanguage } from '../../context/LanguageContext';
 import { useMode } from '../../context/ModeContext';
@@ -20,6 +21,7 @@ interface CustomerModalProps {
   user: User;
   editingCustomer: Customer | null;
   onClose: () => void;
+  onSavedAndSendPathao?: (customer: Customer) => void;
 }
 
 export const CustomerModal: React.FC<CustomerModalProps> = ({
@@ -27,6 +29,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
   user,
   editingCustomer,
   onClose,
+  onSavedAndSendPathao,
 }) => {
   const { t } = useLanguage();
   const { activeBusinessId, matchesBusiness } = useMode();
@@ -38,8 +41,14 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
   const [numberOption, setNumberOption] = useState<CustomerNumberOption>('Call / Phone');
   const [email, setEmail] = useState('');
   const [district, setDistrict] = useState<string>('Dhaka');
+  const [zone, setZone] = useState('');
+  const [area, setArea] = useState('');
   const [address, setAddress] = useState('');
 
+  const [itemType, setItemType] = useState<'parcel' | 'document'>('parcel');
+  const [storeName, setStoreName] = useState('');
+  const [merchantOrderId, setMerchantOrderId] = useState('');
+  const [itemWeight, setItemWeight] = useState('0.5');
   const [productName, setProductName] = useState('');
   const [productSize, setProductSize] = useState('');
   const [quantity, setQuantity] = useState('1');
@@ -66,7 +75,17 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
       setNumberOption(editingCustomer.numberOption || 'Call / Phone');
       setEmail(editingCustomer.email);
       setDistrict(editingCustomer.district || 'Dhaka');
+      setZone(editingCustomer.zone || '');
+      setArea(editingCustomer.area || '');
       setAddress(editingCustomer.address);
+      setItemType(editingCustomer.itemType === 'document' ? 'document' : 'parcel');
+      setStoreName(editingCustomer.storeName || '');
+      setMerchantOrderId(editingCustomer.merchantOrderId || '');
+      setItemWeight(
+        editingCustomer.itemWeight && editingCustomer.itemWeight > 0
+          ? String(editingCustomer.itemWeight)
+          : '0.5'
+      );
       setProductName(editingCustomer.productName || '');
       setProductSize(editingCustomer.productSize || '');
       setQuantity(
@@ -87,7 +106,13 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
       setNumberOption('Call / Phone');
       setEmail('');
       setDistrict('Dhaka');
+      setZone('');
+      setArea('');
       setAddress('');
+      setItemType('parcel');
+      setStoreName('');
+      setMerchantOrderId('');
+      setItemWeight('0.5');
       setProductName('');
       setProductSize('');
       setQuantity('1');
@@ -117,8 +142,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const saveCustomerRecord = async (sendToPathao: boolean) => {
     setErrorMsg(null);
 
     const parsed = customerSchema.safeParse({
@@ -127,7 +151,13 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
       numberOption,
       email,
       district,
+      zone,
+      area,
       address,
+      itemType,
+      storeName,
+      merchantOrderId,
+      itemWeight: itemWeight === '' ? 0.5 : itemWeight,
       productName,
       productSize,
       quantity: quantity === '' ? 1 : quantity,
@@ -143,19 +173,60 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
 
     setSaving(true);
     try {
-      await dbService.saveCustomer(
+      const targetBusinessId = editingCustomer ? editingCustomer.businessId : activeBusinessId;
+      const savedId = await dbService.saveCustomer(
         user,
         parsed.data,
         editingCustomer || undefined,
-        editingCustomer ? editingCustomer.businessId : activeBusinessId,
+        targetBusinessId,
         editingCustomer ? recordAsNewOrder : undefined
       );
-      onClose();
+
+      if (sendToPathao && onSavedAndSendPathao) {
+        const orderAmount = Math.round(
+          (parsed.data.quantity || 0) * (parsed.data.unitPrice || 0) * 100
+        ) / 100;
+        const customerSnapshot: Customer = {
+          id: savedId,
+          userId: user.uid,
+          businessId: targetBusinessId || '',
+          name: parsed.data.name,
+          phone: parsed.data.phone,
+          numberOption: parsed.data.numberOption,
+          email: parsed.data.email,
+          address: parsed.data.address,
+          district: parsed.data.district,
+          zone: parsed.data.zone,
+          area: parsed.data.area,
+          itemType: parsed.data.itemType,
+          storeName: parsed.data.storeName,
+          merchantOrderId: parsed.data.merchantOrderId,
+          itemWeight: parsed.data.itemWeight,
+          productName: parsed.data.productName,
+          productSize: parsed.data.productSize,
+          quantity: parsed.data.quantity,
+          unitPrice: parsed.data.unitPrice,
+          orderDetails: parsed.data.orderDetails,
+          notes: parsed.data.notes,
+          totalOrders: editingCustomer ? editingCustomer.totalOrders || 1 : 1,
+          totalSpent: orderAmount > 0 ? orderAmount : editingCustomer?.totalSpent || 0,
+          lastOrderDate: editingCustomer?.lastOrderDate || '',
+        };
+        onClose();
+        onSavedAndSendPathao(customerSnapshot);
+      } else {
+        onClose();
+      }
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Unable to save customer.');
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await saveCustomerRecord(false);
   };
 
   return (
@@ -219,11 +290,25 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
             <Input
+              label={t.customers.zoneLabel}
+              maxLength={80}
+              value={zone}
+              onChange={(e) => setZone(e.target.value)}
+              placeholder="e.g. Uttara, Mirpur, Dhanmondi"
+            />
+            <Input
+              label={t.customers.areaLabel}
+              maxLength={80}
+              value={area}
+              onChange={(e) => setArea(e.target.value)}
+              placeholder="e.g. Sector 6"
+            />
+            <Input
               label={t.customers.locationAddressLabel}
               maxLength={240}
               value={address}
               onChange={(e) => setAddress(e.target.value)}
-              placeholder="House, Road, Block / Thana"
+              placeholder="e.g. H-1,R-1,S-6, Uttara"
             />
             <Input
               label="Email Address (Optional)"
@@ -304,15 +389,26 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3.5 sm:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            <Select
+              label={t.customers.itemTypeLabel}
+              value={itemType}
+              onChange={(e) =>
+                setItemType(e.target.value === 'document' ? 'document' : 'parcel')
+              }
+            >
+              <option value="parcel">{t.customers.parcelOption}</option>
+              <option value="document">{t.customers.documentOption}</option>
+            </Select>
             <Input
-              label={t.customers.tkPerProductLabel}
+              label={t.customers.itemWeightLabel}
               type="number"
-              min="0"
-              step="0.01"
-              value={unitPrice}
-              onChange={(e) => setUnitPrice(e.target.value)}
-              placeholder="e.g. 850"
+              min="0.1"
+              max="500"
+              step="0.1"
+              value={itemWeight}
+              onChange={(e) => setItemWeight(e.target.value)}
+              placeholder="0.5"
               className="font-mono"
             />
             <Input
@@ -323,6 +419,34 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
               placeholder="1"
+              className="font-mono"
+            />
+            <Input
+              label={t.customers.tkPerProductLabel}
+              type="number"
+              min="0"
+              step="0.01"
+              value={unitPrice}
+              onChange={(e) => setUnitPrice(e.target.value)}
+              placeholder="e.g. 1000"
+              className="font-mono"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
+            <Input
+              label={t.customers.storeNameLabel}
+              maxLength={120}
+              value={storeName}
+              onChange={(e) => setStoreName(e.target.value)}
+              placeholder="Leave blank or enter Pathao StoreName"
+            />
+            <Input
+              label={t.customers.merchantOrderIdLabel}
+              maxLength={64}
+              value={merchantOrderId}
+              onChange={(e) => setMerchantOrderId(e.target.value)}
+              placeholder="Optional order reference"
               className="font-mono"
             />
           </div>
@@ -356,14 +480,14 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
 
         <div className="pt-4 border-t border-[#27272a] space-y-1.5">
           <label className="block text-xs font-medium text-zinc-300">
-            Customer Notes &amp; Delivery Preferences
+            {t.customers.specialInstructionLabel}
           </label>
           <textarea
             rows={2}
             maxLength={1000}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Preferred courier or repeat buyer notes..."
+            placeholder="SpecialInstruction / preferred courier or delivery notes..."
             className="w-full px-3 py-2 text-base sm:text-sm bg-[#09090b] text-zinc-100 border border-[#27272a] rounded-lg placeholder:text-zinc-500 focus:outline-none focus:border-[#22c55e] focus:ring-1 focus:ring-[#22c55e]"
           />
         </div>
@@ -371,13 +495,25 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
         <div className="pt-4 border-t border-[#27272a] flex flex-col-reverse sm:flex-row sm:items-center justify-end gap-2.5 sm:gap-3">
           <Button
             type="button"
-            variant="secondary"
+            variant="ghost"
             className="w-full sm:w-auto min-h-[44px] sm:min-h-0"
             onClick={onClose}
             disabled={saving}
           >
             Cancel
           </Button>
+          {onSavedAndSendPathao && (
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-full sm:w-auto min-h-[44px] sm:min-h-0"
+              disabled={saving}
+              onClick={() => void saveCustomerRecord(true)}
+            >
+              <Truck className="w-4 h-4 text-[#4ade80]" />
+              <span>{t.customers.saveAndSendPathaoBtn}</span>
+            </Button>
+          )}
           <Button
             type="submit"
             className="w-full sm:w-auto min-h-[44px] sm:min-h-0"

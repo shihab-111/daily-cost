@@ -182,6 +182,7 @@ service cloud.firestore {
         ])
         && data.keys().hasOnly([
           'userId', 'businessId', 'name', 'phone', 'numberOption', 'email', 'address', 'district',
+          'zone', 'area', 'itemType', 'storeName', 'merchantOrderId', 'itemWeight',
           'productName', 'productSize', 'quantity', 'unitPrice', 'orderDetails', 'notes',
           'totalOrders', 'totalSpent', 'lastOrderDate', 'createdAt', 'updatedAt'
         ])
@@ -193,6 +194,12 @@ service cloud.firestore {
         && data.email is string && data.email.size() <= 140
         && data.address is string && data.address.size() <= 240
         && data.district is string && data.district.size() <= 80
+        && (!('zone' in data) || (data.zone is string && data.zone.size() <= 80))
+        && (!('area' in data) || (data.area is string && data.area.size() <= 80))
+        && (!('itemType' in data) || data.itemType in ['parcel', 'document'])
+        && (!('storeName' in data) || (data.storeName is string && data.storeName.size() <= 120))
+        && (!('merchantOrderId' in data) || (data.merchantOrderId is string && data.merchantOrderId.size() <= 64))
+        && (!('itemWeight' in data) || ((data.itemWeight is int || data.itemWeight is float) && data.itemWeight >= 0.1 && data.itemWeight <= 500))
         && (!('productName' in data) || (data.productName is string && data.productName.size() <= 160))
         && (!('productSize' in data) || (data.productSize is string && data.productSize.size() <= 40))
         && (!('quantity' in data) || ((data.quantity is int || data.quantity is float) && data.quantity >= 0 && data.quantity <= 99999))
@@ -219,10 +226,11 @@ service cloud.firestore {
           'customer_created', 'customer_updated', 'customer_deleted',
           'partner_created', 'partner_updated', 'partner_deleted',
           'receipt_created', 'receipt_deleted',
-          'loan_created', 'loan_updated', 'loan_deleted'
+          'loan_created', 'loan_updated', 'loan_deleted',
+          'pathao_created', 'pathao_updated', 'pathao_deleted'
         ]
         && data.summary is string && data.summary.size() >= 1 && data.summary.size() <= 240
-        && data.entityType in ['expense', 'product', 'customer', 'partner', 'receipt', 'loan']
+        && data.entityType in ['expense', 'product', 'customer', 'partner', 'receipt', 'loan', 'pathao']
         && isValidId(data.entityId)
         && (data.amount is int || data.amount is float) && data.amount >= 0 && data.amount <= 999999999
         && data.currency in ['BDT', 'USD']
@@ -451,6 +459,46 @@ service cloud.firestore {
         && data.updatedAt is timestamp;
     }
 
+    function isValidPathaoParcel(data) {
+      return data.keys().hasAll([
+          'userId', 'customerId', 'merchantOrderId', 'consignmentId', 'storeId', 'storeName',
+          'recipientName', 'recipientPhone', 'recipientAddress', 'recipientDistrict',
+          'deliveryType', 'itemType', 'itemQuantity', 'itemWeight', 'amountToCollect',
+          'deliveryFee', 'itemDescription', 'specialInstruction', 'orderStatus', 'dispatchMode',
+          'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'userId', 'businessId', 'customerId', 'merchantOrderId', 'consignmentId', 'storeId', 'storeName',
+          'recipientName', 'recipientPhone', 'recipientAddress', 'recipientDistrict',
+          'deliveryType', 'itemType', 'itemQuantity', 'itemWeight', 'amountToCollect',
+          'deliveryFee', 'itemDescription', 'specialInstruction', 'orderStatus', 'dispatchMode',
+          'createdAt', 'updatedAt'
+        ])
+        && isValidOptionalBusinessId(data)
+        && isValidId(data.userId)
+        && data.customerId is string && data.customerId.size() <= 128 && data.customerId.matches('^[a-zA-Z0-9_\\-]*$')
+        && isValidId(data.merchantOrderId) && data.merchantOrderId.size() <= 64
+        && data.consignmentId is string && data.consignmentId.size() <= 80
+        && data.storeId is int && data.storeId >= 0 && data.storeId <= 99999999
+        && data.storeName is string && data.storeName.size() <= 120
+        && data.recipientName is string && data.recipientName.size() >= 1 && data.recipientName.size() <= 140
+        && data.recipientPhone is string && data.recipientPhone.size() >= 11 && data.recipientPhone.size() <= 20
+        && data.recipientAddress is string && data.recipientAddress.size() >= 1 && data.recipientAddress.size() <= 300
+        && data.recipientDistrict is string && data.recipientDistrict.size() <= 80
+        && data.deliveryType in [12, 48]
+        && data.itemType in [1, 2]
+        && data.itemQuantity is int && data.itemQuantity >= 1 && data.itemQuantity <= 99999
+        && (data.itemWeight is int || data.itemWeight is float) && data.itemWeight >= 0.1 && data.itemWeight <= 500
+        && (data.amountToCollect is int || data.amountToCollect is float) && data.amountToCollect >= 0 && data.amountToCollect <= 999999999
+        && (data.deliveryFee is int || data.deliveryFee is float) && data.deliveryFee >= 0 && data.deliveryFee <= 999999
+        && data.itemDescription is string && data.itemDescription.size() <= 300
+        && data.specialInstruction is string && data.specialInstruction.size() <= 300
+        && data.orderStatus is string && data.orderStatus.size() >= 1 && data.orderStatus.size() <= 80
+        && data.dispatchMode in ['api', 'queued']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
     // --- Collection Rules (Strict Per-Tenant userId Isolation) ---
 
     // 0. Admin Directory (/admins/{adminUid})
@@ -665,6 +713,7 @@ service cloud.firestore {
         && (
           incoming().diff(existing()).affectedKeys().hasOnly([
             'businessId', 'name', 'phone', 'numberOption', 'email', 'address', 'district',
+            'zone', 'area', 'itemType', 'storeName', 'merchantOrderId', 'itemWeight',
             'productName', 'productSize', 'quantity', 'unitPrice', 'orderDetails', 'notes',
             'totalOrders', 'totalSpent', 'lastOrderDate', 'updatedAt'
           ]) ||
@@ -875,6 +924,33 @@ service cloud.firestore {
           'currency', 'date', 'dueDate', 'notes', 'updatedAt'
         ]);
       allow delete: if isVerified() && isValidId(loanId) && existing().userId == request.auth.uid;
+    }
+
+    // 14. Pathao Courier Parcels (Business Mode, strictly owned by userId)
+    match /pathaoParcels/{parcelId} {
+      allow get: if isVerified() && isValidId(parcelId) && existing().userId == request.auth.uid;
+      allow list: if isVerified() && resource.data.userId == request.auth.uid;
+      allow create: if isVerified()
+        && isValidId(parcelId)
+        && isValidPathaoParcel(incoming())
+        && incoming().userId == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isVerified()
+        && isValidId(parcelId)
+        && isValidPathaoParcel(incoming())
+        && existing().userId == request.auth.uid
+        && incoming().userId == existing().userId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'businessId', 'customerId', 'merchantOrderId', 'consignmentId', 'storeId', 'storeName',
+          'recipientName', 'recipientPhone', 'recipientAddress', 'recipientDistrict',
+          'deliveryType', 'itemType', 'itemQuantity', 'itemWeight', 'amountToCollect',
+          'deliveryFee', 'itemDescription', 'specialInstruction', 'orderStatus', 'dispatchMode',
+          'updatedAt'
+        ]);
+      allow delete: if isVerified() && isValidId(parcelId) && existing().userId == request.auth.uid;
     }
   }
 }

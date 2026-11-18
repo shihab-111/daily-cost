@@ -14,6 +14,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { ExpensesPage } from './pages/ExpensesPage';
 import { ProductsPage } from './pages/ProductsPage';
 import { CustomersPage } from './pages/CustomersPage';
+import { PathaoPage } from './pages/PathaoPage';
 import { PartnersPage } from './pages/PartnersPage';
 import { LoansPage } from './pages/LoansPage';
 import { ReceiptsPage } from './pages/ReceiptsPage';
@@ -82,6 +83,14 @@ export default function App() {
                 element={
                   <ProtectedRoute>
                     <CustomersPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/pathao"
+                element={
+                  <ProtectedRoute>
+                    <PathaoPage />
                   </ProtectedRoute>
                 }
               />

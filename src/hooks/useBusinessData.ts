@@ -10,6 +10,7 @@ import {
   CustomerReceipt,
   Expense,
   ExpenseCategoryItem,
+  PathaoParcel,
   PersonalLoan,
   Product,
   ReceiptTemplate,
@@ -226,6 +227,36 @@ export function usePersonalLoans(user: User | null, enabled: boolean) {
   }, [user, enabled]);
 
   return { loans, loading, error };
+}
+
+export function usePathaoParcels(user: User | null, enabled: boolean) {
+  const [parcels, setParcels] = useState<PathaoParcel[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user || !enabled) {
+      setParcels([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    const unsub = dbService.subscribePathaoParcels(
+      user,
+      (list) => {
+        setParcels(list);
+        setLoading(false);
+      },
+      (err) => {
+        setError(err.message);
+        setLoading(false);
+      }
+    );
+    return () => unsub();
+  }, [user, enabled]);
+
+  return { parcels, loading, error };
 }
 
 export function useSettings(user: User | null, enabled: boolean) {
