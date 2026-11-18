@@ -260,7 +260,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialMode = 'login' }) =
           </div>
         </div>
 
-        <div className="mt-10 sm:mt-20 lg:my-auto lg:py-8 max-w-xl">
+        <div className="mt-28 sm:mt-32 lg:my-auto lg:py-8 max-w-xl">
           <p className="hidden lg:block text-xs font-mono text-[#4ade80] mb-2 tracking-wide">
             {t.login.kicker}
           </p>
