@@ -12,6 +12,7 @@ import {
   CUSTOMER_NUMBER_OPTIONS,
   convertToBdt,
   formatMoney,
+  getTodayDhakaDate,
   PRODUCT_SIZE_PRESETS,
 } from '../../lib/utils';
 import { Button, Input, Modal, Select } from '../ui';
@@ -20,6 +21,7 @@ interface CustomerModalProps {
   open: boolean;
   user: User;
   editingCustomer: Customer | null;
+  nextSerialNumber?: number;
   onClose: () => void;
   onSavedAndSendPathao?: (customer: Customer) => void;
 }
@@ -28,6 +30,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
   open,
   user,
   editingCustomer,
+  nextSerialNumber = 1,
   onClose,
   onSavedAndSendPathao,
 }) => {
@@ -36,6 +39,8 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
   const { products } = useProducts(user, open);
   const { settings } = useSettings(user, open);
 
+  const [serialNumber, setSerialNumber] = useState('1');
+  const [orderDate, setOrderDate] = useState(getTodayDhakaDate());
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [numberOption, setNumberOption] = useState<CustomerNumberOption>('Call / Phone');
@@ -72,6 +77,16 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
     setErrorMsg(null);
     setRecordAsNewOrder(false);
     if (editingCustomer) {
+      setSerialNumber(
+        String(
+          editingCustomer.serialNumber && editingCustomer.serialNumber > 0
+            ? editingCustomer.serialNumber
+            : nextSerialNumber
+        )
+      );
+      setOrderDate(
+        editingCustomer.orderDate || editingCustomer.lastOrderDate || getTodayDhakaDate()
+      );
       setName(editingCustomer.name);
       setPhone(editingCustomer.phone);
       setNumberOption(editingCustomer.numberOption || 'Call / Phone');
@@ -109,6 +124,8 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
       setOrderStatus(editingCustomer.orderStatus || 'pending');
       setNotes(editingCustomer.notes);
     } else {
+      setSerialNumber(String(Math.max(1, nextSerialNumber)));
+      setOrderDate(getTodayDhakaDate());
       setName('');
       setPhone('');
       setNumberOption('Call / Phone');
@@ -130,7 +147,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
       setOrderStatus('pending');
       setNotes('');
     }
-  }, [open, editingCustomer]);
+  }, [open, editingCustomer, nextSerialNumber]);
 
   const numericQty = Math.max(0, Number(quantity) || 0);
   const numericUnitPrice = Math.max(0, Number(unitPrice) || 0);
@@ -158,6 +175,8 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
     setErrorMsg(null);
 
     const parsed = customerSchema.safeParse({
+      serialNumber: serialNumber === '' ? Math.max(1, nextSerialNumber) : serialNumber,
+      orderDate: orderDate || getTodayDhakaDate(),
       name,
       phone,
       numberOption,
@@ -207,6 +226,8 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
           id: savedId,
           userId: user.uid,
           businessId: targetBusinessId || '',
+          serialNumber: parsed.data.serialNumber,
+          orderDate: parsed.data.orderDate || getTodayDhakaDate(),
           name: parsed.data.name,
           phone: parsed.data.phone,
           numberOption: parsed.data.numberOption,
@@ -229,7 +250,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
           notes: parsed.data.notes,
           totalOrders: editingCustomer ? editingCustomer.totalOrders || 1 : 1,
           totalSpent: orderAmount > 0 ? orderAmount : editingCustomer?.totalSpent || 0,
-          lastOrderDate: editingCustomer?.lastOrderDate || '',
+          lastOrderDate: parsed.data.orderDate || editingCustomer?.lastOrderDate || '',
         };
         onClose();
         onSavedAndSendPathao(customerSnapshot);
@@ -263,8 +284,31 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
           </div>
         )}
 
-        {/* Customer Contact & Location */}
+        {/* Serial Number & Order Date First */}
         <div className="space-y-3.5">
+          <div className="grid grid-cols-2 gap-3.5 sm:gap-4 p-3 rounded-xl bg-[#09090b] border border-[#27272a]">
+            <Input
+              label={t.customers.serialNoLabel}
+              type="number"
+              required
+              min="1"
+              max="9999999"
+              step="1"
+              value={serialNumber}
+              onChange={(e) => setSerialNumber(e.target.value)}
+              placeholder="1"
+              className="font-mono"
+            />
+            <Input
+              label={t.customers.orderDateLabel}
+              type="date"
+              required
+              value={orderDate}
+              onChange={(e) => setOrderDate(e.target.value)}
+              className="font-mono"
+            />
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
             <Input
               label="Customer Full Name *"

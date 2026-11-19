@@ -187,6 +187,24 @@ export interface TranslationStrings {
     editCategory: string;
     saveCategory: string;
     cancelEdit: string;
+    paymentDueSectionTitle: string;
+    paymentStatusCol: string;
+    statusPaid: string;
+    statusPartial: string;
+    statusDue: string;
+    paidAmount: string;
+    dueAmount: string;
+    totalPaid: string;
+    totalDue: string;
+    totalExpense: string;
+    filterAllStatus: string;
+    markFullPaid: string;
+    addPayment: string;
+    addPaymentPlaceholder: string;
+    applyPayment: string;
+    fullPaidBtn: string;
+    partialBtn: string;
+    fullDueBtn: string;
   };
   products: {
     addProduct: string;
@@ -262,6 +280,10 @@ export interface TranslationStrings {
     statusReceived: string;
     statusRejected: string;
     statusNoCall: string;
+    serialNoCol: string;
+    serialNoLabel: string;
+    orderDateCol: string;
+    orderDateLabel: string;
   };
   partners: {
     pageTitle: string;
@@ -779,6 +801,24 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       editCategory: 'Edit category',
       saveCategory: 'Save',
       cancelEdit: 'Cancel',
+      paymentDueSectionTitle: 'Payment & Due Status',
+      paymentStatusCol: 'Payment / Due',
+      statusPaid: 'Paid',
+      statusPartial: 'Partial Paid',
+      statusDue: 'Due',
+      paidAmount: 'Paid Amount',
+      dueAmount: 'Due Amount',
+      totalPaid: 'Total Paid',
+      totalDue: 'Total Due',
+      totalExpense: 'Total Expense',
+      filterAllStatus: 'All Status',
+      markFullPaid: 'Mark Paid',
+      addPayment: 'Pay Due',
+      addPaymentPlaceholder: 'Add paid amount',
+      applyPayment: 'Apply',
+      fullPaidBtn: 'Full Paid',
+      partialBtn: 'Partial Paid',
+      fullDueBtn: 'Full Due',
     },
     products: {
       addProduct: 'Add Product',
@@ -856,6 +896,10 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       statusReceived: 'Order Received',
       statusRejected: 'Rejected / Not Received',
       statusNoCall: 'Not Received Call',
+      serialNoCol: 'SL',
+      serialNoLabel: 'Serial No. (#) *',
+      orderDateCol: 'Order Date',
+      orderDateLabel: 'Order Date *',
     },
     partners: {
       pageTitle: 'Business Partners & Investment',
@@ -1386,6 +1430,24 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       editCategory: 'ক্যাটাগরি সম্পাদনা',
       saveCategory: 'সংরক্ষণ',
       cancelEdit: 'বাতিল',
+      paymentDueSectionTitle: 'পেমেন্ট ও বকেয়া (Due) হিসাব',
+      paymentStatusCol: 'পেমেন্ট / বকেয়া',
+      statusPaid: 'পরিশোধিত',
+      statusPartial: 'আংশিক পরিশোধ',
+      statusDue: 'বকেয়া',
+      paidAmount: 'পরিশোধিত পরিমাণ',
+      dueAmount: 'বকেয়া পরিমাণ',
+      totalPaid: 'মোট পরিশোধিত',
+      totalDue: 'মোট বকেয়া',
+      totalExpense: 'মোট খরচ',
+      filterAllStatus: 'সব স্ট্যাটাস',
+      markFullPaid: 'পরিশোধ করুন',
+      addPayment: 'টাকা দিন',
+      addPaymentPlaceholder: 'জমা টাকা লিখুন',
+      applyPayment: 'জমা করুন',
+      fullPaidBtn: 'সম্পূর্ণ পরিশোধ',
+      partialBtn: 'আংশিক পরিশোধ',
+      fullDueBtn: 'সম্পূর্ণ বকেয়া',
     },
     products: {
       addProduct: 'পণ্য যোগ করুন',
@@ -1462,6 +1524,10 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       statusReceived: 'অর্ডার রিসিভড',
       statusRejected: 'রিজেক্টেড / রিসিভ করেনি',
       statusNoCall: 'কল রিসিভ করেনি',
+      serialNoCol: 'ক্রমিক',
+      serialNoLabel: 'ক্রমিক নম্বর (SL #) *',
+      orderDateCol: 'অর্ডারের তারিখ',
+      orderDateLabel: 'অর্ডারের তারিখ *',
     },
     partners: {
       pageTitle: 'বিজনেস পার্টনার ও বিনিয়োগ',

@@ -32,7 +32,15 @@ export function subscribeCustomers(
           id: d.id,
           ...(d.data() as Omit<Customer, 'id'>),
         }))
-        .sort((a, b) => a.name.localeCompare(b.name));
+        .sort((a, b) => {
+          const sa = a.serialNumber && a.serialNumber > 0 ? a.serialNumber : Number.MAX_SAFE_INTEGER;
+          const sb = b.serialNumber && b.serialNumber > 0 ? b.serialNumber : Number.MAX_SAFE_INTEGER;
+          if (sa !== sb) return sa - sb;
+          const ta = a.createdAt?.toMillis?.() ?? 0;
+          const tb = b.createdAt?.toMillis?.() ?? 0;
+          if (ta !== tb) return ta - tb;
+          return a.name.localeCompare(b.name);
+        });
       onData(list);
     },
     (err) => {
@@ -67,6 +75,16 @@ export async function saveCustomer(
   const hasOrderInfo = Boolean(values.productName.trim() || productSubtotal > 0 || deliveryCharge > 0);
   const shouldIncrementOrder = existing ? Boolean(recordOrder && hasOrderInfo) : hasOrderInfo;
 
+  const serialNumber = Math.max(
+    1,
+    Math.min(9999999, Math.round(Number(values.serialNumber) || existing?.serialNumber || 1))
+  );
+  const resolvedOrderDate =
+    (values.orderDate || '').trim().slice(0, 10) ||
+    existing?.orderDate ||
+    existing?.lastOrderDate ||
+    getTodayDhakaDate();
+
   const baseOrders = existing ? existing.totalOrders || 0 : 0;
   const baseSpent = existing ? existing.totalSpent || 0 : 0;
   const nextOrders = shouldIncrementOrder ? Math.min(999999, baseOrders + 1) : baseOrders;
@@ -74,10 +92,10 @@ export async function saveCustomer(
     ? Math.min(999999999, Math.round((baseSpent + orderAmount) * 100) / 100)
     : baseSpent;
   const nextLastOrderDate = shouldIncrementOrder
-    ? getTodayDhakaDate()
+    ? resolvedOrderDate
     : existing
-    ? existing.lastOrderDate
-    : '';
+    ? existing.lastOrderDate || resolvedOrderDate
+    : resolvedOrderDate;
 
   const itemWeight = Math.max(
     0.1,
@@ -86,6 +104,8 @@ export async function saveCustomer(
 
   const payloadBase = {
     businessId: resolvedBusinessId,
+    serialNumber,
+    orderDate: resolvedOrderDate,
     name: values.name.trim().slice(0, 140),
     phone: values.phone.trim().slice(0, 20),
     numberOption: values.numberOption,

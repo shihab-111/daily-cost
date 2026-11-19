@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Check,
+  CheckCircle2,
+  Clock,
   Download,
   Edit3,
   ImagePlus,
@@ -11,6 +13,7 @@ import {
   SlidersHorizontal,
   Tag,
   Trash2,
+  Wallet,
   X,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
@@ -28,9 +31,16 @@ import {
   PERSONAL_EXPENSE_CATEGORIES,
   resolveCategoryLabel,
   resolveExpenseMode,
+  resolveExpensePayment,
 } from '../lib/utils';
 import { expenseCategorySchema } from '../lib/validators/schemas';
-import { DateRangePreset, Expense, ExpenseCategory, ExpenseCategoryItem } from '../types';
+import {
+  DateRangePreset,
+  Expense,
+  ExpenseCategory,
+  ExpenseCategoryItem,
+  ExpensePaymentStatus,
+} from '../types';
 import { DashboardShell } from '../components/layout/DashboardShell';
 import { ExpenseModal } from '../components/expenses/ExpenseModal';
 import { LightboxImageItem, LightboxModal } from '../components/ui/LightboxModal';
@@ -49,10 +59,15 @@ export const ExpensesPage: React.FC = () => {
   const { settings } = useSettings(user, Boolean(user));
 
   const [categoryFilter, setCategoryFilter] = useState<'all' | ExpenseCategory>('all');
+  const [paymentFilter, setPaymentFilter] = useState<'all' | ExpensePaymentStatus>('all');
   const [datePreset, setDatePreset] = useState<DateRangePreset>('all');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+
+  const [payingExpenseId, setPayingExpenseId] = useState<string | null>(null);
+  const [quickPayAmount, setQuickPayAmount] = useState('');
+  const [updatingPaymentId, setUpdatingPaymentId] = useState<string | null>(null);
 
   const [manageCatsOpen, setManageCatsOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -82,6 +97,9 @@ export const ExpensesPage: React.FC = () => {
 
   useEffect(() => {
     setCategoryFilter('all');
+    setPaymentFilter('all');
+    setPayingExpenseId(null);
+    setQuickPayAmount('');
     setCatError(null);
     setEditingCatId(null);
   }, [mode]);
@@ -270,16 +288,18 @@ export const ExpensesPage: React.FC = () => {
     [expenses, allCategories, mode, matchesBusiness]
   );
 
-  const filteredExpenses = useMemo(() => {
+  const baseFilteredExpenses = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return modeExpenses.filter((exp) => {
       if (categoryFilter !== 'all' && exp.category !== categoryFilter) return false;
       if (!isDateInRange(exp.date, datePreset, customStart, customEnd)) return false;
       if (!q) return true;
+      const payment = resolveExpensePayment(exp);
       const haystack = [
         exp.title,
         exp.description,
         exp.paymentMethod,
+        payment.paymentStatus,
         exp.adAccountId,
         exp.campaignName,
         exp.partnerOrAgency,
@@ -294,14 +314,76 @@ export const ExpensesPage: React.FC = () => {
     });
   }, [modeExpenses, categoryFilter, datePreset, customStart, customEnd, searchQuery]);
 
-  const totalFilteredBdt = useMemo(
+  const paymentStatusCounts = useMemo(() => {
+    let paid = 0;
+    let partial = 0;
+    let due = 0;
+    for (const exp of baseFilteredExpenses) {
+      const st = resolveExpensePayment(exp).paymentStatus;
+      if (st === 'paid') paid += 1;
+      else if (st === 'partial') partial += 1;
+      else due += 1;
+    }
+    return { all: baseFilteredExpenses.length, paid, partial, due };
+  }, [baseFilteredExpenses]);
+
+  const filteredExpenses = useMemo(() => {
+    if (mode !== 'business' || paymentFilter === 'all') return baseFilteredExpenses;
+    return baseFilteredExpenses.filter(
+      (exp) => resolveExpensePayment(exp).paymentStatus === paymentFilter
+    );
+  }, [baseFilteredExpenses, mode, paymentFilter]);
+
+  const { totalFilteredBdt, totalPaidFilteredBdt, totalDueFilteredBdt, dueCountFiltered } = useMemo(
     () =>
       filteredExpenses.reduce(
-        (sum, e) => sum + convertToBdt(e.amount, e.currency, usdToBdtRate),
-        0
+        (acc, e) => {
+          const payment = resolveExpensePayment(e);
+          acc.totalFilteredBdt += convertToBdt(e.amount, e.currency, usdToBdtRate);
+          acc.totalPaidFilteredBdt += convertToBdt(payment.paidAmount, e.currency, usdToBdtRate);
+          acc.totalDueFilteredBdt += convertToBdt(payment.dueAmount, e.currency, usdToBdtRate);
+          if (payment.dueAmount > 0.001) acc.dueCountFiltered += 1;
+          return acc;
+        },
+        {
+          totalFilteredBdt: 0,
+          totalPaidFilteredBdt: 0,
+          totalDueFilteredBdt: 0,
+          dueCountFiltered: 0,
+        }
       ),
     [filteredExpenses, usdToBdtRate]
   );
+
+  const handleMarkFullPaid = async (exp: Expense) => {
+    if (!user) return;
+    setUpdatingPaymentId(exp.id);
+    try {
+      await dbService.updateExpensePayment(user, exp, exp.amount);
+      if (payingExpenseId === exp.id) {
+        setPayingExpenseId(null);
+        setQuickPayAmount('');
+      }
+    } finally {
+      setUpdatingPaymentId(null);
+    }
+  };
+
+  const handleApplyQuickPayment = async (exp: Expense) => {
+    if (!user) return;
+    const addVal = Number(quickPayAmount);
+    if (Number.isNaN(addVal) || addVal <= 0) return;
+    const current = resolveExpensePayment(exp);
+    const nextPaid = Math.min(exp.amount, Math.round((current.paidAmount + addVal) * 100) / 100);
+    setUpdatingPaymentId(exp.id);
+    try {
+      await dbService.updateExpensePayment(user, exp, nextPaid);
+      setPayingExpenseId(null);
+      setQuickPayAmount('');
+    } finally {
+      setUpdatingPaymentId(null);
+    }
+  };
 
   const openReceiptsLightbox = async (expense: Expense) => {
     if (!user) return;
@@ -367,6 +449,70 @@ export const ExpensesPage: React.FC = () => {
       }
     >
       <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-5 sm:space-y-6">
+        {/* Business Payment & Due KPI Summary */}
+        {mode === 'business' && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+            <Card className="p-4 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs text-zinc-400">{t.expenses.totalExpense}</p>
+                <p className="text-xl font-bold font-mono tabular-nums text-zinc-100 mt-1 truncate">
+                  {formatMoney(totalFilteredBdt, 'BDT')}
+                </p>
+                <p className="text-[11px] text-zinc-500 mt-0.5 font-mono tabular-nums">
+                  {filteredExpenses.length} {t.expenses.entries}
+                </p>
+              </div>
+              <div className="w-10 h-10 rounded-lg bg-zinc-900 border border-[#27272a] flex items-center justify-center shrink-0">
+                <Receipt className="w-4 h-4 text-zinc-300" />
+              </div>
+            </Card>
+
+            <Card className="p-4 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs text-zinc-400">{t.expenses.totalPaid}</p>
+                <p className="text-xl font-bold font-mono tabular-nums text-[#4ade80] mt-1 truncate">
+                  {formatMoney(totalPaidFilteredBdt, 'BDT')}
+                </p>
+                <p className="text-[11px] text-zinc-500 mt-0.5 font-mono tabular-nums">
+                  {paymentStatusCounts.paid} {t.expenses.statusPaid}
+                </p>
+              </div>
+              <div className="w-10 h-10 rounded-lg bg-[#22c55e]/10 border border-[#22c55e]/30 flex items-center justify-center shrink-0">
+                <CheckCircle2 className="w-4 h-4 text-[#4ade80]" />
+              </div>
+            </Card>
+
+            <Card className="p-4 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs text-zinc-400">{t.expenses.totalDue}</p>
+                <p
+                  className={`text-xl font-bold font-mono tabular-nums mt-1 truncate ${
+                    totalDueFilteredBdt > 0 ? 'text-amber-400' : 'text-zinc-300'
+                  }`}
+                >
+                  {formatMoney(totalDueFilteredBdt, 'BDT')}
+                </p>
+                <p className="text-[11px] text-zinc-500 mt-0.5 font-mono tabular-nums">
+                  {dueCountFiltered} {t.expenses.statusDue} / {t.expenses.statusPartial}
+                </p>
+              </div>
+              <div
+                className={`w-10 h-10 rounded-lg border flex items-center justify-center shrink-0 ${
+                  totalDueFilteredBdt > 0
+                    ? 'bg-amber-500/10 border-amber-500/30'
+                    : 'bg-zinc-900 border-[#27272a]'
+                }`}
+              >
+                <Clock
+                  className={`w-4 h-4 ${
+                    totalDueFilteredBdt > 0 ? 'text-amber-400' : 'text-zinc-500'
+                  }`}
+                />
+              </div>
+            </Card>
+          </div>
+        )}
+
         {/* Filter Toolbar */}
         <Card className="p-3.5 sm:p-4 space-y-3.5 sm:space-y-4">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
@@ -494,6 +640,56 @@ export const ExpensesPage: React.FC = () => {
               </span>
             </div>
           </div>
+
+          {/* Payment Status Filter Strip (Business Mode) */}
+          {mode === 'business' && (
+            <div className="flex flex-wrap items-center gap-1.5 pt-3 border-t border-[#27272a]">
+              {(
+                [
+                  {
+                    id: 'all',
+                    label: t.expenses.filterAllStatus,
+                    count: paymentStatusCounts.all,
+                    activeClass: 'bg-[#18181b] text-zinc-100 border-zinc-600',
+                  },
+                  {
+                    id: 'paid',
+                    label: t.expenses.statusPaid,
+                    count: paymentStatusCounts.paid,
+                    activeClass: 'bg-[#22c55e]/15 text-[#4ade80] border-[#22c55e]/40',
+                  },
+                  {
+                    id: 'partial',
+                    label: t.expenses.statusPartial,
+                    count: paymentStatusCounts.partial,
+                    activeClass: 'bg-amber-500/15 text-amber-300 border-amber-500/40',
+                  },
+                  {
+                    id: 'due',
+                    label: t.expenses.statusDue,
+                    count: paymentStatusCounts.due,
+                    activeClass: 'bg-red-500/15 text-red-400 border-red-500/40',
+                  },
+                ] as const
+              ).map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setPaymentFilter(item.id)}
+                  className={`inline-flex items-center gap-1.5 px-3 min-h-[36px] sm:min-h-[30px] py-1 text-xs font-medium rounded-lg border transition-colors cursor-pointer ${
+                    paymentFilter === item.id
+                      ? item.activeClass
+                      : 'bg-[#09090b] text-zinc-400 border-[#27272a] hover:text-zinc-200'
+                  }`}
+                >
+                  <span>{item.label}</span>
+                  <span className="font-mono tabular-nums text-[11px] opacity-80">
+                    ({item.count})
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
 
           {manageCatsOpen && (
             <div className="p-3.5 sm:p-4 rounded-lg bg-[#09090b] border border-[#27272a] space-y-4">
@@ -898,15 +1094,47 @@ export const ExpensesPage: React.FC = () => {
                   const catItem = categoryMap[exp.category];
                   const expQty = Number(exp.quantity || 0);
                   const expUnitPrice = Number(exp.unitPrice || 0);
+                  const payment = resolveExpensePayment(exp);
+                  const isPaying = payingExpenseId === exp.id;
+                  const isUpdatingPay = updatingPaymentId === exp.id;
+
                   return (
                     <div key={exp.id} className="p-4 space-y-2.5">
-                      <div className="flex items-center justify-between gap-2 text-xs">
-                        <span className="font-mono tabular-nums text-zinc-400">
-                          {exp.date} · {exp.paymentMethod}
-                        </span>
-                        <span className="text-sm font-mono tabular-nums font-semibold text-zinc-100 shrink-0">
-                          {formatMoney(exp.amount, exp.currency)}
-                        </span>
+                      <div className="flex items-start justify-between gap-2 text-xs">
+                        <div className="min-w-0">
+                          <span className="font-mono tabular-nums text-zinc-400">
+                            {exp.date} · {exp.paymentMethod}
+                          </span>
+                          {mode === 'business' && (
+                            <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                              <span
+                                className={`inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded border ${
+                                  payment.paymentStatus === 'paid'
+                                    ? 'bg-[#22c55e]/15 text-[#4ade80] border-[#22c55e]/30'
+                                    : payment.paymentStatus === 'partial'
+                                    ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                                    : 'bg-red-500/15 text-red-400 border-red-500/30'
+                                }`}
+                              >
+                                {payment.paymentStatus === 'paid'
+                                  ? t.expenses.statusPaid
+                                  : payment.paymentStatus === 'partial'
+                                  ? t.expenses.statusPartial
+                                  : t.expenses.statusDue}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className="block text-sm font-mono tabular-nums font-semibold text-zinc-100">
+                            {formatMoney(exp.amount, exp.currency)}
+                          </span>
+                          {mode === 'business' && payment.dueAmount > 0 && (
+                            <span className="block text-[11px] font-mono tabular-nums text-amber-400 mt-0.5">
+                              {t.expenses.statusDue}: {formatMoney(payment.dueAmount, exp.currency)}
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       <div className="flex items-start gap-2.5">
@@ -960,11 +1188,63 @@ export const ExpensesPage: React.FC = () => {
                             <span className="mx-1.5 text-zinc-600">·</span>
                             <span>{renderCategoryContext(exp)}</span>
                           </p>
+                          {mode === 'business' && payment.dueAmount > 0 && (
+                            <p className="text-[11px] font-mono tabular-nums text-zinc-400 mt-1">
+                              <span className="text-[#4ade80]">
+                                {t.expenses.statusPaid}:{' '}
+                                {formatMoney(payment.paidAmount, exp.currency)}
+                              </span>
+                              <span className="mx-1.5 text-zinc-600">·</span>
+                              <span className="text-amber-400">
+                                {t.expenses.statusDue}:{' '}
+                                {formatMoney(payment.dueAmount, exp.currency)}
+                              </span>
+                            </p>
+                          )}
                         </div>
                       </div>
 
+                      {mode === 'business' && isPaying && payment.dueAmount > 0 && (
+                        <div className="flex items-center gap-2 p-2 rounded-lg bg-[#09090b] border border-[#22c55e]/40">
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0.01"
+                            max={payment.dueAmount}
+                            value={quickPayAmount}
+                            onChange={(e) => setQuickPayAmount(e.target.value)}
+                            placeholder={`${t.expenses.addPaymentPlaceholder} (max ${payment.dueAmount})`}
+                            className="flex-1 min-w-0 px-2.5 py-2 text-base sm:text-xs font-mono tabular-nums bg-[#121214] text-zinc-100 border border-[#27272a] rounded-md focus:outline-none focus:border-[#22c55e]"
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            className="min-h-[38px]"
+                            disabled={
+                              isUpdatingPay ||
+                              !quickPayAmount ||
+                              Number(quickPayAmount) <= 0
+                            }
+                            onClick={() => handleApplyQuickPayment(exp)}
+                          >
+                            {t.expenses.applyPayment}
+                          </Button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPayingExpenseId(null);
+                              setQuickPayAmount('');
+                            }}
+                            aria-label={t.common.close}
+                            className="min-h-[38px] min-w-[38px] inline-flex items-center justify-center text-zinc-400 hover:text-zinc-200 cursor-pointer"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+
                       <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#27272a]/70">
-                        <div>
+                        <div className="flex items-center gap-2">
                           {exp.receiptCount > 0 && exp.receiptThumb ? (
                             <button
                               type="button"
@@ -986,7 +1266,32 @@ export const ExpensesPage: React.FC = () => {
                           )}
                         </div>
 
-                        <div className="inline-flex items-center gap-1.5">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {mode === 'business' && payment.dueAmount > 0 && (
+                            <>
+                              <button
+                                type="button"
+                                disabled={isUpdatingPay}
+                                onClick={() => {
+                                  setPayingExpenseId(isPaying ? null : exp.id);
+                                  setQuickPayAmount(String(payment.dueAmount));
+                                }}
+                                className="min-h-[38px] px-2.5 inline-flex items-center gap-1 text-xs font-medium bg-amber-500/15 border border-amber-500/30 text-amber-300 hover:bg-amber-500/25 rounded-lg cursor-pointer"
+                              >
+                                <Wallet className="w-3.5 h-3.5" />
+                                <span>{t.expenses.addPayment}</span>
+                              </button>
+                              <button
+                                type="button"
+                                disabled={isUpdatingPay}
+                                onClick={() => handleMarkFullPaid(exp)}
+                                className="min-h-[38px] px-2.5 inline-flex items-center gap-1 text-xs font-medium bg-[#22c55e]/15 border border-[#22c55e]/30 text-[#4ade80] hover:bg-[#22c55e]/25 rounded-lg cursor-pointer"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                                <span>{t.expenses.markFullPaid}</span>
+                              </button>
+                            </>
+                          )}
                           <button
                             type="button"
                             onClick={() => {
@@ -1044,6 +1349,9 @@ export const ExpensesPage: React.FC = () => {
                     <th className="py-3 px-4">{t.expenses.titleDetails}</th>
                     <th className="py-3 px-4 hidden md:table-cell">{t.expenses.payment}</th>
                     <th className="py-3 px-4">{t.expenses.receipt}</th>
+                    {mode === 'business' && (
+                      <th className="py-3 px-4">{t.expenses.paymentStatusCol}</th>
+                    )}
                     <th className="py-3 px-4 text-right">{t.expenses.amount}</th>
                     <th className="py-3 px-4 text-right">{t.common.actions}</th>
                   </tr>
@@ -1053,6 +1361,9 @@ export const ExpensesPage: React.FC = () => {
                     const catItem = categoryMap[exp.category];
                     const expQty = Number(exp.quantity || 0);
                     const expUnitPrice = Number(exp.unitPrice || 0);
+                    const payment = resolveExpensePayment(exp);
+                    const isPaying = payingExpenseId === exp.id;
+                    const isUpdatingPay = updatingPaymentId === exp.id;
                     return (
                     <tr key={exp.id} className="hover:bg-zinc-900/60 transition-colors">
                       <td className="py-3 px-4 text-xs font-mono tabular-nums text-zinc-400 whitespace-nowrap">
@@ -1135,11 +1446,105 @@ export const ExpensesPage: React.FC = () => {
                           <span className="text-xs text-zinc-600">—</span>
                         )}
                       </td>
+                      {mode === 'business' && (
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <div className="space-y-1">
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded border ${
+                                payment.paymentStatus === 'paid'
+                                  ? 'bg-[#22c55e]/15 text-[#4ade80] border-[#22c55e]/30'
+                                  : payment.paymentStatus === 'partial'
+                                  ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                                  : 'bg-red-500/15 text-red-400 border-red-500/30'
+                              }`}
+                            >
+                              {payment.paymentStatus === 'paid'
+                                ? t.expenses.statusPaid
+                                : payment.paymentStatus === 'partial'
+                                ? t.expenses.statusPartial
+                                : t.expenses.statusDue}
+                            </span>
+                            {payment.dueAmount > 0 && (
+                              <div className="text-[11px] font-mono tabular-nums space-x-2">
+                                <span className="text-[#4ade80]">
+                                  {t.expenses.statusPaid}:{' '}
+                                  {formatMoney(payment.paidAmount, exp.currency)}
+                                </span>
+                                <span className="text-amber-400 font-medium">
+                                  {t.expenses.statusDue}:{' '}
+                                  {formatMoney(payment.dueAmount, exp.currency)}
+                                </span>
+                              </div>
+                            )}
+                            {isPaying && payment.dueAmount > 0 && (
+                              <div className="flex items-center gap-1.5 pt-1">
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  min="0.01"
+                                  max={payment.dueAmount}
+                                  value={quickPayAmount}
+                                  onChange={(e) => setQuickPayAmount(e.target.value)}
+                                  placeholder={t.expenses.addPaymentPlaceholder}
+                                  className="w-28 px-2 py-1 text-xs font-mono tabular-nums bg-[#09090b] text-zinc-100 border border-[#22c55e]/50 rounded focus:outline-none"
+                                />
+                                <button
+                                  type="button"
+                                  disabled={
+                                    isUpdatingPay ||
+                                    !quickPayAmount ||
+                                    Number(quickPayAmount) <= 0
+                                  }
+                                  onClick={() => handleApplyQuickPayment(exp)}
+                                  className="px-2 py-1 text-xs font-semibold bg-[#22c55e] text-zinc-950 rounded hover:bg-[#4ade80] disabled:opacity-50 cursor-pointer"
+                                >
+                                  {t.expenses.applyPayment}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setPayingExpenseId(null);
+                                    setQuickPayAmount('');
+                                  }}
+                                  className="p-1 text-zinc-400 hover:text-zinc-200 cursor-pointer"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      )}
                       <td className="py-3 px-4 text-right font-mono tabular-nums font-medium text-zinc-100 whitespace-nowrap">
                         {formatMoney(exp.amount, exp.currency)}
                       </td>
                       <td className="py-3 px-4 text-right whitespace-nowrap">
                         <div className="inline-flex items-center gap-1">
+                          {mode === 'business' && payment.dueAmount > 0 && (
+                            <>
+                              <button
+                                type="button"
+                                disabled={isUpdatingPay}
+                                onClick={() => {
+                                  setPayingExpenseId(isPaying ? null : exp.id);
+                                  setQuickPayAmount(String(payment.dueAmount));
+                                }}
+                                title={t.expenses.addPayment}
+                                className="px-2 py-1 text-xs font-medium bg-amber-500/15 border border-amber-500/30 text-amber-300 hover:bg-amber-500/25 rounded-md cursor-pointer"
+                              >
+                                {t.expenses.addPayment}
+                              </button>
+                              <button
+                                type="button"
+                                disabled={isUpdatingPay}
+                                onClick={() => handleMarkFullPaid(exp)}
+                                title={t.expenses.markFullPaid}
+                                className="px-2 py-1 text-xs font-medium bg-[#22c55e]/15 border border-[#22c55e]/30 text-[#4ade80] hover:bg-[#22c55e]/25 rounded-md cursor-pointer"
+                              >
+                                {t.expenses.markFullPaid}
+                              </button>
+                            </>
+                          )}
                           <button
                             type="button"
                             onClick={() => {

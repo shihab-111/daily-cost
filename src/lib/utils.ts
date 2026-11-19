@@ -370,6 +370,45 @@ function downloadPathaoStandardCsv(
   URL.revokeObjectURL(url);
 }
 
+export function resolveExpensePayment(
+  exp: Pick<Expense, 'amount' | 'paidAmount' | 'dueAmount' | 'paymentStatus'>
+): {
+  paidAmount: number;
+  dueAmount: number;
+  paymentStatus: 'paid' | 'partial' | 'due';
+} {
+  const total = Math.max(0, Math.round((Number(exp.amount) || 0) * 100) / 100);
+  if (
+    exp.paidAmount === undefined &&
+    exp.dueAmount === undefined &&
+    exp.paymentStatus === undefined
+  ) {
+    return { paidAmount: total, dueAmount: 0, paymentStatus: 'paid' };
+  }
+
+  let paid: number;
+  let due: number;
+
+  if (exp.paidAmount !== undefined && !Number.isNaN(Number(exp.paidAmount))) {
+    paid = Math.max(0, Math.min(total, Math.round(Number(exp.paidAmount) * 100) / 100));
+    due = Math.max(0, Math.round((total - paid) * 100) / 100);
+  } else if (exp.dueAmount !== undefined && !Number.isNaN(Number(exp.dueAmount))) {
+    due = Math.max(0, Math.min(total, Math.round(Number(exp.dueAmount) * 100) / 100));
+    paid = Math.max(0, Math.round((total - due) * 100) / 100);
+  } else if (exp.paymentStatus === 'due') {
+    paid = 0;
+    due = total;
+  } else {
+    paid = total;
+    due = 0;
+  }
+
+  const paymentStatus: 'paid' | 'partial' | 'due' =
+    due <= 0.001 ? 'paid' : paid <= 0.001 ? 'due' : 'partial';
+
+  return { paidAmount: paid, dueAmount: due, paymentStatus };
+}
+
 export function exportExpensesCsv(
   expenses: Expense[],
   categoryLabels?: Record<string, string>
@@ -381,7 +420,10 @@ export function exportExpensesCsv(
     'Category',
     'Quantity',
     'Per Piece Price',
-    'Amount',
+    'Total Amount',
+    'Paid Amount',
+    'Due Amount',
+    'Payment Status',
     'Currency',
     'Payment Method',
     'Ad Account ID',
@@ -393,25 +435,70 @@ export function exportExpensesCsv(
     'Vendor / Courier',
     'Description',
   ];
-  const rows = expenses.map((e) => [
-    e.mode,
-    e.date,
-    e.title,
-    resolveCategoryLabel(e.category, categoryLabels),
-    e.quantity ? e.quantity : '',
-    e.unitPrice ? e.unitPrice.toFixed(2) : '',
-    e.amount.toFixed(2),
-    e.currency,
-    e.paymentMethod,
-    e.adAccountId,
-    e.campaignName,
-    e.partnerOrAgency,
-    e.modelName,
-    e.photographerName,
-    e.studioName,
-    e.vendorOrCourier,
-    e.description,
-  ]);
+  let totalAmountSum = 0;
+  let totalPaidSum = 0;
+  let totalDueSum = 0;
+
+  const rows: (string | number)[][] = expenses.map((e) => {
+    const payment = resolveExpensePayment(e);
+    totalAmountSum += e.amount || 0;
+    totalPaidSum += payment.paidAmount;
+    totalDueSum += payment.dueAmount;
+    const statusLabel =
+      payment.paymentStatus === 'paid'
+        ? 'Paid'
+        : payment.paymentStatus === 'partial'
+        ? 'Partial Paid'
+        : 'Due';
+    return [
+      e.mode,
+      e.date,
+      e.title,
+      resolveCategoryLabel(e.category, categoryLabels),
+      e.quantity ? e.quantity : '',
+      e.unitPrice ? e.unitPrice.toFixed(2) : '',
+      e.amount.toFixed(2),
+      payment.paidAmount.toFixed(2),
+      payment.dueAmount.toFixed(2),
+      statusLabel,
+      e.currency,
+      e.paymentMethod,
+      e.adAccountId,
+      e.campaignName,
+      e.partnerOrAgency,
+      e.modelName,
+      e.photographerName,
+      e.studioName,
+      e.vendorOrCourier,
+      e.description,
+    ];
+  });
+
+  if (expenses.length > 0) {
+    rows.push([
+      'TOTAL',
+      `${expenses.length} Entries`,
+      '',
+      '',
+      '',
+      '',
+      (Math.round(totalAmountSum * 100) / 100).toFixed(2),
+      (Math.round(totalPaidSum * 100) / 100).toFixed(2),
+      (Math.round(totalDueSum * 100) / 100).toFixed(2),
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+    ]);
+  }
+
   downloadCsv(`bd-expenses-${getTodayDhakaDate()}.csv`, headers, rows);
 }
 
@@ -582,11 +669,42 @@ export function exportPathaoBulkCsv(parcels: PathaoParcel[]) {
   );
 }
 
+const CUSTOMER_ORDERS_CSV_HEADERS = [
+  'SerialNumber',
+  'OrderDate',
+  'ItemType',
+  'StoreName',
+  'MerchantOrderId',
+  'RecipientName(*)',
+  'RecipientPhone(*)',
+  'RecipientAddress(*)',
+  'RecipientCity(*)',
+  'RecipientZone(*)',
+  'RecipientArea',
+  'DeliveryCharge',
+  'AmountToCollect(*)',
+  'TotalSpent',
+  'ItemQuantity',
+  'ItemWeight',
+  'ItemDesc',
+  'SpecialInstruction',
+];
+
 export function exportCustomersOrdersCsv(
   customers: Customer[],
-  latestParcelByCustomer: Record<string, PathaoParcel> = {}
+  latestParcelByCustomer: Record<string, PathaoParcel> = {},
+  serialById: Record<string, number> = {}
 ) {
-  const rows = customers.map((c) => {
+  let totalDeliveryChargeSum = 0;
+  let totalAmountToCollectSum = 0;
+  let totalSpentSum = 0;
+  let totalQuantitySum = 0;
+
+  const rows: (string | number)[][] = customers.map((c, idx) => {
+    const serialNumber =
+      serialById[c.id] ||
+      (c.serialNumber && c.serialNumber > 0 ? c.serialNumber : idx + 1);
+    const orderDate = c.orderDate?.trim() || c.lastOrderDate?.trim() || '';
     const qty = Math.max(1, Math.round(Number(c.quantity) || 1));
     const unitPrice = Math.max(0, Number(c.unitPrice) || 0);
     const deliveryCharge = Math.max(0, Number(c.deliveryCharge) || 0);
@@ -594,6 +712,15 @@ export function exportCustomersOrdersCsv(
     const amountToCollect = Math.round(
       currentOrderTotal > 0 ? currentOrderTotal : c.totalSpent || 0
     );
+    const customerTotalSpent = Math.round(
+      (Number(c.totalSpent) > 0 ? Number(c.totalSpent) : amountToCollect) * 100
+    ) / 100;
+
+    totalDeliveryChargeSum += Math.round(deliveryCharge);
+    totalAmountToCollectSum += amountToCollect;
+    totalSpentSum += customerTotalSpent;
+    totalQuantitySum += qty;
+
     const parcel = latestParcelByCustomer[c.id];
     const itemDesc = [
       c.productName?.trim(),
@@ -604,6 +731,8 @@ export function exportCustomersOrdersCsv(
       .join(' · ');
 
     return [
+      serialNumber,
+      orderDate,
       c.itemType === 'document' ? 'document' : 'parcel',
       c.storeName?.trim() || parcel?.storeName || '',
       c.merchantOrderId?.trim() || parcel?.merchantOrderId || '',
@@ -613,7 +742,9 @@ export function exportCustomersOrdersCsv(
       c.district?.trim() || 'Dhaka',
       c.zone?.trim() || '',
       c.area?.trim() || '',
+      Math.round(deliveryCharge),
       amountToCollect,
+      customerTotalSpent,
       qty,
       c.itemWeight && c.itemWeight > 0 ? c.itemWeight : 0.5,
       itemDesc,
@@ -621,9 +752,32 @@ export function exportCustomersOrdersCsv(
     ];
   });
 
+  if (customers.length > 0) {
+    rows.push([
+      'TOTAL',
+      `${customers.length} Orders`,
+      '',
+      '',
+      '',
+      'TOTAL SPENT SUM',
+      '',
+      '',
+      '',
+      '',
+      '',
+      Math.round(totalDeliveryChargeSum),
+      Math.round(totalAmountToCollectSum),
+      Math.round(totalSpentSum * 100) / 100,
+      totalQuantitySum,
+      '',
+      '',
+      '',
+    ]);
+  }
+
   downloadPathaoStandardCsv(
     `customer-orders-${getTodayDhakaDate()}.csv`,
-    PATHAO_SAMPLE_CSV_HEADERS,
+    CUSTOMER_ORDERS_CSV_HEADERS,
     rows
   );
 }

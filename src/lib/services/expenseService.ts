@@ -15,7 +15,7 @@ import {
 import { commitOfflineSafe, db, handleFirestoreError, OperationType } from '../firebase/client';
 import { Expense, ReceiptAsset } from '../../types';
 import { ExpenseFormValues } from '../validators/schemas';
-import { generateSafeId } from '../utils';
+import { generateSafeId, resolveExpensePayment } from '../utils';
 import { logActivity } from './activityService';
 import type { StagedAssetInput } from '../firebase/db';
 
@@ -93,13 +93,24 @@ export async function saveExpense(
       ? (businessId !== undefined ? businessId : existing?.businessId || '').slice(0, 128)
       : '';
 
+  const amountRounded = Math.max(0, Math.round(values.amount * 100) / 100);
+  const payment = resolveExpensePayment({
+    amount: amountRounded,
+    paidAmount: values.paidAmount,
+    dueAmount: values.dueAmount,
+    paymentStatus: values.paymentStatus,
+  });
+
   const payloadBase = {
     businessId: resolvedBusinessId,
     mode: values.mode,
     title: values.title.trim().slice(0, 200),
     description: values.description.trim().slice(0, 4000),
     category: values.category,
-    amount: Math.round(values.amount * 100) / 100,
+    amount: amountRounded,
+    paidAmount: payment.paidAmount,
+    dueAmount: payment.dueAmount,
+    paymentStatus: payment.paymentStatus,
     quantity: Math.max(0, Math.min(9999999, Math.round((values.quantity || 0) * 100) / 100)),
     unitPrice: Math.max(0, Math.min(999999999, Math.round((values.unitPrice || 0) * 100) / 100)),
     currency: values.currency,
@@ -180,6 +191,47 @@ export async function saveExpense(
   });
 
   return expenseId;
+}
+
+export async function updateExpensePayment(
+  user: User,
+  expense: Expense,
+  nextPaidAmount: number
+): Promise<void> {
+  const path = `expenses/${expense.id}`;
+  const payment = resolveExpensePayment({
+    amount: expense.amount,
+    paidAmount: nextPaidAmount,
+  });
+
+  await commitOfflineSafe(
+    updateDoc(doc(db, 'expenses', expense.id), {
+      paidAmount: payment.paidAmount,
+      dueAmount: payment.dueAmount,
+      paymentStatus: payment.paymentStatus,
+      updatedAt: serverTimestamp(),
+    }),
+    OperationType.UPDATE,
+    path
+  );
+
+  const statusNote =
+    payment.paymentStatus === 'paid'
+      ? 'marked fully paid'
+      : payment.paymentStatus === 'partial'
+      ? `partial paid (${payment.paidAmount} paid, ${payment.dueAmount} due)`
+      : `marked due (${payment.dueAmount} due)`;
+
+  await logActivity(user, {
+    mode: expense.mode || 'business',
+    businessId: expense.businessId || '',
+    action: 'expense_updated',
+    summary: `Expense "${expense.title}" ${statusNote}`,
+    entityType: 'expense',
+    entityId: expense.id,
+    amount: payment.paidAmount,
+    currency: expense.currency,
+  });
 }
 
 export async function deleteExpense(user: User, expense: Expense): Promise<void> {

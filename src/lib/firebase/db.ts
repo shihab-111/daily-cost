@@ -150,6 +150,7 @@ export interface BusinessDataAdapter {
     existing?: Expense,
     businessId?: string
   ): Promise<string>;
+  updateExpensePayment(user: User, expense: Expense, nextPaidAmount: number): Promise<void>;
   deleteExpense(user: User, expense: Expense): Promise<void>;
   fetchProductPhotos(productId: string, user: User): Promise<ProductPhoto[]>;
   saveProduct(
@@ -302,6 +303,7 @@ class FirestoreBusinessAdapter implements BusinessDataAdapter {
   subscribeActivityLogs = activityService.subscribeActivityLogs;
   fetchExpenseReceipts = expenseService.fetchExpenseReceipts;
   saveExpense = expenseService.saveExpense;
+  updateExpensePayment = expenseService.updateExpensePayment;
   deleteExpense = expenseService.deleteExpense;
   fetchProductPhotos = productService.fetchProductPhotos;
   saveProduct = productService.saveProduct;

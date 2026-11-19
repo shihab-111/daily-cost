@@ -42,6 +42,9 @@
           "pattern": "^[a-zA-Z0-9_\\-]+$"
         },
         "amount": { "type": "number" },
+        "paidAmount": { "type": "number" },
+        "dueAmount": { "type": "number" },
+        "paymentStatus": { "type": "string", "enum": ["paid", "partial", "due"] },
         "quantity": { "type": "number" },
         "unitPrice": { "type": "number" },
         "currency": { "type": "string", "enum": ["BDT", "USD"] },
@@ -138,6 +141,8 @@
       "properties": {
         "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
         "businessId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]*$" },
+        "serialNumber": { "type": "integer" },
+        "orderDate": { "type": "string", "maxLength": 10 },
         "name": { "type": "string", "minLength": 1, "maxLength": 140 },
         "phone": { "type": "string", "minLength": 11, "maxLength": 20 },
         "numberOption": { "type": "string", "enum": ["Call / Phone", "WhatsApp", "bKash", "Nagad", "Rocket", "Alternate"] },

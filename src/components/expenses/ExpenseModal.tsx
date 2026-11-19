@@ -1,7 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { User } from 'firebase/auth';
 import { ImagePlus, Plus, Trash2, X } from 'lucide-react';
-import { AppMode, CurrencyCode, Expense, ExpenseCategory, PaymentMethod } from '../../types';
+import {
+  AppMode,
+  CurrencyCode,
+  Expense,
+  ExpenseCategory,
+  ExpensePaymentStatus,
+  PaymentMethod,
+} from '../../types';
 import { useLanguage } from '../../context/LanguageContext';
 import { useMode } from '../../context/ModeContext';
 import { useExpenseCategories } from '../../hooks/useBusinessData';
@@ -17,6 +24,7 @@ import {
   PERSONAL_EXPENSE_CATEGORIES,
   resolveCategoryLabel,
   resolveExpenseMode,
+  resolveExpensePayment,
 } from '../../lib/utils';
 import { Button, Input, Modal, Select } from '../ui';
 
@@ -51,6 +59,9 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
   const [quantity, setQuantity] = useState('');
   const [unitPrice, setUnitPrice] = useState('');
   const [amount, setAmount] = useState('');
+  const [paymentStatus, setPaymentStatus] = useState<ExpensePaymentStatus>('paid');
+  const [paidAmount, setPaidAmount] = useState('');
+  const [dueAmount, setDueAmount] = useState('0');
   const [currency, setCurrency] = useState<CurrencyCode>(defaultCurrency);
   const [date, setDate] = useState(getTodayDhakaDate());
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('bKash');
@@ -99,6 +110,10 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
       setQuantity(editingExpense.quantity ? String(editingExpense.quantity) : '');
       setUnitPrice(editingExpense.unitPrice ? String(editingExpense.unitPrice) : '');
       setAmount(String(editingExpense.amount));
+      const resolvedPay = resolveExpensePayment(editingExpense);
+      setPaymentStatus(resolvedPay.paymentStatus);
+      setPaidAmount(String(resolvedPay.paidAmount));
+      setDueAmount(String(resolvedPay.dueAmount));
       setCurrency(editingExpense.currency);
       setDate(editingExpense.date);
       setPaymentMethod(editingExpense.paymentMethod);
@@ -137,6 +152,9 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
       setQuantity('');
       setUnitPrice('');
       setAmount('');
+      setPaymentStatus('paid');
+      setPaidAmount('');
+      setDueAmount('0');
       setCurrency(defaultCurrency);
       setDate(getTodayDhakaDate());
       setPaymentMethod('bKash');
@@ -168,6 +186,42 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
     }
   }, [open, editingExpense, modeCategories, allCategories, entryMode, category]);
 
+  const syncPaymentForTotal = (
+    nextAmountStr: string,
+    status: ExpensePaymentStatus = paymentStatus,
+    currentPaidStr: string = paidAmount
+  ) => {
+    if (nextAmountStr.trim() === '') {
+      if (status === 'paid') {
+        setPaidAmount('');
+        setDueAmount('0');
+      } else if (status === 'due') {
+        setPaidAmount('0');
+        setDueAmount('');
+      } else {
+        setPaidAmount('');
+        setDueAmount('');
+      }
+      return;
+    }
+    const total = Math.max(0, Math.round((Number(nextAmountStr) || 0) * 100) / 100);
+    if (status === 'paid') {
+      setPaidAmount(String(total));
+      setDueAmount('0');
+    } else if (status === 'due') {
+      setPaidAmount('0');
+      setDueAmount(String(total));
+    } else {
+      const prevPaid = Math.max(
+        0,
+        Math.min(total, Math.round((Number(currentPaidStr) || 0) * 100) / 100)
+      );
+      const nextDue = Math.max(0, Math.round((total - prevPaid) * 100) / 100);
+      setPaidAmount(String(prevPaid));
+      setDueAmount(String(nextDue));
+    }
+  };
+
   const applyCategoryDefaultsIfNew = (catKey: string) => {
     if (editingExpense) return;
     const catItem = allCategories.find((c) => c.key === catKey);
@@ -178,7 +232,9 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
       setQuantity(catQty > 0 ? String(catQty) : '');
       setUnitPrice(catPrice > 0 ? String(catPrice) : '');
       if (catQty > 0 && catPrice > 0) {
-        setAmount(String(Math.round(catQty * catPrice * 100) / 100));
+        const nextTotalStr = String(Math.round(catQty * catPrice * 100) / 100);
+        setAmount(nextTotalStr);
+        syncPaymentForTotal(nextTotalStr, paymentStatus, paidAmount);
       }
     }
   };
@@ -212,7 +268,9 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
     const q = Number(val);
     const p = Number(unitPrice);
     if (val !== '' && !Number.isNaN(q) && q >= 0 && unitPrice !== '' && !Number.isNaN(p) && p >= 0) {
-      setAmount(String(Math.round(q * p * 100) / 100));
+      const nextTotalStr = String(Math.round(q * p * 100) / 100);
+      setAmount(nextTotalStr);
+      syncPaymentForTotal(nextTotalStr, paymentStatus, paidAmount);
     }
   };
 
@@ -221,8 +279,67 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
     const q = Number(quantity);
     const p = Number(val);
     if (quantity !== '' && !Number.isNaN(q) && q >= 0 && val !== '' && !Number.isNaN(p) && p >= 0) {
-      setAmount(String(Math.round(q * p * 100) / 100));
+      const nextTotalStr = String(Math.round(q * p * 100) / 100);
+      setAmount(nextTotalStr);
+      syncPaymentForTotal(nextTotalStr, paymentStatus, paidAmount);
     }
+  };
+
+  const handleAmountChange = (val: string) => {
+    setAmount(val);
+    syncPaymentForTotal(val, paymentStatus, paidAmount);
+  };
+
+  const handleSelectPaymentStatus = (nextStatus: ExpensePaymentStatus) => {
+    setPaymentStatus(nextStatus);
+    const total = Math.max(0, Math.round((Number(amount) || 0) * 100) / 100);
+    if (nextStatus === 'paid') {
+      setPaidAmount(amount ? String(total) : '');
+      setDueAmount('0');
+    } else if (nextStatus === 'due') {
+      setPaidAmount('0');
+      setDueAmount(amount ? String(total) : '');
+    } else {
+      const currentPaidNum = Number(paidAmount);
+      const isAlreadyPartial =
+        !Number.isNaN(currentPaidNum) && currentPaidNum > 0 && currentPaidNum < total;
+      if (!isAlreadyPartial) {
+        setPaidAmount('');
+        setDueAmount(amount ? String(total) : '');
+      }
+    }
+  };
+
+  const handlePaidAmountChange = (val: string) => {
+    setPaidAmount(val);
+    const total = Math.max(0, Math.round((Number(amount) || 0) * 100) / 100);
+    if (val.trim() === '') {
+      setDueAmount(amount ? String(total) : '');
+      if (total > 0) setPaymentStatus('due');
+      return;
+    }
+    const parsedPaid = Number(val);
+    if (Number.isNaN(parsedPaid) || parsedPaid < 0) return;
+    const clampedPaid = Math.min(total, Math.round(parsedPaid * 100) / 100);
+    const nextDue = Math.max(0, Math.round((total - clampedPaid) * 100) / 100);
+    setDueAmount(String(nextDue));
+    setPaymentStatus(nextDue <= 0.001 ? 'paid' : clampedPaid <= 0.001 ? 'due' : 'partial');
+  };
+
+  const handleDueAmountChange = (val: string) => {
+    setDueAmount(val);
+    const total = Math.max(0, Math.round((Number(amount) || 0) * 100) / 100);
+    if (val.trim() === '') {
+      setPaidAmount(amount ? String(total) : '');
+      setPaymentStatus('paid');
+      return;
+    }
+    const parsedDue = Number(val);
+    if (Number.isNaN(parsedDue) || parsedDue < 0) return;
+    const clampedDue = Math.min(total, Math.round(parsedDue * 100) / 100);
+    const nextPaid = Math.max(0, Math.round((total - clampedDue) * 100) / 100);
+    setPaidAmount(String(nextPaid));
+    setPaymentStatus(clampedDue <= 0.001 ? 'paid' : nextPaid <= 0.001 ? 'due' : 'partial');
   };
 
   const handleQuickCatPhoto = async (files: FileList | null) => {
@@ -348,12 +465,35 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
       return;
     }
 
+    const numericAmount = Math.max(0, Math.round((Number(amount) || 0) * 100) / 100);
+    const resolvedPayment =
+      entryMode === 'business'
+        ? resolveExpensePayment({
+            amount: numericAmount,
+            paidAmount:
+              paidAmount.trim() === ''
+                ? paymentStatus === 'paid'
+                  ? numericAmount
+                  : 0
+                : Number(paidAmount),
+            dueAmount: dueAmount.trim() === '' ? undefined : Number(dueAmount),
+            paymentStatus,
+          })
+        : {
+            paidAmount: numericAmount,
+            dueAmount: 0,
+            paymentStatus: 'paid' as ExpensePaymentStatus,
+          };
+
     const parsed = expenseSchema.safeParse({
       mode: entryMode,
       title,
       description,
       category,
       amount,
+      paidAmount: resolvedPayment.paidAmount,
+      dueAmount: resolvedPayment.dueAmount,
+      paymentStatus: resolvedPayment.paymentStatus,
       quantity: quantity || 0,
       unitPrice: unitPrice || 0,
       currency,
@@ -644,7 +784,7 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
               min="0"
               required
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={(e) => handleAmountChange(e.target.value)}
               placeholder={
                 Number(quantity) > 0 && Number(unitPrice) > 0
                   ? String(Math.round(Number(quantity) * Number(unitPrice) * 100) / 100)
@@ -671,7 +811,7 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-2">
+          <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
               label="Date (Dhaka) *"
               type="date"
@@ -692,6 +832,118 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
               ))}
             </Select>
           </div>
+
+          {/* Business Expense Payment & Due Tracking */}
+          {entryMode === 'business' && (
+            <div className="sm:col-span-2 p-3.5 rounded-lg bg-[#09090b] border border-[#27272a] space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <span className="text-xs font-semibold text-zinc-200">
+                  {t.expenses.paymentDueSectionTitle}
+                </span>
+                <div className="grid grid-cols-3 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => handleSelectPaymentStatus('paid')}
+                    className={`px-2.5 min-h-[36px] sm:min-h-[30px] text-xs font-medium rounded-md border transition-colors cursor-pointer ${
+                      paymentStatus === 'paid'
+                        ? 'bg-[#22c55e]/20 text-[#4ade80] border-[#22c55e]/50 font-semibold'
+                        : 'bg-[#121214] text-zinc-400 border-[#27272a] hover:text-zinc-200'
+                    }`}
+                  >
+                    {t.expenses.fullPaidBtn}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSelectPaymentStatus('partial')}
+                    className={`px-2.5 min-h-[36px] sm:min-h-[30px] text-xs font-medium rounded-md border transition-colors cursor-pointer ${
+                      paymentStatus === 'partial'
+                        ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 font-semibold'
+                        : 'bg-[#121214] text-zinc-400 border-[#27272a] hover:text-zinc-200'
+                    }`}
+                  >
+                    {t.expenses.partialBtn}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSelectPaymentStatus('due')}
+                    className={`px-2.5 min-h-[36px] sm:min-h-[30px] text-xs font-medium rounded-md border transition-colors cursor-pointer ${
+                      paymentStatus === 'due'
+                        ? 'bg-red-500/20 text-red-400 border-red-500/50 font-semibold'
+                        : 'bg-[#121214] text-zinc-400 border-[#27272a] hover:text-zinc-200'
+                    }`}
+                  >
+                    {t.expenses.fullDueBtn}
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <Input
+                  label={`${t.expenses.paidAmount} (${currency === 'BDT' ? '৳' : '$'})`}
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max={amount || undefined}
+                  value={paidAmount}
+                  onChange={(e) => handlePaidAmountChange(e.target.value)}
+                  placeholder="0.00"
+                  className="font-mono tabular-nums"
+                />
+                <Input
+                  label={`${t.expenses.dueAmount} (${currency === 'BDT' ? '৳' : '$'})`}
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max={amount || undefined}
+                  value={dueAmount}
+                  onChange={(e) => handleDueAmountChange(e.target.value)}
+                  placeholder="0.00"
+                  className="font-mono tabular-nums"
+                />
+              </div>
+
+              {Number(amount) > 0 && (
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#27272a]/70 text-xs font-mono tabular-nums">
+                  <span className="text-zinc-400">
+                    {t.expenses.total}:{' '}
+                    <span className="text-zinc-100 font-semibold">
+                      {formatMoney(Number(amount) || 0, currency)}
+                    </span>
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-[#4ade80]">
+                      {t.expenses.statusPaid}:{' '}
+                      {formatMoney(
+                        paidAmount.trim() === ''
+                          ? paymentStatus === 'paid'
+                            ? Number(amount) || 0
+                            : 0
+                          : Math.min(Number(amount) || 0, Math.max(0, Number(paidAmount) || 0)),
+                        currency
+                      )}
+                    </span>
+                    <span
+                      className={
+                        (Number(dueAmount) || 0) > 0
+                          ? 'text-amber-400 font-semibold'
+                          : 'text-zinc-500'
+                      }
+                    >
+                      {t.expenses.statusDue}:{' '}
+                      {formatMoney(
+                        dueAmount.trim() === ''
+                          ? paymentStatus === 'due'
+                            ? Number(amount) || 0
+                            : 0
+                          : Math.min(Number(amount) || 0, Math.max(0, Number(dueAmount) || 0)),
+                        currency
+                      )}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Dynamic Category-Specific Fields */}

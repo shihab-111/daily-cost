@@ -61,10 +61,56 @@ export const CustomersPage: React.FC = () => {
 
   const businessName = activeBusiness?.name || settings?.businessName || 'EkTally';
 
-  const businessCustomers = useMemo(
-    () => customers.filter((c) => matchesBusiness(c.businessId)),
-    [customers, matchesBusiness]
-  );
+  const { businessCustomers, serialById, nextSerialNumber } = useMemo(() => {
+    const matching = customers.filter((c) => matchesBusiness(c.businessId));
+    const usedSerials = new Set<number>();
+    for (const c of matching) {
+      if (c.serialNumber && Number.isInteger(c.serialNumber) && c.serialNumber > 0) {
+        usedSerials.add(c.serialNumber);
+      }
+    }
+
+    const withoutSerial = matching
+      .filter((c) => !(c.serialNumber && Number.isInteger(c.serialNumber) && c.serialNumber > 0))
+      .sort((a, b) => {
+        const ta = a.createdAt?.toMillis?.() ?? 0;
+        const tb = b.createdAt?.toMillis?.() ?? 0;
+        if (ta !== tb) return ta - tb;
+        return a.id.localeCompare(b.id);
+      });
+
+    const map: Record<string, number> = {};
+    for (const c of matching) {
+      if (c.serialNumber && Number.isInteger(c.serialNumber) && c.serialNumber > 0) {
+        map[c.id] = c.serialNumber;
+      }
+    }
+
+    let cursor = 1;
+    for (const c of withoutSerial) {
+      while (usedSerials.has(cursor)) cursor += 1;
+      map[c.id] = cursor;
+      usedSerials.add(cursor);
+      cursor += 1;
+    }
+
+    const ordered = [...matching].sort((a, b) => {
+      const sa = map[a.id] ?? 0;
+      const sb = map[b.id] ?? 0;
+      if (sa !== sb) return sa - sb;
+      const da = a.orderDate || a.lastOrderDate || '';
+      const db = b.orderDate || b.lastOrderDate || '';
+      if (da !== db) return da.localeCompare(db);
+      return a.name.localeCompare(b.name);
+    });
+
+    const maxSerial = ordered.reduce((max, c) => Math.max(max, map[c.id] ?? 0), 0);
+    return {
+      businessCustomers: ordered,
+      serialById: map,
+      nextSerialNumber: maxSerial + 1,
+    };
+  }, [customers, matchesBusiness]);
 
   const latestParcelByCustomer = useMemo(() => {
     const map: Record<string, PathaoParcel> = {};
@@ -103,7 +149,12 @@ export const CustomersPage: React.FC = () => {
         return false;
       }
       if (!q) return true;
+      const serialStr = String(serialById[c.id] ?? '');
+      const orderDateStr = (c.orderDate || c.lastOrderDate || '').toLowerCase();
       return (
+        serialStr === q.replace(/^#/, '') ||
+        `#${serialStr}`.includes(q) ||
+        orderDateStr.includes(q) ||
         c.name.toLowerCase().includes(q) ||
         c.phone.toLowerCase().includes(q) ||
         (c.numberOption || '').toLowerCase().includes(q) ||
@@ -118,7 +169,7 @@ export const CustomersPage: React.FC = () => {
         (c.orderDetails || '').toLowerCase().includes(q)
       );
     });
-  }, [businessCustomers, searchQuery, statusFilter]);
+  }, [businessCustomers, searchQuery, statusFilter, serialById]);
 
   const handleQuickStatusChange = async (
     customer: Customer,
@@ -187,7 +238,9 @@ export const CustomersPage: React.FC = () => {
               variant="secondary"
               size="sm"
               className="flex-1 sm:flex-none min-h-[40px] md:min-h-0"
-              onClick={() => exportCustomersOrdersCsv(selectedCustomers, latestParcelByCustomer)}
+              onClick={() =>
+                exportCustomersOrdersCsv(selectedCustomers, latestParcelByCustomer, serialById)
+              }
             >
               <Download className="w-3.5 h-3.5 text-[#4ade80]" />
               <span>
@@ -201,7 +254,9 @@ export const CustomersPage: React.FC = () => {
             size="sm"
             className="flex-1 sm:flex-none min-h-[40px] md:min-h-0"
             disabled={filteredCustomers.length === 0}
-            onClick={() => exportCustomersOrdersCsv(filteredCustomers, latestParcelByCustomer)}
+            onClick={() =>
+              exportCustomersOrdersCsv(filteredCustomers, latestParcelByCustomer, serialById)
+            }
           >
             <Download className="w-3.5 h-3.5" />
             <span>
@@ -381,7 +436,9 @@ export const CustomersPage: React.FC = () => {
                 <Button
                   type="button"
                   size="sm"
-                  onClick={() => exportCustomersOrdersCsv(selectedCustomers, latestParcelByCustomer)}
+                  onClick={() =>
+                    exportCustomersOrdersCsv(selectedCustomers, latestParcelByCustomer, serialById)
+                  }
                 >
                   <Download className="w-3.5 h-3.5" />
                   <span>
@@ -462,6 +519,8 @@ export const CustomersPage: React.FC = () => {
                       c.itemType
                   );
 
+                  const serialNo = serialById[c.id] ?? 1;
+                  const displayOrderDate = c.orderDate || c.lastOrderDate || '—';
                   const isSelected = selectedIds.has(c.id);
 
                   return (
@@ -469,28 +528,38 @@ export const CustomersPage: React.FC = () => {
                       key={c.id}
                       className={`p-4 space-y-3 transition-colors ${isSelected ? 'bg-[#22c55e]/5' : ''}`}
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-start gap-2.5 min-w-0">
+                      {/* Serial Number & Order Date First */}
+                      <div className="flex items-center justify-between gap-2 pb-2 border-b border-[#27272a]/70">
+                        <div className="flex items-center gap-2.5 min-w-0">
                           <input
                             type="checkbox"
                             checked={isSelected}
                             onChange={() => toggleSelectOne(c.id)}
-                            aria-label={`Select ${c.name}`}
-                            className="mt-1 w-4 h-4 rounded border-[#27272a] bg-[#09090b] accent-[#22c55e] cursor-pointer shrink-0"
+                            aria-label={`Select #${serialNo} ${c.name}`}
+                            className="w-4 h-4 rounded border-[#27272a] bg-[#09090b] accent-[#22c55e] cursor-pointer shrink-0"
                           />
-                          <div className="min-w-0">
-                            <p className="text-sm font-semibold text-zinc-100 truncate">{c.name}</p>
-                            {c.email && (
-                              <p className="text-xs text-zinc-400 truncate mt-0.5">{c.email}</p>
-                            )}
-                          </div>
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#22c55e]/15 border border-[#22c55e]/30 font-mono tabular-nums text-xs font-semibold text-[#4ade80]">
+                            #{serialNo}
+                          </span>
+                          <span className="font-mono tabular-nums text-xs text-zinc-300">
+                            {displayOrderDate}
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-zinc-400">
+                          {c.numberOption || 'Call / Phone'}
+                        </span>
+                      </div>
+
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-zinc-100 truncate">{c.name}</p>
+                          {c.email && (
+                            <p className="text-xs text-zinc-400 truncate mt-0.5">{c.email}</p>
+                          )}
                         </div>
                         <div className="text-right shrink-0">
                           <span className="block font-mono tabular-nums text-xs text-[#4ade80]">
                             {c.phone}
-                          </span>
-                          <span className="block text-[11px] text-zinc-400">
-                            {c.numberOption || 'Call / Phone'}
                           </span>
                         </div>
                       </div>
@@ -685,6 +754,8 @@ export const CustomersPage: React.FC = () => {
                         className="w-4 h-4 rounded border-[#27272a] bg-[#09090b] accent-[#22c55e] cursor-pointer"
                       />
                     </th>
+                    <th className="py-3 px-3 whitespace-nowrap">{t.customers.serialNoCol}</th>
+                    <th className="py-3 px-3 whitespace-nowrap">{t.customers.orderDateCol}</th>
                     <th className="py-3 px-4">{t.customers.customer}</th>
                     <th className="py-3 px-4">{t.customers.bdPhone}</th>
                     <th className="py-3 px-4">{t.customers.districtAddress}</th>
@@ -697,6 +768,8 @@ export const CustomersPage: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-[#27272a] text-sm">
                   {filteredCustomers.map((c) => {
+                    const serialNo = serialById[c.id] ?? 1;
+                    const displayOrderDate = c.orderDate || c.lastOrderDate || '—';
                     const qty = c.quantity ?? 0;
                     const unitPrice = c.unitPrice ?? 0;
                     const deliveryCharge = Math.max(0, c.deliveryCharge ?? 0);
@@ -716,9 +789,15 @@ export const CustomersPage: React.FC = () => {
                           type="checkbox"
                           checked={isSelected}
                           onChange={() => toggleSelectOne(c.id)}
-                          aria-label={`Select ${c.name}`}
+                          aria-label={`Select #${serialNo} ${c.name}`}
                           className="mt-0.5 w-4 h-4 rounded border-[#27272a] bg-[#09090b] accent-[#22c55e] cursor-pointer"
                         />
+                      </td>
+                      <td className="py-3 px-3 whitespace-nowrap font-mono tabular-nums text-xs font-semibold text-[#4ade80]">
+                        {serialNo}
+                      </td>
+                      <td className="py-3 px-3 whitespace-nowrap font-mono tabular-nums text-xs text-zinc-300">
+                        {displayOrderDate}
                       </td>
                       <td className="py-3 px-4">
                         <p className="font-medium text-zinc-100">{c.name}</p>
@@ -888,6 +967,11 @@ export const CustomersPage: React.FC = () => {
           open={modalOpen}
           user={user}
           editingCustomer={editingCustomer}
+          nextSerialNumber={
+            editingCustomer
+              ? serialById[editingCustomer.id] || nextSerialNumber
+              : nextSerialNumber
+          }
           onClose={() => {
             setModalOpen(false);
             setEditingCustomer(null);

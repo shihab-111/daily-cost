@@ -72,6 +72,8 @@ export interface BusinessProfile {
   updatedAt?: Timestamp;
 }
 
+export type ExpensePaymentStatus = 'paid' | 'partial' | 'due';
+
 export interface Expense {
   id: string;
   userId: string;
@@ -82,6 +84,9 @@ export interface Expense {
   description: string;
   category: ExpenseCategory;
   amount: number;
+  paidAmount?: number;
+  dueAmount?: number;
+  paymentStatus?: ExpensePaymentStatus;
   quantity?: number;
   unitPrice?: number;
   currency: CurrencyCode;
@@ -163,6 +168,8 @@ export interface Customer {
   id: string;
   userId: string;
   businessId?: string;
+  serialNumber?: number;
+  orderDate?: string;
   name: string;
   phone: string;
   numberOption?: CustomerNumberOption;

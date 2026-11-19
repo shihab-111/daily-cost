@@ -20,30 +20,48 @@ export const registerSchema = z
     path: ['confirmPassword'],
   });
 
-export const expenseSchema = z.object({
-  mode: z.enum(['business', 'personal']),
-  title: z.string().trim().min(1, 'Expense title is required.').max(200),
-  description: z.string().trim().max(4000).default(''),
-  category: z
-    .string()
-    .trim()
-    .min(1, 'Expense category is required.')
-    .max(64)
-    .regex(/^[a-zA-Z0-9_-]+$/, 'Invalid category key format.'),
-  amount: z.coerce.number().min(0, 'Amount cannot be negative.').max(999999999),
-  quantity: z.coerce.number().min(0, 'Quantity cannot be negative.').max(9999999).default(0),
-  unitPrice: z.coerce.number().min(0, 'Per piece price cannot be negative.').max(999999999).default(0),
-  currency: z.enum(['BDT', 'USD']),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD date format.'),
-  paymentMethod: z.enum(['bKash', 'Nagad', 'Rocket', 'Bank Transfer', 'Cash', 'Card']),
-  adAccountId: z.string().trim().max(120).default(''),
-  campaignName: z.string().trim().max(160).default(''),
-  partnerOrAgency: z.string().trim().max(160).default(''),
-  modelName: z.string().trim().max(120).default(''),
-  photographerName: z.string().trim().max(120).default(''),
-  studioName: z.string().trim().max(120).default(''),
-  vendorOrCourier: z.string().trim().max(160).default(''),
-});
+export const expenseSchema = z
+  .object({
+    mode: z.enum(['business', 'personal']),
+    title: z.string().trim().min(1, 'Expense title is required.').max(200),
+    description: z.string().trim().max(4000).default(''),
+    category: z
+      .string()
+      .trim()
+      .min(1, 'Expense category is required.')
+      .max(64)
+      .regex(/^[a-zA-Z0-9_-]+$/, 'Invalid category key format.'),
+    amount: z.coerce.number().min(0, 'Amount cannot be negative.').max(999999999),
+    paidAmount: z.coerce.number().min(0, 'Paid amount cannot be negative.').max(999999999).optional(),
+    dueAmount: z.coerce.number().min(0, 'Due amount cannot be negative.').max(999999999).optional(),
+    paymentStatus: z.enum(['paid', 'partial', 'due']).optional(),
+    quantity: z.coerce.number().min(0, 'Quantity cannot be negative.').max(9999999).default(0),
+    unitPrice: z.coerce.number().min(0, 'Per piece price cannot be negative.').max(999999999).default(0),
+    currency: z.enum(['BDT', 'USD']),
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD date format.'),
+    paymentMethod: z.enum(['bKash', 'Nagad', 'Rocket', 'Bank Transfer', 'Cash', 'Card']),
+    adAccountId: z.string().trim().max(120).default(''),
+    campaignName: z.string().trim().max(160).default(''),
+    partnerOrAgency: z.string().trim().max(160).default(''),
+    modelName: z.string().trim().max(120).default(''),
+    photographerName: z.string().trim().max(120).default(''),
+    studioName: z.string().trim().max(120).default(''),
+    vendorOrCourier: z.string().trim().max(160).default(''),
+  })
+  .refine(
+    (data) => data.paidAmount === undefined || data.paidAmount <= data.amount + 0.01,
+    {
+      message: 'Paid amount cannot exceed total expense amount.',
+      path: ['paidAmount'],
+    }
+  )
+  .refine(
+    (data) => data.dueAmount === undefined || data.dueAmount <= data.amount + 0.01,
+    {
+      message: 'Due amount cannot exceed total expense amount.',
+      path: ['dueAmount'],
+    }
+  );
 
 export const expenseCategorySchema = z.object({
   mode: z.enum(['business', 'personal']),
@@ -75,6 +93,17 @@ export const productSchema = z.object({
 });
 
 export const customerSchema = z.object({
+  serialNumber: z.coerce
+    .number()
+    .int('Serial number must be a whole number.')
+    .min(1, 'Serial number must be at least 1.')
+    .max(9999999)
+    .default(1),
+  orderDate: z
+    .string()
+    .trim()
+    .refine((v) => !v || /^\d{4}-\d{2}-\d{2}$/.test(v), 'Use YYYY-MM-DD order date format.')
+    .default(''),
   name: z.string().trim().min(1, 'Customer name is required.').max(140),
   phone: z
     .string()
