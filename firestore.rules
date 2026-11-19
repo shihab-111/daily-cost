@@ -183,7 +183,7 @@ service cloud.firestore {
         && data.keys().hasOnly([
           'userId', 'businessId', 'name', 'phone', 'numberOption', 'email', 'address', 'district',
           'zone', 'area', 'itemType', 'storeName', 'merchantOrderId', 'itemWeight',
-          'productName', 'productSize', 'quantity', 'unitPrice', 'orderDetails', 'orderStatus', 'notes',
+          'productName', 'productSize', 'quantity', 'unitPrice', 'deliveryCharge', 'orderDetails', 'orderStatus', 'notes',
           'totalOrders', 'totalSpent', 'lastOrderDate', 'createdAt', 'updatedAt'
         ])
         && isValidOptionalBusinessId(data)
@@ -204,6 +204,7 @@ service cloud.firestore {
         && (!('productSize' in data) || (data.productSize is string && data.productSize.size() <= 40))
         && (!('quantity' in data) || ((data.quantity is int || data.quantity is float) && data.quantity >= 0 && data.quantity <= 99999))
         && (!('unitPrice' in data) || ((data.unitPrice is int || data.unitPrice is float) && data.unitPrice >= 0 && data.unitPrice <= 999999999))
+        && (!('deliveryCharge' in data) || ((data.deliveryCharge is int || data.deliveryCharge is float) && data.deliveryCharge >= 0 && data.deliveryCharge <= 999999999))
         && (!('orderDetails' in data) || (data.orderDetails is string && data.orderDetails.size() <= 500))
         && (!('orderStatus' in data) || data.orderStatus in ['pending', 'received', 'rejected', 'no_call'])
         && data.notes is string && data.notes.size() <= 1000
@@ -715,7 +716,7 @@ service cloud.firestore {
           incoming().diff(existing()).affectedKeys().hasOnly([
             'businessId', 'name', 'phone', 'numberOption', 'email', 'address', 'district',
             'zone', 'area', 'itemType', 'storeName', 'merchantOrderId', 'itemWeight',
-            'productName', 'productSize', 'quantity', 'unitPrice', 'orderDetails', 'orderStatus', 'notes',
+            'productName', 'productSize', 'quantity', 'unitPrice', 'deliveryCharge', 'orderDetails', 'orderStatus', 'notes',
             'totalOrders', 'totalSpent', 'lastOrderDate', 'updatedAt'
           ]) ||
           incoming().diff(existing()).affectedKeys().hasOnly(['orderStatus', 'updatedAt']) ||

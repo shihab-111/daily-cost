@@ -61,8 +61,10 @@ export async function saveCustomer(
 
   const quantity = Math.max(0, Math.min(99999, Number(values.quantity) || 0));
   const unitPrice = Math.max(0, Math.min(999999999, Number(values.unitPrice) || 0));
-  const orderAmount = Math.round(quantity * unitPrice * 100) / 100;
-  const hasOrderInfo = Boolean(values.productName.trim() || orderAmount > 0);
+  const deliveryCharge = Math.max(0, Math.min(999999999, Number(values.deliveryCharge) || 0));
+  const productSubtotal = Math.round(quantity * unitPrice * 100) / 100;
+  const orderAmount = Math.round((productSubtotal + deliveryCharge) * 100) / 100;
+  const hasOrderInfo = Boolean(values.productName.trim() || productSubtotal > 0 || deliveryCharge > 0);
   const shouldIncrementOrder = existing ? Boolean(recordOrder && hasOrderInfo) : hasOrderInfo;
 
   const baseOrders = existing ? existing.totalOrders || 0 : 0;
@@ -100,6 +102,7 @@ export async function saveCustomer(
     productSize: values.productSize.trim().slice(0, 40),
     quantity,
     unitPrice,
+    deliveryCharge,
     orderDetails: values.orderDetails.trim().slice(0, 500),
     orderStatus: values.orderStatus || 'pending',
     notes: values.notes.trim().slice(0, 1000),

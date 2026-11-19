@@ -179,6 +179,7 @@ export interface Customer {
   productSize?: string;
   quantity?: number;
   unitPrice?: number;
+  deliveryCharge?: number;
   orderDetails?: string;
   orderStatus?: CustomerOrderStatus;
   notes: string;

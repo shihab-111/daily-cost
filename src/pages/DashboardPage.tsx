@@ -164,12 +164,14 @@ export const DashboardPage: React.FC = () => {
     );
 
     const totalCustomerSalesBdt = businessCustomers.reduce((sum, c) => {
-      const fallbackOrderAmt = Math.round(((c.quantity || 0) * (c.unitPrice || 0)) * 100) / 100;
+      const fallbackOrderAmt =
+        Math.round(((c.quantity || 0) * (c.unitPrice || 0) + (c.deliveryCharge || 0)) * 100) / 100;
       const spent = (c.totalSpent || 0) > 0 ? c.totalSpent : fallbackOrderAmt;
       return sum + spent;
     }, 0);
     const totalCustomerOrders = businessCustomers.reduce((sum, c) => {
-      const fallbackOrder = (c.quantity || 0) * (c.unitPrice || 0) > 0 ? 1 : 0;
+      const fallbackOrder =
+        (c.quantity || 0) * (c.unitPrice || 0) + (c.deliveryCharge || 0) > 0 ? 1 : 0;
       return sum + ((c.totalOrders || 0) > 0 ? c.totalOrders : fallbackOrder);
     }, 0);
 

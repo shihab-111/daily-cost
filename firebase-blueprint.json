@@ -154,6 +154,7 @@
         "productSize": { "type": "string", "maxLength": 40 },
         "quantity": { "type": "number" },
         "unitPrice": { "type": "number" },
+        "deliveryCharge": { "type": "number" },
         "orderDetails": { "type": "string", "maxLength": 500 },
         "orderStatus": { "type": "string", "enum": ["pending", "received", "rejected", "no_call"] },
         "notes": { "type": "string", "maxLength": 1000 },

@@ -53,6 +53,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
   const [productSize, setProductSize] = useState('');
   const [quantity, setQuantity] = useState('1');
   const [unitPrice, setUnitPrice] = useState('');
+  const [deliveryCharge, setDeliveryCharge] = useState('');
   const [orderDetails, setOrderDetails] = useState('');
   const [orderStatus, setOrderStatus] = useState<CustomerOrderStatus>('pending');
   const [notes, setNotes] = useState('');
@@ -99,6 +100,11 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
           ? String(editingCustomer.unitPrice)
           : ''
       );
+      setDeliveryCharge(
+        editingCustomer.deliveryCharge !== undefined && editingCustomer.deliveryCharge > 0
+          ? String(editingCustomer.deliveryCharge)
+          : ''
+      );
       setOrderDetails(editingCustomer.orderDetails || '');
       setOrderStatus(editingCustomer.orderStatus || 'pending');
       setNotes(editingCustomer.notes);
@@ -119,6 +125,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
       setProductSize('');
       setQuantity('1');
       setUnitPrice('');
+      setDeliveryCharge('');
       setOrderDetails('');
       setOrderStatus('pending');
       setNotes('');
@@ -127,7 +134,9 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
 
   const numericQty = Math.max(0, Number(quantity) || 0);
   const numericUnitPrice = Math.max(0, Number(unitPrice) || 0);
-  const computedOrderTotal = Math.round(numericQty * numericUnitPrice * 100) / 100;
+  const numericDeliveryCharge = Math.max(0, Number(deliveryCharge) || 0);
+  const computedProductSubtotal = Math.round(numericQty * numericUnitPrice * 100) / 100;
+  const computedOrderTotal = Math.round((computedProductSubtotal + numericDeliveryCharge) * 100) / 100;
 
   const handleInventoryPick = (productId: string) => {
     if (!productId) return;
@@ -165,6 +174,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
       productSize,
       quantity: quantity === '' ? 1 : quantity,
       unitPrice: unitPrice === '' ? 0 : unitPrice,
+      deliveryCharge: deliveryCharge === '' ? 0 : deliveryCharge,
       orderDetails,
       orderStatus,
       notes,
@@ -187,9 +197,12 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
       );
 
       if (sendToPathao && onSavedAndSendPathao) {
-        const orderAmount = Math.round(
-          (parsed.data.quantity || 0) * (parsed.data.unitPrice || 0) * 100
-        ) / 100;
+        const orderAmount =
+          Math.round(
+            ((parsed.data.quantity || 0) * (parsed.data.unitPrice || 0) +
+              (parsed.data.deliveryCharge || 0)) *
+              100
+          ) / 100;
         const customerSnapshot: Customer = {
           id: savedId,
           userId: user.uid,
@@ -210,6 +223,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
           productSize: parsed.data.productSize,
           quantity: parsed.data.quantity,
           unitPrice: parsed.data.unitPrice,
+          deliveryCharge: parsed.data.deliveryCharge,
           orderDetails: parsed.data.orderDetails,
           orderStatus: parsed.data.orderStatus,
           notes: parsed.data.notes,
@@ -334,8 +348,24 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
             </h3>
             {computedOrderTotal > 0 && (
               <span className="text-xs font-mono tabular-nums text-zinc-200">
-                {t.customers.orderTotalLabel}:{' '}
-                <strong className="text-[#4ade80]">{formatMoney(computedOrderTotal, 'BDT')}</strong>
+                {computedProductSubtotal > 0 && numericDeliveryCharge > 0 ? (
+                  <>
+                    <span className="text-zinc-400">
+                      {formatMoney(computedProductSubtotal, 'BDT')} +{' '}
+                      {formatMoney(numericDeliveryCharge, 'BDT')} ={' '}
+                    </span>
+                    <strong className="text-[#4ade80]">
+                      {formatMoney(computedOrderTotal, 'BDT')}
+                    </strong>
+                  </>
+                ) : (
+                  <>
+                    {t.customers.orderTotalLabel}:{' '}
+                    <strong className="text-[#4ade80]">
+                      {formatMoney(computedOrderTotal, 'BDT')}
+                    </strong>
+                  </>
+                )}
               </span>
             )}
           </div>
@@ -436,6 +466,41 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
               placeholder="e.g. 1000"
               className="font-mono"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Input
+              label={t.customers.deliveryChargeLabel}
+              type="number"
+              min="0"
+              step="1"
+              value={deliveryCharge}
+              onChange={(e) => setDeliveryCharge(e.target.value)}
+              placeholder="e.g. 70 (Inside Dhaka) or 130 (Outside Dhaka)"
+              className="font-mono"
+            />
+            <div className="flex flex-wrap gap-1.5">
+              {[0, 60, 70, 80, 120, 130, 150].map((fee) => {
+                const active =
+                  fee === 0
+                    ? deliveryCharge === '0'
+                    : Number(deliveryCharge) === fee;
+                return (
+                  <button
+                    key={fee}
+                    type="button"
+                    onClick={() => setDeliveryCharge(String(fee))}
+                    className={`px-2.5 py-1 min-h-[34px] sm:min-h-0 text-[11px] font-mono font-medium rounded-md border transition-colors cursor-pointer ${
+                      active
+                        ? 'bg-[#22c55e] text-zinc-950 border-[#22c55e] font-semibold'
+                        : 'bg-[#09090b] text-zinc-300 border-[#27272a] hover:border-zinc-500'
+                    }`}
+                  >
+                    {fee === 0 ? '৳0 (Free)' : `৳${fee}`}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-4">

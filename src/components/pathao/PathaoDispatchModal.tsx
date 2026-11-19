@@ -79,8 +79,11 @@ export const PathaoDispatchModal: React.FC<PathaoDispatchModalProps> = ({
     } else if (customer) {
       const qty = Math.max(1, Math.round(customer.quantity || 1));
       const unitPrice = Number(customer.unitPrice || 0);
+      const deliveryCharge = Math.max(0, Number(customer.deliveryCharge || 0));
       const computedTotal =
-        unitPrice > 0 ? Math.round(qty * unitPrice) : Math.round(customer.totalSpent || 0);
+        unitPrice > 0 || deliveryCharge > 0
+          ? Math.round(qty * unitPrice + deliveryCharge)
+          : Math.round(customer.totalSpent || 0);
       const composedAddress = [
         customer.address?.trim(),
         customer.area?.trim(),

@@ -449,11 +449,14 @@ export const CustomersPage: React.FC = () => {
                     .join(', ');
                   const qty = c.quantity ?? 0;
                   const unitPrice = c.unitPrice ?? 0;
-                  const orderTotal = Math.round(qty * unitPrice * 100) / 100;
+                  const deliveryCharge = Math.max(0, c.deliveryCharge ?? 0);
+                  const productTotal = Math.round(qty * unitPrice * 100) / 100;
+                  const orderTotal = Math.round((productTotal + deliveryCharge) * 100) / 100;
                   const hasOrderMeta = Boolean(
                     c.productName ||
                       c.productSize ||
                       unitPrice > 0 ||
+                      deliveryCharge > 0 ||
                       c.orderDetails ||
                       c.merchantOrderId ||
                       c.itemType
@@ -502,7 +505,7 @@ export const CustomersPage: React.FC = () => {
                             <span className="font-medium text-zinc-100 truncate">
                               {c.productName || 'Order Item'}
                             </span>
-                            {unitPrice > 0 && (
+                            {(unitPrice > 0 || deliveryCharge > 0) && (
                               <span className="font-mono tabular-nums text-[#4ade80] font-semibold shrink-0">
                                 {formatMoney(orderTotal > 0 ? orderTotal : unitPrice, 'BDT')}
                               </span>
@@ -520,6 +523,14 @@ export const CustomersPage: React.FC = () => {
                                 <span className="font-mono tabular-nums">
                                   {qty > 0 ? `${qty} × ` : ''}
                                   {formatMoney(unitPrice, 'BDT')} {t.customers.perPcWord}
+                                </span>
+                              </>
+                            )}
+                            {deliveryCharge > 0 && (
+                              <>
+                                {(c.productSize || unitPrice > 0) && <span aria-hidden="true">·</span>}
+                                <span className="font-mono tabular-nums text-zinc-300">
+                                  {t.customers.deliveryChargeShort}: +{formatMoney(deliveryCharge, 'BDT')}
                                 </span>
                               </>
                             )}
@@ -688,7 +699,9 @@ export const CustomersPage: React.FC = () => {
                   {filteredCustomers.map((c) => {
                     const qty = c.quantity ?? 0;
                     const unitPrice = c.unitPrice ?? 0;
-                    const orderTotal = Math.round(qty * unitPrice * 100) / 100;
+                    const deliveryCharge = Math.max(0, c.deliveryCharge ?? 0);
+                    const productTotal = Math.round(qty * unitPrice * 100) / 100;
+                    const orderTotal = Math.round((productTotal + deliveryCharge) * 100) / 100;
                     const isSelected = selectedIds.has(c.id);
 
                     return (
@@ -730,14 +743,18 @@ export const CustomersPage: React.FC = () => {
                           {c.productName && (
                             <p className="font-medium text-zinc-100 truncate">{c.productName}</p>
                           )}
-                          {(c.productSize || unitPrice > 0) && (
+                          {(c.productSize || unitPrice > 0 || deliveryCharge > 0) && (
                             <p className="text-[11px] text-zinc-400 font-mono tabular-nums">
                               {c.productSize ? `${t.customers.sizeWord}: ${c.productSize}` : ''}
-                              {c.productSize && unitPrice > 0 ? ' · ' : ''}
+                              {c.productSize && (unitPrice > 0 || deliveryCharge > 0) ? ' · ' : ''}
                               {unitPrice > 0
-                                ? `${qty > 0 ? `${qty} × ` : ''}${formatMoney(unitPrice, 'BDT')}${
-                                    orderTotal > 0 ? ` = ${formatMoney(orderTotal, 'BDT')}` : ''
-                                  }`
+                                ? `${qty > 0 ? `${qty} × ` : ''}${formatMoney(unitPrice, 'BDT')}`
+                                : ''}
+                              {deliveryCharge > 0
+                                ? `${unitPrice > 0 ? ' + ' : ''}${t.customers.deliveryChargeShort}: ${formatMoney(deliveryCharge, 'BDT')}`
+                                : ''}
+                              {orderTotal > 0 && (unitPrice > 0 || deliveryCharge > 0)
+                                ? ` = ${formatMoney(orderTotal, 'BDT')}`
                                 : ''}
                             </p>
                           )}

@@ -589,7 +589,8 @@ export function exportCustomersOrdersCsv(
   const rows = customers.map((c) => {
     const qty = Math.max(1, Math.round(Number(c.quantity) || 1));
     const unitPrice = Math.max(0, Number(c.unitPrice) || 0);
-    const currentOrderTotal = Math.round(qty * unitPrice * 100) / 100;
+    const deliveryCharge = Math.max(0, Number(c.deliveryCharge) || 0);
+    const currentOrderTotal = Math.round((qty * unitPrice + deliveryCharge) * 100) / 100;
     const amountToCollect = Math.round(
       currentOrderTotal > 0 ? currentOrderTotal : c.totalSpent || 0
     );

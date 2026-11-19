@@ -116,6 +116,7 @@ export const customerSchema = z.object({
   productSize: z.string().trim().max(40).default(''),
   quantity: z.coerce.number().min(0, 'Quantity cannot be negative.').max(99999).default(1),
   unitPrice: z.coerce.number().min(0, 'Tk per product cannot be negative.').max(999999999).default(0),
+  deliveryCharge: z.coerce.number().min(0, 'Delivery charge cannot be negative.').max(999999999).default(0),
   orderDetails: z.string().trim().max(500).default(''),
   orderStatus: z.enum(['pending', 'received', 'rejected', 'no_call']).default('pending'),
   notes: z.string().trim().max(1000).default(''),

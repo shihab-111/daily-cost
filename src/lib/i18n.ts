@@ -233,6 +233,8 @@ export interface TranslationStrings {
     productSizeLabel: string;
     quantityLabel: string;
     tkPerProductLabel: string;
+    deliveryChargeLabel: string;
+    deliveryChargeShort: string;
     orderTotalLabel: string;
     orderDetailsLabel: string;
     recordNewOrderLabel: string;
@@ -825,6 +827,8 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       productSizeLabel: 'Size of Product',
       quantityLabel: 'Qty (Pcs)',
       tkPerProductLabel: 'Tk per Product (৳)',
+      deliveryChargeLabel: 'Delivery Charge (৳)',
+      deliveryChargeShort: 'Delivery',
       orderTotalLabel: 'Order Total',
       orderDetailsLabel: 'Order Details / Instructions',
       recordNewOrderLabel: 'Add as a new order (+1 order & add total to customer spent)',
@@ -1429,6 +1433,8 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationStrings> = {
       productSizeLabel: 'পণ্যের সাইজ',
       quantityLabel: 'পরিমাণ (পিস)',
       tkPerProductLabel: 'প্রতি পণ্যের দাম (৳ টাকা)',
+      deliveryChargeLabel: 'ডেলিভারি চার্জ (৳ টাকা)',
+      deliveryChargeShort: 'ডেলিভারি',
       orderTotalLabel: 'অর্ডার মোট',
       orderDetailsLabel: 'অর্ডারের বিবরণ / নোট',
       recordNewOrderLabel: 'নতুন অর্ডার হিসেবে যোগ করুন (+১ অর্ডার ও মোট খরচে যোগ হবে)',

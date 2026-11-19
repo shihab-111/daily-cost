@@ -253,9 +253,13 @@ export const ReceiptsPage: React.FC = () => {
             },
           ]
         : prev.items;
+      const nextDeliveryCharge =
+        incoming.deliveryCharge !== undefined
+          ? Math.max(0, incoming.deliveryCharge)
+          : prev.deliveryCharge;
       const totals = computeTotals(
         nextItems,
-        prev.deliveryCharge,
+        nextDeliveryCharge,
         prev.discountAmount,
         prev.vatPercent,
         prev.paidAmount
@@ -275,6 +279,7 @@ export const ReceiptsPage: React.FC = () => {
         customerDistrict: incoming.district || 'Dhaka',
         customerAddress: incoming.address,
         paymentMethod: mappedPayment,
+        deliveryCharge: nextDeliveryCharge,
         items: nextItems,
         subtotal: totals.subtotal,
         vatAmount: totals.vatAmount,
@@ -362,7 +367,12 @@ export const ReceiptsPage: React.FC = () => {
     const isDhaka =
       cust.district.toLowerCase() === 'dhaka' || cust.district.toLowerCase() === 'savar';
     const zone: DeliveryZone = isDhaka ? 'inside_dhaka' : 'outside_dhaka';
-    const charge = isDhaka ? 70 : 130;
+    const charge =
+      cust.deliveryCharge !== undefined && cust.deliveryCharge > 0
+        ? cust.deliveryCharge
+        : isDhaka
+        ? 70
+        : 130;
 
     updateDraftWithTotals((prev) => ({
       ...prev,
